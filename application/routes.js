@@ -1,5 +1,5 @@
 /*
-These are routes as defined in https://docs.google.com/document/d/1337m6i7Y0GPULKLsKpyHR4NRzRwhoxJnAZNnDFCigkc/edit#
+
 Each route implementes a basic parameter/payload validation and a swagger API documentation description
 */
 'use strict';
@@ -7,69 +7,73 @@ Each route implementes a basic parameter/payload validation and a swagger API do
 const Joi = require('joi'),
   handlers = require('./controllers/handler');
 
-module.exports = function(server) {
-  //Get slide with id id from database and return it (when not available, return NOT FOUND). Validate id
-  server.route({
-    method: 'GET',
-    path: '/slide/{id}',
-    handler: handlers.getSlide,
-    config: {
-      validate: {
-        params: {
-          id: Joi.string().alphanum().lowercase()
-        },
-      },
-      tags: ['api'],
-      description: 'Get a slide'
-    }
-  });
-
-  //Create new slide (by payload) and return it (...). Validate payload
+module.exports = function (server) {
+  //Register new user with credentials
   server.route({
     method: 'POST',
-    path: '/slide/new',
-    handler: handlers.newSlide,
+    path: '/register',
+    handler: handlers.register,
     config: {
       validate: {
         payload: Joi.object().keys({
-          title: Joi.string(),
-          body: Joi.string(),
-          user_id: Joi.string().alphanum().lowercase(),
-          root_deck_id: Joi.string().alphanum().lowercase(),
-          parent_deck_id: Joi.string().alphanum().lowercase(),
-          no_new_revision: Joi.boolean(),
-          position: Joi.number().integer().min(0),
+          surname: Joi.string(),
+          name: Joi.string(),
+          username: Joi.string().alphanum().lowercase(),
+          email: Joi.string().email(),
+          password: Joi.string(),
           language: Joi.string()
-        }).requiredKeys('title', 'body'),
+        }).requiredKeys('name', 'username', 'email', 'password'),
       },
       tags: ['api'],
-      description: 'Create a new slide'
+      description: 'Register a new user'
     }
   });
 
-  //Update slide with id id (by payload) and return it (...). Validate payload
+  //Get a user
   server.route({
-    method: 'PUT',
-    path: '/slide/{id}',
-    handler: handlers.replaceSlide,
+    method: 'GET',
+    path: '/user/{id}',
+    handler: handlers.getUser,
     config: {
       validate: {
         params: {
           id: Joi.string().alphanum().lowercase()
-        },
-        payload: Joi.object().keys({
-          title: Joi.string(),
-          body: Joi.string(),
-          user_id: Joi.string().alphanum().lowercase(),
-          root_deck_id: Joi.string().alphanum().lowercase(),
-          parent_deck_id: Joi.string().alphanum().lowercase(),
-          no_new_revision: Joi.boolean(),
-          position: Joi.number().integer().min(0),
-          language: Joi.string()
-        }).requiredKeys('title', 'body'),
+        }
       },
       tags: ['api'],
-      description: 'Replace a slide'
+      description: 'Get user by id'
+    }
+  });
+
+  //Delete user
+  server.route({
+    method: 'DELETE',
+    path: '/user/{id}',
+    handler: handlers.deleteUser,
+    config: {
+      validate: {
+        params: {
+          id: Joi.string().alphanum().lowercase()
+        }
+      },
+      tags: ['api'],
+      description: 'Delete a user'
+    }
+  });
+
+  //Update a user with a new JSON representation
+  server.route({
+    method: 'PUT',
+    path: '/user/{id}',
+    handler: handlers.updateUser,
+    config: {
+      validate: {
+        params: {
+          id: Joi.string().alphanum().lowercase()
+        }
+      },
+      tags: ['api'],
+      description: 'Update a user'
     }
   });
 };
