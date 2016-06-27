@@ -1,5 +1,5 @@
 # User Management Service #
-[![Build Status](https://travis-ci.org/slidewiki/microservice-template.svg?branch=master)](https://travis-ci.org/slidewiki/user-service)
+[![Build Status](https://travis-ci.org/slidewiki/user-service.svg?branch=master)](https://travis-ci.org/slidewiki/user-service)
 [![License](https://img.shields.io/badge/License-MPL%202.0-green.svg)](https://github.com/slidewiki/microservice-template/blob/master/LICENSE)
 [![Language](https://img.shields.io/badge/Language-Javascript%20ECMA2015-lightgrey.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Framework](https://img.shields.io/badge/Framework-NodeJS%206.2.0-blue.svg)](https://nodejs.org/)

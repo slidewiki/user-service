@@ -1,13 +1,13 @@
 {
-  "name": "template_application",
+  "name": "user_service",
   "version": "0.1.0",
-  "description": "This is a Microservice template appication, meant to be forked.",
+  "description": "Manages user accounts. Used for credential login and user information management.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/slidewiki/Microservice-Template"
+    "url": "https://github.com/slidewiki/user-service"
   },
-  "bugs": "https://github.com/slidewiki/Microservice-Template/issues",
-  "author": "Roy Meissner (https://rmeissn.github.io/)",
+  "bugs": "https://github.com/slidewiki/user-service/issues",
+  "author": "Kurt Junghanns",
   "license": "MPL-2.0",
   "main": "server.js",
   "scripts": {
