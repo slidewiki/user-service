@@ -8,3 +8,23 @@
 This service manages the user accounts in terms of CRUD operations with their credentials and informations.
 There is a collaboration with the authentification service, with handles OAuth2.
 The API is just a draft.
+
+API:
+user
+
+&nbsp;&nbsp;&nbsp;        delete /user/{id}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Delete a user
+&nbsp;&nbsp;&nbsp;        get /user/{id}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Get user by id
+&nbsp;&nbsp;&nbsp;        put /user/{id}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Update a user
+
+login
+
+&nbsp;&nbsp;&nbsp;        post /login
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Login
+
+register
+
+&nbsp;&nbsp;&nbsp;        post /register
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Register a new user
