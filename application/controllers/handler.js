@@ -12,8 +12,10 @@ module.exports = {
 
   },
 
-  create: () => {
-
+  create: (req, res) => {
+    res({
+      new_id: '123L564890423454784012A4'
+    });
   },
 
   getUser: () => {
