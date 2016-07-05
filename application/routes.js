@@ -34,6 +34,30 @@ module.exports = function (server) {
     }
   });
 
+  //Create user - used by authorization service
+  //returns new _id
+  server.route({
+    method: 'POST',
+    path: '/create',
+    handler: handlers.create,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          email: Joi.string().email(),
+          username: Joi.string().alphanum(),
+          language: Joi.string()
+        }).requiredKeys('email', 'username', 'language'),
+      },
+      tags: ['api'],
+      description: 'Register a new user',
+      response: {
+        schema: Joi.object().keys({
+          new_id: Joi.string().alphanum()
+        })
+      }
+    }
+  });
+
   //Login with credentials
   server.route({
     method: 'POST',

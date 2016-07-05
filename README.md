@@ -36,3 +36,9 @@ register
 &nbsp;&nbsp;&nbsp;        post /register
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Register a new user
+
+create
+
+&nbsp;&nbsp;&nbsp;        post /create
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            Create a new user by authorization service
