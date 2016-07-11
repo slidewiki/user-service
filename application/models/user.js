@@ -28,7 +28,7 @@ const user = {
       type: 'string'
     },
     registered: {
-      type: 'string'
+      type: 'boolean'
     },
     defaults: {
       type: 'array',
