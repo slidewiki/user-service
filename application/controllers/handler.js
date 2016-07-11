@@ -8,7 +8,7 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   co = require('../common');
 
 module.exports = {
-  register: () => {
+  register: (req, res) => {
 
   },
 
@@ -18,19 +18,19 @@ module.exports = {
     });
   },
 
-  getUser: () => {
+  getUser: (req, res) => {
 
   },
 
-  updateUser: () => {
+  updateUser: (req, res) => {
 
   },
 
-  deleteUser: () => {
+  deleteUser: (req, res) => {
 
   },
 
-  login: () => {
+  login: (req, res) => {
 
   },
 
