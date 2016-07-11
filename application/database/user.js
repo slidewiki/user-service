@@ -2,7 +2,6 @@
 
 const helper = require('./helper'),
   userModel = require('../models/user.js'),
-  mongodb = require('mongodb'),
   collectionName = 'users';
 
 module.exports = {
@@ -58,5 +57,11 @@ module.exports = {
       .then((collection) => collection.remove({
         _id: userid
       }));
+  },
+
+  find: (query) => {
+    return helper.connectToDatabase()
+      .then((dbconn) => dbconn.collection(collectionName))
+      .then((collection) => collection.find(query));
   }
 };

@@ -28,7 +28,8 @@ module.exports = function (server) {
       description: 'Register a new user',
       response: {
         schema: Joi.object().keys({
-          success: Joi.boolean()
+          success: Joi.boolean(),
+          userid: Joi.string().alphanum()
         })
       }
     }
@@ -76,7 +77,7 @@ module.exports = function (server) {
         schema: Joi.object().keys({
           access_token: Joi.string(),
           expires_in: Joi.number(),
-          user_id: Joi.string()
+          userid: Joi.string()
         })
       }
     }
@@ -134,7 +135,8 @@ module.exports = function (server) {
       description: 'Update a user',
       response: {
         schema: Joi.object().keys({
-          user_id: Joi.string()
+          success: Joi.boolean(),
+          userid: Joi.string()
         })
       }
     }

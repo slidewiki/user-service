@@ -3,7 +3,7 @@
 
 //Mocking is missing completely TODO add mocked objects
 
-describe('User service', () => {
+describe('User service database', () => {
 
   let db, expect;
 
@@ -38,7 +38,7 @@ describe('User service', () => {
       email: 4,
       password: false
     };
-    let userid = '';
+  let userid = '';
 
   context('Making CRUD on user collection - ', () => {
     it('Create with wrong data', () => {
