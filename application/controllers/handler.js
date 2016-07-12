@@ -24,31 +24,42 @@ module.exports = {
       registered: true
     };
 
-    //Todo: check if username already exists
+    //check if username already exists
+    return isUsernameAlreadyTaken(user.username)
+    .then((isTaken) => {
+      console.log('username already taken: ', user.username, isTaken);
+      if (isTaken === false) {
+        return userCtrl.create(user)
+          .then((result) => {
+            //console.log('register: user create result: ', result);
 
-    return userCtrl.create(user)
-      .then((result) => {
-        //console.log('register: user create result: ', result);
+            if (result[0] !== undefined && result[0] !== null) {
+              //Error
+              return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+            }
 
-        if (result[0] !== undefined && result[0] !== null) {
-          //Error
-          return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-        }
+            if (result.insertedCount === 1) {
+              //success
+              return res({
+                success: true,
+                userid: result.insertedId
+              });
+            }
 
-        if (result.insertedCount === 1) {
-          //success
-          return res({
-            success: true,
-            userid: result.insertedId
+            res(boom.badImplementation());
+          })
+          .catch((error) => {
+            console.log('register: catch: ', error);
+            res(boom.badImplementation('Error', error));
           });
-        }
-
-        res(boom.badImplementation());
-      })
-      .catch((error) => {
-        console.log('register: catch: ', error);
-        res(boom.badImplementation('Error', error));
-      });
+      }
+      else {
+        return res(boom.badData('The username is already taken'));
+      }
+    })
+    .catch((error) => {
+      res(boom.badImplementation('Error', error));
+    });
   },
 
   //used by authorization service - not needed for now
@@ -138,7 +149,6 @@ module.exports = {
           default:
             res(boom.badImplementation('Found multiple users'));
             break;
-
         }
       })
       .catch((error) => {
@@ -146,3 +156,24 @@ module.exports = {
       });
   }
 };
+
+function isUsernameAlreadyTaken(username) {
+  let myPromise = new Promise((resolve, reject) => {
+    return userCtrl.find({
+      username: username
+    })
+    .then((cursor) => cursor.count())
+    .then((count) => {
+      //console.log('isUsernameAlreadyTaken: cursor.count():', count);
+      if (count > 0) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    })
+    .catch((error) => {
+      reject(error);
+    });
+  });
+  return myPromise;
+}

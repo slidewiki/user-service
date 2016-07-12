@@ -53,6 +53,24 @@ describe('User service', () => {
         throw Error;
         expect(1).to.equals(2);
       });
+    });it('Register a second user with same username - should not be possible', () => {
+      let req = {
+        payload: correct_user1
+      };
+      return handler.register(req, (result) => {
+        //console.log(result);
+
+        expect(result.output).to.not.equal(undefined);
+        expect(result.output).to.not.equal(null);
+        expect(result.output.statusCode).to.equal(422);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log(Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
     });
     it('Get user', () => {
       let req = {

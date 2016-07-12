@@ -1,5 +1,4 @@
 /*
-
 Each route implementes a basic parameter/payload validation and a swagger API documentation description
 */
 'use strict';
