@@ -114,7 +114,7 @@ module.exports = function (server) {
         }
       },
       tags: ['api'],
-      description: 'Delete a user',
+      description: 'Delete a user - JWT needed',
       response: {
         schema: Joi.object().keys({
           success: Joi.boolean()
