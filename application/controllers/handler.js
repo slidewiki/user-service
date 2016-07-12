@@ -42,7 +42,7 @@ module.exports = {
               //success
               return res({
                 success: true,
-                userid: result.insertedId
+                userid: result.insertedId.toString()
               });
             }
 
@@ -94,7 +94,7 @@ module.exports = {
           //success
           return res({
             success: true,
-            userid: result.ops[0]._id
+            userid: result.ops[0]._id.toString()
           });
         }
 
@@ -141,7 +141,7 @@ module.exports = {
             //TODO: call authorization service for OAuth2 token
 
             res({
-              userid: result[0]._id,
+              userid: result[0]._id.toString(),
               access_token: '',
               expires_in: 0
             });
