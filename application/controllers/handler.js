@@ -81,10 +81,11 @@ module.exports = {
 
   updateUser: (req, res) => {
     let user = req.payload;
-    user._id = req.params.id;
+    user._id = new mongodb.ObjectID(decodeURI(req.params.id));
 
     return userCtrl.update(user)
       .then((result) => {
+        //console.log('handler: updateUser:', user,  result);
         if (result[0] !== undefined && result[0] !== null) {
           //Error
           return res(boom.badData('update failed because data is wrong: ', co.parseAjvValidationErrors(result)));
@@ -106,7 +107,7 @@ module.exports = {
   },
 
   deleteUser: (req, res) => {
-    let userid = req.params.id;
+    let userid = new mongodb.ObjectID(decodeURI(req.params.id));
     return userCtrl.delete(userid)
       .then((result) => {
         if (result.result.n === 1) {
