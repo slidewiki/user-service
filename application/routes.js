@@ -30,7 +30,8 @@ module.exports = function (server) {
           success: Joi.boolean(),
           userid: Joi.string().alphanum()
         })
-      }
+      },
+      auth: false
     }
   });
 
@@ -54,7 +55,8 @@ module.exports = function (server) {
         schema: Joi.object().keys({
           new_id: Joi.string().alphanum()
         })
-      }
+      },
+      auth: false
     }
   });
 
@@ -78,7 +80,8 @@ module.exports = function (server) {
           expires_in: Joi.number(),
           userid: Joi.string()
         })
-      }
+      },
+      auth: false
     }
   });
 
@@ -94,7 +97,8 @@ module.exports = function (server) {
         }
       },
       tags: ['api'],
-      description: 'Get user by id'
+      description: 'Get user by id',
+      auth: false
     }
   });
 
@@ -115,7 +119,8 @@ module.exports = function (server) {
         schema: Joi.object().keys({
           success: Joi.boolean()
         })
-      }
+      },
+      auth: 'jwt'
     }
   });
 
@@ -137,7 +142,8 @@ module.exports = function (server) {
           success: Joi.boolean(),
           userid: Joi.string()
         })
-      }
+      },
+      auth: false
     }
   });
 };

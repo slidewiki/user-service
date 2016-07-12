@@ -7,7 +7,9 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
   co = require('../common'),
   userCtrl = require('../database/user'),
-  mongodb = require('mongodb');
+  mongodb = require('mongodb'),
+  config = require('../configuration'),
+  jwt = require('./jwt');
 
 module.exports = {
   register: (req, res) => {
@@ -72,7 +74,11 @@ module.exports = {
   getUser: (req, res) => {
     return userCtrl.read(new mongodb.ObjectID(decodeURI(req.params.id)))
       .then((user) => {
-        res(user);
+        if (user !== undefined && user !== null && user.username !== undefined)
+          res(user);
+        else {
+          res(boom.notFound());
+        }
       })
       .catch((error) => {
         res(boom.notFound('Wrong user id', error));
@@ -108,6 +114,18 @@ module.exports = {
 
   deleteUser: (req, res) => {
     let userid = new mongodb.ObjectID(decodeURI(req.params.id));
+
+    //check if the user which should be deleted have the right JWT data
+    let jwt_data = '';
+    try {
+      jwt_data = req.auth.credentials.userid;
+    }
+    catch (e) {}
+    //console.log(decodeURI(req.params.id), 'vs', jwt_data);
+    if (decodeURI(req.params.id) !== jwt_data) {
+      return res(boom.unauthorized('You cannot delete another user'));
+    }
+
     return userCtrl.delete(userid)
       .then((result) => {
         if (result.result.n === 1) {
@@ -143,9 +161,12 @@ module.exports = {
 
             res({
               userid: result[0]._id.toString(),
-              access_token: '',
+              access_token: 'dummy',
               expires_in: 0
-            });
+            })
+            .header(config.JWT.HEADER, jwt.createToken({
+              userid: result[0]._id.toString()
+            }));
             break;
           default:
             res(boom.badImplementation('Found multiple users'));

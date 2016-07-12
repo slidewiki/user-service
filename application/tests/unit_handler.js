@@ -31,7 +31,8 @@ describe('User service', () => {
     }],
     registered: false
   };
-  let userid = '';
+  let userid = '',
+    jwt = '';
 
   context('Using all exported functions - ', () => {
     it('Register user', () => {
@@ -44,7 +45,7 @@ describe('User service', () => {
         expect(result.success).to.equal(true);
         expect(result.userid).to.not.equal(undefined);
 
-        userid = result.userid;
+        userid = result.userid.toString();
 
         return;
       })
@@ -81,7 +82,7 @@ describe('User service', () => {
       return handler.getUser(req, (result) => {
         //console.log(result);
 
-        expect(result._id.toString()).to.equal(userid.toString());
+        expect(result._id.toString()).to.equal(userid);
 
         return;
       })
@@ -101,9 +102,14 @@ describe('User service', () => {
       return handler.login(req, (result) => {
         //console.log('result', result);
 
-        expect(result.userid.toString()).to.equal(userid.toString());
+        expect(result.userid).to.equal(userid);
 
-        return;
+        return {
+          header: (name, data) => {
+            console.log('got header:', name, data);
+            jwt = data;
+          }
+        };
       })
       .catch((Error) => {
         console.log('Error', Error);
@@ -121,7 +127,7 @@ describe('User service', () => {
       return handler.updateUser(req, (result) => {
         //console.log(result);
 
-        expect(result.userid.toString()).to.equal(userid.toString());
+        expect(result.userid.toString()).to.equal(userid);
         expect(result.success).to.equal(true);
 
         return;
@@ -136,10 +142,15 @@ describe('User service', () => {
       let req = {
         params: {
           id: userid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
         }
       };
       return handler.deleteUser(req, (result) => {
-        //console.log(result);
+        //console.log('result', result);
 
         expect(result.success).to.equal(true);
 
