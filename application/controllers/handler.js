@@ -31,6 +31,8 @@ module.exports = {
     .then((isTaken) => {
       console.log('username already taken: ', user.username, isTaken);
       if (isTaken === false) {
+        //TODO: check email
+
         return userCtrl.create(user)
           .then((result) => {
             //console.log('register: user create result: ', result);
