@@ -95,7 +95,20 @@ module.exports = {
   },
 
   deleteUser: (req, res) => {
+    let userid = req.params.id;
+    return userCtrl.delete(userid)
+      .then((result) => {
+        if (result.result.n === 1) {
+          return res({
+            success: true
+          });
+        }
 
+        res(boom.notFound('Deletion failed - no matched id'));
+      })
+      .catch((error) => {
+        res(boom.badImplementation('Deletion failed', error));
+      });
   },
 
   login: (req, res) => {

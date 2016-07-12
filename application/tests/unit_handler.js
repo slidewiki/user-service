@@ -68,7 +68,7 @@ describe('User service', () => {
         return;
       })
       .catch((Error) => {
-        console.log(Error);
+        console.log('Error', Error);
         throw Error;
         expect(1).to.equals(2);
       });
@@ -81,14 +81,54 @@ describe('User service', () => {
         }
       };
       return handler.login(req, (result) => {
-        //console.log(result);
+        //console.log('result', result);
 
         expect(result.userid.toString()).to.equal(userid.toString());
 
         return;
       })
       .catch((Error) => {
-        console.log(Error);
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Update user', () => {
+      let req = {
+        payload: correct_user1,
+        params: {
+          id: userid
+        }
+      };
+      return handler.updateUser(req, (result) => {
+        //console.log(result);
+
+        expect(result.userid.toString()).to.equal(userid.toString());
+        expect(result.success).to.equal(true);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Delete user', () => {
+      let req = {
+        params: {
+          id: userid
+        }
+      };
+      return handler.deleteUser(req, (result) => {
+        //console.log(result);
+
+        expect(result.success).to.equal(true);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
         throw Error;
         expect(1).to.equals(2);
       });
