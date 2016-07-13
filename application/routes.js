@@ -16,12 +16,12 @@ module.exports = function (server) {
       validate: {
         payload: Joi.object().keys({
           surname: Joi.string(),
-          name: Joi.string(),
+          lastname: Joi.string(),
           username: Joi.string().alphanum(),
           email: Joi.string().email(),
           password: Joi.string(),
           language: Joi.string()
-        }).requiredKeys('name', 'username', 'email', 'password'),
+        }).requiredKeys('username', 'email', 'password'),
       },
       tags: ['api'],
       description: 'Register a new user',

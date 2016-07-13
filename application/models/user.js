@@ -27,9 +27,6 @@ const user = {
     password: {
       type: 'string'
     },
-    registered: {
-      type: 'boolean'
-    },
     defaults: {
       type: 'array',
       items: {
@@ -86,7 +83,7 @@ const user = {
     },
     infodeck: objectid
   },
-  required: ['email', 'username', 'registered']
+  required: ['email', 'username']
 };
 
 //export
