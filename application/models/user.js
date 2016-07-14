@@ -36,7 +36,7 @@ const user = {
     surname: {
       type: 'string'
     },
-    lastname: {
+    forename: {
       type: 'string'
     },
     gender: {

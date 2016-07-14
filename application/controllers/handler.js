@@ -15,7 +15,7 @@ module.exports = {
   register: (req, res) => {
     let user = {
       surname: decodeURI(req.payload.surname),
-      lastname: decodeURI(req.payload.lastname),
+      forename: decodeURI(req.payload.forename),
       username: decodeURI(req.payload.username),
       email: decodeURI(req.payload.email),
       password: decodeURI(req.payload.password),
