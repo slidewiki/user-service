@@ -33,6 +33,9 @@ const user = {
         type: 'object'
       }
     },
+	registered: {
+		type: 'date'
+	}
     surname: {
       type: 'string'
     },
