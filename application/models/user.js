@@ -33,9 +33,9 @@ const user = {
         type: 'object'
       }
     },
-	registered: {
-		type: 'date'
-	},
+    registered: {
+      type: 'date'
+    },
     surname: {
       type: 'string'
     },

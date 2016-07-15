@@ -44,19 +44,19 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-            email: Joi.string().email(),
-            username: Joi.string().alphanum(),
-            password: Joi.string(),
-            registered: Joi.date(),
-            surname: Joi.string(),
-            forename: Joi.string(),
-            gender: Joi.string().regex(/^(fe)?male$/)
-            locale: Joi.string(),
-            hometown: Joi.string(),
-            location: Joi.string(),
-            picture: Joi.string().uri(),
-            desription: Joi.string(),
-            birthday: Joi.date.timestamp()
+          email: Joi.string().email(),
+          username: Joi.string().alphanum(),
+          password: Joi.string(),
+          registered: Joi.date(),
+          surname: Joi.string(),
+          forename: Joi.string(),
+          gender: Joi.string().regex(/^(fe)?male$/),
+          locale: Joi.string(),
+          hometown: Joi.string(),
+          location: Joi.string(),
+          picture: Joi.string().uri(),
+          desription: Joi.string(),
+          birthday: Joi.date.timestamp()
         }).requiredKeys('email', 'username', 'password', 'language'),
       },
       tags: ['api'],
