@@ -35,7 +35,7 @@ module.exports = function (server) {
     }
   });
 
-  //Create user - used by authorization service
+  //Create user - used by authorization service and for migration
   //returns new _id
   server.route({
     method: 'POST',
@@ -44,10 +44,20 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-          email: Joi.string().email(),
-          username: Joi.string().alphanum(),
-          language: Joi.string()
-        }).requiredKeys('email', 'username', 'language'),
+            email: Joi.string().email(),
+            username: Joi.string().alphanum(),
+            password: Joi.string(),
+            registered: Joi.date(),
+            surname: Joi.string(),
+            forename: Joi.string(),
+            gender: Joi.string().regex(/^(fe)?male$/)
+            locale: Joi.string(),
+            hometown: Joi.string(),
+            location: Joi.string(),
+            picture: Joi.string().uri(),
+            desription: Joi.string(),
+            birthday: Joi.date.timestamp()
+        }).requiredKeys('email', 'username', 'password', 'language'),
       },
       tags: ['api'],
       description: 'Register a new user',
