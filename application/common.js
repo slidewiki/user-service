@@ -28,7 +28,7 @@ module.exports = {
         };
         if (this.isEmpty(array))
             return null;
-            
+
         return array.reduce((prev, curr) => {
             if (curr.keyword === 'required') {
                 prev.missing[beautifyKey(curr.params.missingProperty)] = curr;
