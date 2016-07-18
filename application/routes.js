@@ -56,8 +56,8 @@ module.exports = function (server) {
           location: Joi.string(),
           picture: Joi.string().uri(),
           desription: Joi.string(),
-          birthday: Joi.date.timestamp()
-        }).requiredKeys('email', 'username', 'password', 'language'),
+          birthday: Joi.date().timestamp()
+        }).requiredKeys('email', 'username', 'password'),
       },
       tags: ['api'],
       description: 'Register a new user',
