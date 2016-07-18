@@ -56,7 +56,8 @@ module.exports = function (server) {
           location: Joi.string(),
           picture: Joi.string().uri(),
           desription: Joi.string(),
-          birthday: Joi.date.timestamp()
+          birthday: Joi.date().timestamp(),
+          language: Joi.string()
         }).requiredKeys('email', 'username', 'password', 'language'),
       },
       tags: ['api'],

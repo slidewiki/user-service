@@ -63,5 +63,6 @@ module.exports = {
     return helper.connectToDatabase()
     .then((dbconn) => dbconn.collection(collectionName))
     .then((collection) => collection.find(query));
-  }
+  },
+
 };

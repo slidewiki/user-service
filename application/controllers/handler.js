@@ -83,44 +83,42 @@ module.exports = {
       birthday: decodeURI(req.payload.birthday)
     };
     //check if username already exists
-    return isUsernameAlreadyTaken(user.username)
-    .then((isTaken) => {
-      console.log('user already exists: ', user.username, isTaken);
-      if (!isTaken) {
-        //TODO: check email
-
-        return userCtrl.create(user)
-        .then((result) => {
-          //console.log('register: user create result: ', result);
-
-          if (result[0] !== undefined && result[0] !== null) {
-            //Error
-            return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-          }
-
-          if (result.insertedCount === 1) {
-            //success
-            return res({
-              success: true,
-              userid: result.insertedId.toString()
-            });
-          }
-
-          res(boom.badImplementation());
-        })
-        .catch((error) => {
-          console.log('register: catch: ', error);
-          res(boom.badImplementation('Error', error));
-        });
-      }
-      else {
-        //update user instead of new
-      }
-    })
-    .catch((error) => {
-      res(boom.badImplementation('Error', error));
+    let cursor = userCtrl.find({
+      username: user.username
     });
+    if (cursor){ // if username exists in the database, we update the user
+      user._id = cursor._id;
+      return userCtrl.update(user)
+      .then((result) => {
+        console.log(result);
+        //checks
+      });
+    }
+    else { // if the username does not exist, we create a new user
+      return userCtrl.create(user)
+      .then((result) => {
+        if (result[0] !== undefined && result[0] !== null) {
+          //Error
+          return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+        }
+
+        if (result.insertedCount === 1) {
+        //success
+          return res({
+            success: true,
+            userid: result.insertedId.toString()
+          });
+        }
+
+        res(boom.badImplementation());
+      })
+      .catch((error) => {
+        console.log('register: catch: ', error);
+        res(boom.badImplementation('Error', error));
+      });
+    };
   },
+
 
   getUser: (req, res) => {
     return userCtrl.read(new mongodb.ObjectID(decodeURI(req.params.id)))
@@ -228,4 +226,25 @@ module.exports = {
       res(boom.notFound('Wrong user id', error));
     });
   }
+};
+
+function isUsernameAlreadyTaken(username) {
+  let myPromise = new Promise((resolve, reject) => {
+    return userCtrl.find({
+      username: username
+    })
+    .then((cursor) => cursor.count())
+    .then((count) => {
+      //console.log('isUsernameAlreadyTaken: cursor.count():', count);
+      if (count > 0) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    })
+    .catch((error) => {
+      reject(error);
+    });
+  });
+  return myPromise;
 };
