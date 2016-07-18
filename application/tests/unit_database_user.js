@@ -28,8 +28,7 @@ describe('User service database', () => {
       languages: ['de'],
       defaults: [{
         language: 'de'
-      }],
-      registered: false
+      }]
     },
     wrong_user1 = {
       bla: 1,

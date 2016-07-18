@@ -28,8 +28,7 @@ describe('User service', () => {
     languages: ['de'],
     defaults: [{
       language: 'de'
-    }],
-    registered: false
+    }]
   };
   let userid = '',
     jwt = '';

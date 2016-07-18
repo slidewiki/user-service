@@ -229,3 +229,24 @@ module.exports = {
     });
   }
 };
+
+function isUsernameAlreadyTaken(username) {
+  let myPromise = new Promise((resolve, reject) => {
+    return userCtrl.find({
+      username: username
+    })
+    .then((cursor) => cursor.count())
+    .then((count) => {
+      //console.log('isUsernameAlreadyTaken: cursor.count():', count);
+      if (count > 0) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    })
+    .catch((error) => {
+      reject(error);
+    });
+  });
+  return myPromise;
+}
