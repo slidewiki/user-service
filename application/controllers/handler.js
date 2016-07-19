@@ -122,76 +122,6 @@ module.exports = {
     });
   },
 
-  getUser: (req, res) => {
-    return userCtrl.read(new mongodb.ObjectID(decodeURI(req.params.id)))
-    .then((user) => {
-      if (user !== undefined && user !== null && user.username !== undefined)
-        res(user);
-      else {
-        res(boom.notFound());
-      }
-    })
-    .catch((error) => {
-      res(boom.notFound('Wrong user id', error));
-    });
-  },
-
-  updateUser: (req, res) => {
-    let user = req.payload;
-    user._id = new mongodb.ObjectID(decodeURI(req.params.id));
-
-    return userCtrl.update(user)
-    .then((result) => {
-      //console.log('handler: updateUser:', user,  result);
-      if (result[0] !== undefined && result[0] !== null) {
-        //Error
-        return res(boom.badData('update failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-      }
-
-      if (result.modifiedCount === 1) {
-        //success
-        return res({
-          success: true,
-          userid: result.ops[0]._id.toString()
-        });
-      }
-
-      res(boom.badImplementation());
-    })
-    .catch((error) => {
-      res(boom.notFound('Update failed', error));
-    });
-  },
-
-  deleteUser: (req, res) => {
-    let userid = new mongodb.ObjectID(decodeURI(req.params.id));
-
-    //check if the user which should be deleted have the right JWT data
-    let jwt_data = '';
-    try {
-      jwt_data = req.auth.credentials.userid;
-    }
-    catch (e) {}
-    //console.log(decodeURI(req.params.id), 'vs', jwt_data);
-    if (decodeURI(req.params.id) !== jwt_data) {
-      return res(boom.unauthorized('You cannot delete another user'));
-    }
-
-    return userCtrl.delete(userid)
-    .then((result) => {
-      if (result.result.n === 1) {
-        return res({
-          success: true
-        });
-      }
-
-      res(boom.notFound('Deletion failed - no matched id'));
-    })
-    .catch((error) => {
-      res(boom.badImplementation('Deletion failed', error));
-    });
-  },
-
   login: (req, res) => {
     const query = {
       username: decodeURI(req.payload.username),
@@ -227,7 +157,83 @@ module.exports = {
     .catch((error) => {
       res(boom.notFound('Wrong user id', error));
     });
-  }
+  },
+
+  getUser: (req, res) => {
+    return userCtrl.read(new mongodb.ObjectID(decodeURI(req.params.id)))
+    .then((user) => {
+      if (user !== undefined && user !== null && user.username !== undefined)
+        res(user);
+      else {
+        res(boom.notFound());
+      }
+    })
+    .catch((error) => {
+      res(boom.notFound('Wrong user id', error));
+    });
+  },
+
+  deleteUser: (req, res) => {
+    let userid = new mongodb.ObjectID(decodeURI(req.params.id));
+
+    //check if the user which should be deleted have the right JWT data
+    let jwt_data = '';
+    try {
+      jwt_data = req.auth.credentials.userid;
+    }
+    catch (e) {}
+    //console.log(decodeURI(req.params.id), 'vs', jwt_data);
+    if (decodeURI(req.params.id) !== jwt_data) {
+      return res(boom.unauthorized('You cannot delete another user'));
+    }
+
+    return userCtrl.delete(userid)
+    .then((result) => {
+      if (result.result.n === 1) {
+        return res({
+          success: true
+        });
+      }
+
+      res(boom.notFound('Deletion failed - no matched id'));
+    })
+    .catch((error) => {
+      res(boom.badImplementation('Deletion failed', error));
+    });
+  },
+
+  //User profile
+  updateUserPasswd: () => {},
+  updateUserProfile: () => {},
+  getPublicUser: () => {},
+
+  //Not used anymore
+  updateUser: (req, res) => {
+    let user = req.payload;
+    user._id = new mongodb.ObjectID(decodeURI(req.params.id));
+
+    return userCtrl.update(user)
+    .then((result) => {
+      //console.log('handler: updateUser:', user,  result);
+      if (result[0] !== undefined && result[0] !== null) {
+        //Error
+        return res(boom.badData('update failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+      }
+
+      if (result.modifiedCount === 1) {
+        //success
+        return res({
+          success: true,
+          userid: result.ops[0]._id.toString()
+        });
+      }
+
+      res(boom.badImplementation());
+    })
+    .catch((error) => {
+      res(boom.notFound('Update failed', error));
+    });
+  },
 };
 
 function isUsernameAlreadyTaken(username) {

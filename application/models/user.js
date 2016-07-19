@@ -47,6 +47,10 @@ const user = {
       type: 'string',
       enum: ['male', 'female']
     },
+    sex: {  //Either life is easy or descriping a humans sex - thus a user should be able to choose one of these four options
+      type: 'string',
+      enum: ['male', 'female', 'other', '']
+    },
     locale: {
       type: 'string'
     },

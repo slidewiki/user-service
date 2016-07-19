@@ -27,7 +27,6 @@ module.exports = function (server) {
       description: 'Register a new user',
       response: {
         schema: Joi.object().keys({
-          success: Joi.boolean(),
           userid: Joi.string().alphanum()
         })
       },
@@ -84,14 +83,27 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Login',
-      response: {
-        schema: Joi.object().keys({
-          access_token: Joi.string(),
-          expires_in: Joi.number(),
-          userid: Joi.string()
-        })
-      },
-      auth: false
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.string()
+              })
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
@@ -104,11 +116,14 @@ module.exports = function (server) {
       validate: {
         params: {
           id: Joi.string().alphanum()
-        }
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
       },
       tags: ['api'],
-      description: 'Get user by id',
-      auth: false
+      description: 'Get detailed information about a user by id - JWT needed',
+      auth: 'jwt'
     }
   });
 
@@ -121,24 +136,81 @@ module.exports = function (server) {
       validate: {
         params: {
           id: Joi.string().alphanum()
-        }
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
       },
       tags: ['api'],
       description: 'Delete a user - JWT needed',
-      response: {
-        schema: Joi.object().keys({
-          success: Joi.boolean()
-        })
-      },
       auth: 'jwt'
     }
   });
 
-  //Update a user with a new JSON representation
+  //User Profile
+
+  //Update a users password
   server.route({
     method: 'PUT',
-    path: '/user/{id}',
-    handler: handlers.updateUser,
+    path: '/user/{id}/passwd',
+    handler: handlers.updateUserPasswd,
+    config: {
+      validate: {
+        params: {
+          id: Joi.string().alphanum()
+        },
+        payload: Joi.object().keys({
+          oldPassword: Joi.string(),
+          newPassword: Joi.string()
+        }),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Update a users password - JWT needed',
+      auth: 'jwt',
+    }
+  });
+
+  //Update a users profile with the given JSON representation
+  server.route({
+    method: 'PUT',
+    path: '/user/{id}/profile',
+    handler: handlers.updateUserProfile,
+    config: {
+      validate: {
+        params: {
+          id: Joi.string().alphanum()
+        },
+        payload: Joi.object().keys({
+          email: Joi.string().email(),
+          username: Joi.string().alphanum(),
+          surname: Joi.string(),
+          forename: Joi.string(),
+          //sex: Joi.string(),  //not used right now
+          language: Joi.string(),
+          hometown: Joi.string(),
+          location: Joi.string(),
+          picture: Joi.string().uri(),
+          desription: Joi.string(),
+          birthday: Joi.date().timestamp()
+        }).requiredKeys('email', 'username'),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Update a user - JWT needed',
+      auth: 'jwt'
+    }
+  });
+
+  //Get a user
+  server.route({
+    method: 'GET',
+    path: '/user/{id}/public',
+    handler: handlers.getPublicUser,
     config: {
       validate: {
         params: {
@@ -146,13 +218,7 @@ module.exports = function (server) {
         }
       },
       tags: ['api'],
-      description: 'Update a user',
-      response: {
-        schema: Joi.object().keys({
-          success: Joi.boolean(),
-          userid: Joi.string()
-        })
-      },
+      description: 'Get public information about a user by id',
       auth: false
     }
   });
