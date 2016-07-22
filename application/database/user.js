@@ -63,5 +63,11 @@ module.exports = {
     return helper.connectToDatabase()
     .then((dbconn) => dbconn.collection(collectionName))
     .then((collection) => collection.find(query));
+  },
+
+  partlyUpdate: (findQuery, updateQuery) => {
+    return helper.connectToDatabase()
+    .then((dbconn) => dbconn.collection(collectionName))
+    .then((collection) => collection.update(findQuery, updateQuery));
   }
 };
