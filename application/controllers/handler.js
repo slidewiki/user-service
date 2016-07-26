@@ -64,62 +64,6 @@ module.exports = {
       });
   },
 
-  //used by authorization service - not needed for now, but needed for migration
-  create: (req, res) => {
-    let user = {
-      email: decodeURI(req.payload.email),
-      username: decodeURI(req.payload.username),
-      password: decodeURI(req.payload.password),
-      registered: decodeURI(req.payload.registered),
-      surname: decodeURI(req.payload.last_name),
-      forename: decodeURI(req.payload.first_name),
-      gender: decodeURI(req.payload.gender),
-      locale: decodeURI(req.payload.locale),
-      hometown: decodeURI(req.payload.hometown),
-      location: decodeURI(req.payload.location),
-      picture: decodeURI(req.payload.picture),
-      desription: decodeURI(req.payload.description),
-      birthday: decodeURI(req.payload.birthday)
-    };
-    //check if username already exists
-    return isUsernameAlreadyTaken(user.username)
-      .then((isTaken) => {
-        console.log('user already exists: ', user.username, isTaken);
-        if (!isTaken) {
-          //TODO: check email
-
-          return userCtrl.create(user)
-            .then((result) => {
-              //console.log('register: user create result: ', result);
-
-              if (result[0] !== undefined && result[0] !== null) {
-                //Error
-                return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-              }
-
-              if (result.insertedCount === 1) {
-                //success
-                return res({
-                  success: true,
-                  userid: result.insertedId.toString()
-                });
-              }
-
-              res(boom.badImplementation());
-            })
-            .catch((error) => {
-              console.log('register: catch: ', error);
-              res(boom.badImplementation('Error', error));
-            });
-        } else {
-          //update user instead of new
-        }
-      })
-      .catch((error) => {
-        res(boom.badImplementation('Error', error));
-      });
-  },
-
   login: (req, res) => {
     const query = {
       username: decodeURI(req.payload.username),
@@ -261,7 +205,7 @@ module.exports = {
       });
   },
 
-  updateUserProfile: (req, res) => {//TODO
+  updateUserProfile: (req, res) => {
     let user = req.payload;
     user._id = new mongodb.ObjectID(decodeURI(req.params.id));
 
@@ -271,48 +215,62 @@ module.exports = {
       return res(boom.unauthorized('You cannot change the user profile of another user'));
     }
 
-    const findQuery = {
-        _id: user._id
-      },
-      updateQuery = {
-        $set: {
-          email: decodeURI(req.payload.email),
-          username: decodeURI(req.payload.email),
-          surname: decodeURI(req.payload.email),
-          forename: decodeURI(req.payload.email),
-          language: decodeURI(req.payload.email),
-          hometown: decodeURI(req.payload.email),
-          location: decodeURI(req.payload.email),
-          picture: decodeURI(req.payload.email),
-          desription: decodeURI(req.payload.email),
-          birthday: decodeURI(req.payload.email)
-        }
-      };
+    //check if username already exists
+    return isUsernameAlreadyTaken(user.username)
+      .then((isTaken) => {
+        if (isTaken === false) {
+          const findQuery = {
+              _id: user._id
+            },
+            updateQuery = {
+              $set: {
+                email: decodeURI(req.payload.email),
+                username: decodeURI(req.payload.username),
+                surname: decodeURI(req.payload.surname),
+                forename: decodeURI(req.payload.forename),
+                current_language: decodeURI(req.payload.language),
+                hometown: decodeURI(req.payload.hometown),
+                location: decodeURI(req.payload.location),
+                picture: decodeURI(req.payload.picture),
+                desription: decodeURI(req.payload.desription),
+                birthday: decodeURI(req.payload.birthday)
+              }
+            };
 
-    return userCtrl.partlyUpdate(user)
-      .then((result) => {
-        //console.log('handler: updateUser:', user,  result);
-        if (result[0] !== undefined && result[0] !== null) {
-          //Error
-          return res(boom.badData('update failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-        }
+          return userCtrl.partlyUpdate(findQuery, updateQuery)
+            .then((result) => {
+              //console.log('handler: updateUserProfile:', updateQuery,  result);
+              if (result.modifiedCount === 1) {
+                //success
+                return res();
+              }
 
-        if (result.modifiedCount === 1) {
-          //success
-          return res({
-            success: true,
-            userid: result.ops[0]._id.toString()
-          });
+              return res(boom.badImplementation());
+            })
+            .catch((error) => {
+              res(boom.notFound('Profile update failed', error));
+            });
+        } else {
+          return res(boom.badData('The username is already taken'));
         }
-
-        res(boom.badImplementation());
-      })
-      .catch((error) => {
-        res(boom.notFound('Update failed', error));
       });
   },
 
-  getPublicUser: () => {},
+  getPublicUser: (req, res) => {
+    return userCtrl.read(new mongodb.ObjectID(decodeURI(req.params.id)))
+      .then((user) => {
+        if (user !== undefined && user !== null && user.username !== undefined)
+          res(preparePublicUserData(user));
+        else {
+          res(boom.notFound());
+        }
+      })
+      .catch((error) => {
+        res(boom.notFound('Wrong user id', error));
+      });
+  },
+
+  checkUsername: () => {}
 };
 
 function isUsernameAlreadyTaken(username) {
@@ -350,6 +308,27 @@ function prepareDetailedUserData(user) {
       return false;
     });
     if (found === false || found === null) {
+      minimizedUser[key] = user[key];
+    }
+  }
+
+  return minimizedUser;
+}
+
+//Remove attributes of the user data object which should not be transmitted for the user profile
+function preparePublicUserData(user) {
+  const shownKeys = ['username', 'organization', 'picture', 'description'];
+  let minimizedUser = {};
+
+  let key;
+  for (key in user) {
+    const found = shownKeys.find((shownkey) => {
+      if (key === shownkey)
+        return true;
+
+      return false;
+    });
+    if (found !== false && found !== null) {
       minimizedUser[key] = user[key];
     }
   }

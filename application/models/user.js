@@ -47,7 +47,7 @@ const user = {
       type: 'string',
       enum: ['male', 'female']
     },
-    sex: {  //Either life is easy or descriping a humans sex - thus a user should be able to choose one of these four options
+    sex: {  //Neither life is easy or descriping a humans sex - thus a user should be able to choose one of these four options
       type: 'string',
       enum: ['male', 'female', 'other', '']
     },
@@ -66,6 +66,9 @@ const user = {
         type: 'string'
       }
     },
+    current_language: {
+      type: 'string'
+    },
     picture: {
       type: 'string'
     },
@@ -76,20 +79,13 @@ const user = {
       type: 'string'
     },
     birthday: {
-      type: 'object',
-      properties: {
-        year: {
-          type: 'number'
-        },
-        month: {
-          type: 'number'
-        },
-        day: {
-          type: 'number'
-        }
-      }
+      type: 'string',
+      format: 'date'
     },
-    infodeck: objectid
+    infodeck: objectid,
+    organization: {
+      type: 'string'
+    }
   },
   required: ['email', 'username']
 };

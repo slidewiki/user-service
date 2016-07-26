@@ -34,41 +34,6 @@ module.exports = function (server) {
     }
   });
 
-  //Create user - used by authorization service and for migration
-  //returns new _id
-  server.route({
-    method: 'POST',
-    path: '/create',
-    handler: handlers.create,
-    config: {
-      validate: {
-        payload: Joi.object().keys({
-          email: Joi.string().email(),
-          username: Joi.string().alphanum(),
-          password: Joi.string(),
-          registered: Joi.date(),
-          surname: Joi.string(),
-          forename: Joi.string(),
-          gender: Joi.string().regex(/^(fe)?male$/),
-          locale: Joi.string(),
-          hometown: Joi.string(),
-          location: Joi.string(),
-          picture: Joi.string().uri(),
-          desription: Joi.string(),
-          birthday: Joi.date().timestamp()
-        }).requiredKeys('email', 'username', 'password'),
-      },
-      tags: ['api'],
-      description: 'Register a new user',
-      response: {
-        schema: Joi.object().keys({
-          new_id: Joi.string().alphanum()
-        })
-      },
-      auth: false
-    }
-  });
-
   //Login with credentials
   server.route({
     method: 'POST',
@@ -110,7 +75,7 @@ module.exports = function (server) {
   //Get a user
   server.route({
     method: 'GET',
-    path: '/user/{id}',
+    path: '/user/{id}/profile',
     handler: handlers.getUser,
     config: {
       validate: {
@@ -194,7 +159,7 @@ module.exports = function (server) {
           location: Joi.string(),
           picture: Joi.string().uri(),
           desription: Joi.string(),
-          birthday: Joi.date().timestamp()
+          birthday: Joi.date()
         }).requiredKeys('email', 'username'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -209,7 +174,7 @@ module.exports = function (server) {
   //Get a user
   server.route({
     method: 'GET',
-    path: '/user/{id}/public',
+    path: '/user/{id}',
     handler: handlers.getPublicUser,
     config: {
       validate: {
@@ -219,6 +184,29 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Get public information about a user by id',
+      auth: false
+    }
+  });
+
+  //Get a user
+  server.route({
+    method: 'GET',
+    path: '/information/{username}',
+    handler: handlers.checkUsername,
+    config: {
+      validate: {
+        params: {
+          username: Joi.string()
+        }
+      },
+      tags: ['api'],
+      description: 'Checks if username exists already',
+      response: {
+        schema: Joi.object().keys({
+          taken: Joi.boolean(),
+          alternatives: Joi.array().items(Joi.string())
+        })
+      },
       auth: false
     }
   });
