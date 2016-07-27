@@ -39,9 +39,8 @@ describe('User service', () => {
         payload: correct_user1
       };
       return handler.register(req, (result) => {
-        //console.log(result);
+        console.log(result);
 
-        expect(result.success).to.equal(true);
         expect(result.userid).to.not.equal(undefined);
 
         userid = result.userid.toString();
