@@ -158,6 +158,116 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     });
+    it('Get user detailed', () => {
+      let req = {
+        params: {
+          id: userid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.getUser(req, (result) => {
+        //console.log('testresult: ', result);
+
+        expect(result._id.toString()).to.equal(userid);
+        expect(result.password).to.equal(undefined);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Update user password', () => {
+      let req = {
+        payload: {
+          oldPassword: 'wrong',
+          newPassword: 'ua89nd7s8df7zsb78f'
+        },
+        params: {
+          id: userid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.updateUserPasswd(req, (result) => {
+        //console.log('testresult: ', result);
+
+        //should failed
+        expect(result).to.not.equal(undefined);
+        expect(result.isBoom).to.equal(true);
+        expect(result.output.statusCode).to.equal(404);
+
+        //again with correct password
+        req.payload.oldPassword = correct_user1.password;
+
+        return handler.updateUserPasswd(req, (result2) => {
+          //console.log('testresult: ', result2);
+
+          expect(result2).to.equal(undefined);
+          //expect(result2.isBoom).to.not.equal(true);
+
+          return;
+        });
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Check usernames', () => {
+      let req = {
+        params: {
+          username: 'foobarr3io4v5nzoi'
+        }
+      };
+      return handler.checkUsername(req, (result) => {
+        //console.log('testresult: ', result);
+
+        //should not be taken
+        expect(result).to.not.equal(undefined);
+        expect(result.taken).to.equal(false);
+        expect(result.alsoTaken.length).to.equal(0);
+
+        //again with similar username
+        req.params.username = correct_user1.username;
+
+        return handler.checkUsername(req, (result2) => {
+          //console.log('testresult: ', result2);
+
+          expect(result2).to.not.equal(undefined);
+          expect(result2.taken).to.equal(false);
+          expect(result2.alsoTaken.length).to.equal(0);
+
+          //again with existing username
+          req.params.username += 'Bazingaish';
+
+          return handler.checkUsername(req, (result3) => {
+            //console.log('testresult: ', result3);
+
+            expect(result3).to.not.equal(undefined);
+            expect(result3.taken).to.equal(true);
+            expect(result3.alsoTaken.length).to.not.equal(0);
+
+            return;
+          });
+        });
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
     it('Delete user', () => {
       let req = {
         params: {

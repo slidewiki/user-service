@@ -110,13 +110,15 @@ module.exports = {
 
     return userCtrl.read(new mongodb.ObjectID(decodeURI(req.params.id)))
       .then((user) => {
+        //console.log('getUser: got user:', user);
         if (user !== undefined && user !== null && user.username !== undefined)
-          res(prepareDetailedUserData(user));
+          return res(prepareDetailedUserData(user));
         else {
-          res(boom.notFound());
+          return res(boom.notFound());
         }
       })
       .catch((error) => {
+        console.log('getUser: error', error);
         res(boom.notFound('Wrong user id', error));
       });
   },
@@ -149,7 +151,7 @@ module.exports = {
   updateUserPasswd: (req, res) => {
     let oldPassword = req.payload.oldPassword;
     let newPassword = req.payload.newPassword;
-    user._id = new mongodb.ObjectID(decodeURI(req.params.id));
+    const user__id = new mongodb.ObjectID(decodeURI(req.params.id));
 
     //check if the user which should be updated have the right JWT data
     const isUseridMatching = isJWTValidForTheGivenUserId(req);
@@ -159,7 +161,7 @@ module.exports = {
 
     //check if old password is correct
     return userCtrl.find({
-      _id: user._id,
+      _id: user__id,
       password: oldPassword
     })
       .then((cursor) => cursor.count())
@@ -170,7 +172,7 @@ module.exports = {
             break;
           case 1:
             const findQuery = {
-                _id: user._id,
+                _id: user__id,
                 password: oldPassword
               },
               updateQuery = {
@@ -182,12 +184,7 @@ module.exports = {
             return userCtrl.partlyUpdate(findQuery, updateQuery)
               .then((result) => {
                 //console.log('handler: updateUserPasswd:',  result);
-                if (result[0] !== undefined && result[0] !== null) {
-                  //Error
-                  return res(boom.badImplementation());
-                }
-
-                if (result.modifiedCount === 1) {
+                if (result.result.nModified === 1) {
                   //success
                   return res();
                 }
@@ -279,7 +276,7 @@ module.exports = {
       })
       .catch((error) => {
         //console.log('handler: updateUserProfile: Error while getting user');
-        return res(boom.badImplementation());
+        return res(boom.badImplementation(error));
       });
   },
 
@@ -318,16 +315,19 @@ module.exports = {
 
         return userCtrl.find(query)
           .then((cursor1) => cursor1.project({username: 1}))
-          .then((cursor2) => cursor2.max(40))
+          .then((cursor2) => cursor2.maxScan(40))
           .then((cursor3) => cursor3.toArray())
           .then((array) => {
+            //console.log('handler: checkUsername: similar usernames', array);
             let alreadyTaken = array.reduce((prev, curr) => {
               prev.push(curr.username);
+              return prev;
             }, []);
             return res({taken: true, alsoTaken: alreadyTaken});
           });
       })
       .catch((error) => {
+        console.log('handler: checkUsername: error', error);
         res(boom.badImplementation(error));
       });
   }
@@ -367,7 +367,7 @@ function prepareDetailedUserData(user) {
 
       return false;
     });
-    if (found === false || found === null) {
+    if (found === undefined) {
       minimizedUser[key] = user[key];
     }
   }
