@@ -44,7 +44,6 @@ module.exports = {
               if (result.insertedCount === 1) {
                 //success
                 return res({
-                  success: true,
                   userid: result.insertedId.toString()
                 });
               }
@@ -283,6 +282,7 @@ module.exports = {
   getPublicUser: (req, res) => {
     return userCtrl.read(new mongodb.ObjectID(decodeURI(req.params.id)))
       .then((user) => {
+        console.log('handler: getPublicUser: ', user);
         if (user !== undefined && user !== null && user.username !== undefined)
           res(preparePublicUserData(user));
         else {
@@ -290,6 +290,7 @@ module.exports = {
         }
       })
       .catch((error) => {
+        console.log('handler: getPublicUser: Error', error);
         res(boom.notFound('Wrong user id', error));
       });
   },
