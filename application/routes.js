@@ -204,7 +204,7 @@ module.exports = function (server) {
       response: {
         schema: Joi.object().keys({
           taken: Joi.boolean(),
-          alternatives: Joi.array().items(Joi.string())
+          alsoTaken: Joi.array().items(Joi.string())
         })
       },
       auth: false

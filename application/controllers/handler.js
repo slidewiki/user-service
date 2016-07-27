@@ -270,7 +270,40 @@ module.exports = {
       });
   },
 
-  checkUsername: () => {}
+  checkUsername: (req, res) => {
+    const username = decodeURI(req.params.username);
+
+    return userCtrl.find({
+      username: username
+    })
+      .then((cursor) => cursor.count())
+      .then((count) => {
+        //console.log('checkUsername: cursor.count():', count);
+        if (count === 0) {
+          return res({taken: false, alsoTaken: []});
+        }
+
+        const query = {
+          username: {
+            $regex: username
+          }
+        };
+
+        return userCtrl.find(query)
+          .then((cursor1) => cursor1.project({username: 1}))
+          .then((cursor2) => cursor2.max(40))
+          .then((cursor3) => cursor3.toArray())
+          .then((array) => {
+            let alreadyTaken = array.reduce((prev, curr) => {
+              prev.push(curr.username);
+            }, []);
+            return res({taken: true, alsoTaken: alreadyTaken});
+          });
+      })
+      .catch((error) => {
+        res(boom.badImplementation(error));
+      });
+  }
 };
 
 function isUsernameAlreadyTaken(username) {
