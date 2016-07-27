@@ -72,16 +72,17 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     });
-    it('Get user', () => {
+    it('Get user public', () => {
       let req = {
         params: {
           id: userid
         }
       };
-      return handler.getUser(req, (result) => {
+      return handler.getPublicUser(req, (result) => {
         //console.log(result);
 
         expect(result._id.toString()).to.equal(userid);
+        expect(result.username).to.equal(correct_user1.username);
 
         return;
       })
@@ -116,20 +117,40 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     });
-    it('Update user', () => {
+    it('Update user profile', () => {
       let req = {
-        payload: correct_user1,
+        payload: {
+          email: correct_user1.email,
+          username: correct_user1.username,
+          forename: correct_user1.forename,
+          surname: correct_user1.surname
+        },
         params: {
           id: userid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
         }
       };
-      return handler.updateUser(req, (result) => {
+      return handler.updateUserProfile(req, (result) => {
         //console.log(result);
 
-        expect(result.userid.toString()).to.equal(userid);
-        expect(result.success).to.equal(true);
+        //should be possible (updates fields)
+        expect(result).to.equal(undefined);
 
-        return;
+        //again with other username
+        req.payload.username += 'Bazingaish';
+
+        return handler.updateUserProfile(req, (result2) => {
+          //console.log(result2);
+
+          //updates username
+          expect(result2).to.equal(undefined);
+
+          return;
+        });
       })
       .catch((Error) => {
         console.log('Error', Error);

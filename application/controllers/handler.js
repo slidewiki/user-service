@@ -162,10 +162,11 @@ module.exports = {
       _id: user._id,
       password: oldPassword
     })
-      .then((result) => {
-        switch (result.length) {
+      .then((cursor) => cursor.count())
+      .then((count) => {
+        switch (count) {
           case 0:
-            res(boom.notFound('There is no user with that Id and this password'));
+            res(boom.notFound('There is no user with this Id and password'));
             break;
           case 1:
             const findQuery = {
@@ -215,44 +216,70 @@ module.exports = {
       return res(boom.unauthorized('You cannot change the user profile of another user'));
     }
 
-    //check if username already exists
-    return isUsernameAlreadyTaken(user.username)
-      .then((isTaken) => {
-        if (isTaken === false) {
-          const findQuery = {
-              _id: user._id
-            },
-            updateQuery = {
-              $set: {
-                email: decodeURI(req.payload.email),
-                username: decodeURI(req.payload.username),
-                surname: decodeURI(req.payload.surname),
-                forename: decodeURI(req.payload.forename),
-                current_language: decodeURI(req.payload.language),
-                hometown: decodeURI(req.payload.hometown),
-                location: decodeURI(req.payload.location),
-                picture: decodeURI(req.payload.picture),
-                desription: decodeURI(req.payload.desription),
-                birthday: decodeURI(req.payload.birthday)
-              }
-            };
+    let updateCall = function() {
+      const findQuery = {
+          _id: user._id
+        },
+        updateQuery = {
+          $set: {
+            email: decodeURI(req.payload.email),
+            username: decodeURI(req.payload.username),
+            surname: decodeURI(req.payload.surname),
+            forename: decodeURI(req.payload.forename),
+            current_language: decodeURI(req.payload.language),
+            hometown: decodeURI(req.payload.hometown),
+            location: decodeURI(req.payload.location),
+            picture: decodeURI(req.payload.picture),
+            desription: decodeURI(req.payload.desription),
+            birthday: decodeURI(req.payload.birthday)
+          }
+        };
 
-          return userCtrl.partlyUpdate(findQuery, updateQuery)
-            .then((result) => {
-              //console.log('handler: updateUserProfile:', updateQuery,  result);
-              if (result.modifiedCount === 1) {
-                //success
-                return res();
-              }
+      return userCtrl.partlyUpdate(findQuery, updateQuery)
+        .then((result) => {
+          //console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
+          if (result.result.nModified === 1) {
+            //success
+            return res();
+          }
 
-              return res(boom.badImplementation());
-            })
-            .catch((error) => {
-              res(boom.notFound('Profile update failed', error));
-            });
-        } else {
-          return res(boom.badData('The username is already taken'));
+          return res(boom.badImplementation());
+        })
+        .catch((error) => {
+          return res(boom.notFound('Profile update failed', error));
+        });
+    };
+
+    //find user and check if username has changed
+    return userCtrl.find({_id: user._id})
+      .then((cursor) => cursor.project({username: 1}))
+      .then((cursor2) => cursor2.next())
+      .then((document) => {
+        //console.log('handler: updateUserProfile: got user as document', document);
+
+        if (document === null)
+          return res(boom.badImplementation());
+
+        const oldUsername = document.username;
+
+        if (decodeURI(req.payload.username) === oldUsername) {
+          return updateCall();
         }
+        else {
+          //check if username already exists
+          return isUsernameAlreadyTaken(user.username)
+            .then((isTaken) => {
+              if (isTaken === false) {
+                return updateCall();
+              } else {
+                return res(boom.badData('The username is already taken'));
+              }
+            });
+        }
+      })
+      .catch((error) => {
+        //console.log('handler: updateUserProfile: Error while getting user');
+        return res(boom.badImplementation());
       });
   },
 
@@ -313,7 +340,7 @@ function isUsernameAlreadyTaken(username) {
     })
       .then((cursor) => cursor.count())
       .then((count) => {
-        //console.log('isUsernameAlreadyTaken: cursor.count():', count);
+        console.log('isUsernameAlreadyTaken: cursor.count():', count);
         if (count > 0) {
           resolve(true);
         } else {
@@ -350,7 +377,7 @@ function prepareDetailedUserData(user) {
 
 //Remove attributes of the user data object which should not be transmitted for the user profile
 function preparePublicUserData(user) {
-  const shownKeys = ['username', 'organization', 'picture', 'description'];
+  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description'];
   let minimizedUser = {};
 
   let key;
@@ -361,7 +388,7 @@ function preparePublicUserData(user) {
 
       return false;
     });
-    if (found !== false && found !== null) {
+    if (found !== undefined) {
       minimizedUser[key] = user[key];
     }
   }
