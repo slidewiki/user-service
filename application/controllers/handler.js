@@ -19,10 +19,7 @@ module.exports = {
       username: decodeURI(req.payload.username),
       email: decodeURI(req.payload.email),
       password: decodeURI(req.payload.password),
-      languages: [decodeURI(req.payload.language)],
-      defaults: [{
-        language: decodeURI(req.payload.language)
-      }]
+      language: decodeURI(req.payload.language)
     };
 
     //check if username already exists
@@ -222,12 +219,11 @@ module.exports = {
             username: decodeURI(req.payload.username),
             surname: decodeURI(req.payload.surname),
             forename: decodeURI(req.payload.forename),
-            current_language: decodeURI(req.payload.language),
+            language: decodeURI(req.payload.language),
             hometown: decodeURI(req.payload.hometown),
             location: decodeURI(req.payload.location),
             picture: decodeURI(req.payload.picture),
-            desription: decodeURI(req.payload.desription),
-            birthday: decodeURI(req.payload.birthday)
+            description: decodeURI(req.payload.description)
           }
         };
 

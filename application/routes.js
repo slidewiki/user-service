@@ -155,12 +155,11 @@ module.exports = function (server) {
           forename: Joi.string(),
           //sex: Joi.string(),  //not used right now
           language: Joi.string(),
-          hometown: Joi.string(),
-          location: Joi.string(),
-          picture: Joi.string().uri(),
-          desription: Joi.string(),
-          birthday: Joi.date()
-        }).requiredKeys('email', 'username'),
+          hometown: Joi.string().allow('').optional(),
+          location: Joi.string().allow('').optional(),
+          picture: Joi.string().uri().allow('').optional(),
+          description: Joi.string().allow('').optional()
+        }).requiredKeys('email', 'username', 'language'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
         }).unknown()

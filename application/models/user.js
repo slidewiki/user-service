@@ -60,13 +60,7 @@ const user = {
     location: {
       type: 'string'
     },
-    languages: {
-      type: 'array',
-      items: {
-        type: 'string'
-      }
-    },
-    current_language: {
+    language: {
       type: 'string'
     },
     picture: {
