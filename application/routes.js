@@ -42,7 +42,7 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-          username: Joi.string().alphanum(),
+          email: Joi.string().email(),
           password: Joi.string()
         })
       },

@@ -67,7 +67,7 @@ module.exports = {
 
   login: (req, res) => {
     const query = {
-      username: decodeURI(req.payload.username),
+      email: decodeURI(req.payload.email),
       password: decodeURI(req.payload.password)
     };
 

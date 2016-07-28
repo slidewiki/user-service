@@ -94,7 +94,7 @@ describe('User service', () => {
     it('Login with user', () => {
       let req = {
         payload: {
-          username: correct_user1.username,
+          email: correct_user1.email,
           password: correct_user1.password
         }
       };
