@@ -227,7 +227,8 @@ module.exports = {
             language:    parseAPIParameter(req.payload.language),
             country:     parseAPIParameter(req.payload.country),
             picture:     parseAPIParameter(req.payload.picture),
-            description: parseAPIParameter(req.payload.description)
+            description: parseAPIParameter(req.payload.description),
+            organization: parseAPIParameter(req.payload.organization)
           }
         };
 
