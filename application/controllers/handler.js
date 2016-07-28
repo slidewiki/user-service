@@ -220,8 +220,7 @@ module.exports = {
             surname: decodeURI(req.payload.surname),
             forename: decodeURI(req.payload.forename),
             language: decodeURI(req.payload.language),
-            hometown: decodeURI(req.payload.hometown),
-            location: decodeURI(req.payload.location),
+            country: decodeURI(req.payload.country),
             picture: decodeURI(req.payload.picture),
             description: decodeURI(req.payload.description)
           }
@@ -374,7 +373,7 @@ function prepareDetailedUserData(user) {
 
 //Remove attributes of the user data object which should not be transmitted for the user profile
 function preparePublicUserData(user) {
-  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description'];
+  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description', 'country'];
   let minimizedUser = {};
 
   let key;

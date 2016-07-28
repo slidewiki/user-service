@@ -57,7 +57,7 @@ const user = {
     hometown: {
       type: 'string'
     },
-    location: {
+    country: {
       type: 'string'
     },
     language: {

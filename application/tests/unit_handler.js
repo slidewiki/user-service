@@ -25,7 +25,7 @@ describe('User service', () => {
     surname: 'Junghanns',
     email: 'tboonx@gmail.com',
     password: '234729834782364826348623846284t374t',
-    languages: ['de'],
+    language: 'de',
     defaults: [{
       language: 'de'
     }]

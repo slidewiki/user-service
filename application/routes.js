@@ -155,8 +155,7 @@ module.exports = function (server) {
           forename: Joi.string(),
           //sex: Joi.string(),  //not used right now
           language: Joi.string(),
-          hometown: Joi.string().allow('').optional(),
-          location: Joi.string().allow('').optional(),
+          country: Joi.string().allow('').optional(),
           picture: Joi.string().uri().allow('').optional(),
           description: Joi.string().allow('').optional()
         }).requiredKeys('email', 'username', 'language'),
