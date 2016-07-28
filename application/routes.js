@@ -151,8 +151,8 @@ module.exports = function (server) {
         payload: Joi.object().keys({
           email: Joi.string().email(),
           username: Joi.string().alphanum(),
-          surname: Joi.string(),
-          forename: Joi.string(),
+          surname: Joi.string().allow('').optional(),
+          forename: Joi.string().allow('').optional(),
           //sex: Joi.string(),  //not used right now
           language: Joi.string(),
           country: Joi.string().allow('').optional(),

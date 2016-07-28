@@ -14,12 +14,12 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
 module.exports = {
   register: (req, res) => {
     let user = {
-      surname: decodeURI(req.payload.surname),
-      forename: decodeURI(req.payload.forename),
-      username: decodeURI(req.payload.username),
-      email: decodeURI(req.payload.email),
-      password: decodeURI(req.payload.password),
-      language: decodeURI(req.payload.language)
+      surname:  parseAPIParameter(req.payload.surname),
+      forename: parseAPIParameter(req.payload.forename),
+      username: parseAPIParameter(req.payload.username),
+      email:    parseAPIParameter(req.payload.email),
+      password: parseAPIParameter(req.payload.password),
+      language: parseAPIParameter(req.payload.language)
     };
 
     //check if username already exists
@@ -215,14 +215,14 @@ module.exports = {
         },
         updateQuery = {
           $set: {
-            email: decodeURI(req.payload.email),
-            username: decodeURI(req.payload.username),
-            surname: decodeURI(req.payload.surname),
-            forename: decodeURI(req.payload.forename),
-            language: decodeURI(req.payload.language),
-            country: decodeURI(req.payload.country),
-            picture: decodeURI(req.payload.picture),
-            description: decodeURI(req.payload.description)
+            email:       parseAPIParameter(req.payload.email),
+            username:    parseAPIParameter(req.payload.username),
+            surname:     parseAPIParameter(req.payload.surname),
+            forename:    parseAPIParameter(req.payload.forename),
+            language:    parseAPIParameter(req.payload.language),
+            country:     parseAPIParameter(req.payload.country),
+            picture:     parseAPIParameter(req.payload.picture),
+            description: parseAPIParameter(req.payload.description)
           }
         };
 
@@ -402,4 +402,11 @@ function isJWTValidForTheGivenUserId(req) {
     return false;
   }
   return true;
+}
+
+function parseAPIParameter(parameter) {
+  if (parameter === undefined || parameter === null || parameter.replace(' ', '') === '')
+    return null;
+
+  return decodeURI(parameter);
 }
