@@ -23,10 +23,10 @@ module.exports = {
     };
 
     //check if username already exists
-    return isUsernameAlreadyTaken(user.username)
-      .then((isTaken) => {
-        console.log('username already taken: ', user.username, isTaken);
-        if (isTaken === false) {
+    return isIdentityAssigned(user.email, user.username)
+      .then((result) => {
+        console.log('identity already taken: ', user.email, user.username, result);
+        if (result.assigned === false) {
           //TODO: check email
 
           return userCtrl.create(user)
@@ -52,7 +52,12 @@ module.exports = {
               res(boom.badImplementation('Error', error));
             });
         } else {
-          return res(boom.badData('The username is already taken'));
+          let message = 'The username and email is already taken';
+          if (result.email === false)
+            message = 'The username is already taken';
+          if (result.username === false)
+            message = 'The email is already taken';
+          return res(boom.badData(message));
         }
       })
       .catch((error) => {
@@ -243,7 +248,7 @@ module.exports = {
 
     //find user and check if username has changed
     return userCtrl.find({_id: user._id})
-      .then((cursor) => cursor.project({username: 1}))
+      .then((cursor) => cursor.project({username: 1, email: 1}))
       .then((cursor2) => cursor2.next())
       .then((document) => {
         //console.log('handler: updateUserProfile: got user as document', document);
@@ -251,19 +256,24 @@ module.exports = {
         if (document === null)
           return res(boom.badImplementation());
 
-        const oldUsername = document.username;
+        const oldUsername = document.username,
+          oldEMail = document.email;
 
-        if (decodeURI(req.payload.username) === oldUsername) {
+        if (decodeURI(req.payload.username) !== oldUsername) {
+          return res(boom.badImplementation('username could not be changed!'));
+        }
+
+        if (decodeURI(req.payload.email) === oldEMail) {
           return updateCall();
         }
         else {
-          //check if username already exists
-          return isUsernameAlreadyTaken(user.username)
+          //check if email already exists
+          return isEMailAlreadyTaken(user.email)
             .then((isTaken) => {
               if (isTaken === false) {
                 return updateCall();
               } else {
-                return res(boom.badData('The username is already taken'));
+                return res(boom.badData('The email is already taken'));
               }
             });
         }
@@ -298,7 +308,7 @@ module.exports = {
     })
       .then((cursor) => cursor.count())
       .then((count) => {
-        //console.log('checkUsername: cursor.count():', count);
+        //console.log('checkUsername: username:', username, '  cursor.count():', count);
         if (count === 0) {
           return res({taken: false, alsoTaken: []});
         }
@@ -350,6 +360,70 @@ function isUsernameAlreadyTaken(username) {
   return myPromise;
 }
 
+function isEMailAlreadyTaken(email) {
+  let myPromise = new Promise((resolve, reject) => {
+    return userCtrl.find({
+      usernaemailme: email
+    })
+      .then((cursor) => cursor.count())
+      .then((count) => {
+        console.log('isEMailAlreadyTaken: cursor.count():', count);
+        if (count > 0) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+  return myPromise;
+}
+
+function isIdentityAssigned(email, username) {
+  let myPromise = new Promise((resolve, reject) => {
+    return userCtrl.find({
+      $or: [
+        {
+          username: username
+        },
+        {
+          email: email
+        }
+      ]
+    })
+      .then((cursor) => cursor.project({email: 1, username: 1}))
+      .then((cursor2) => cursor2.toArray())
+      .then((array) => {
+        console.log('isIdentityAssigned: cursor.array.length:', array.length);
+
+        if (array.length > 0) {
+          const isEMailAssigned = !(array.reduce((prev, curr) => {
+            const sameEMail = curr.email === email;
+            return prev && !sameEMail;
+          }, true));
+          const isUsernameAssigned = !(array.reduce((prev, curr) => {
+            const sameUsername = curr.username === username;
+            return prev && !sameUsername;
+          }, true));
+
+          resolve({
+            assigned: isEMailAssigned || isUsernameAssigned,
+            username: isUsernameAssigned,
+            email: isEMailAssigned
+          });
+        } else {
+          resolve({assigned: false});
+        }
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+  return myPromise;
+}
+
 //Remove attributes of the user data object which should not be transmitted
 function prepareDetailedUserData(user) {
   const hiddenKeys = ['password'];
@@ -392,6 +466,7 @@ function preparePublicUserData(user) {
   return minimizedUser;
 }
 
+//JWT validation inserts userid in header which should be the same as the one in the parameters
 function isJWTValidForTheGivenUserId(req) {
   let jwt_userid = '';
   try {

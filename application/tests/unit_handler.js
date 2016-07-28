@@ -140,7 +140,7 @@ describe('User service', () => {
         expect(result).to.equal(undefined);
 
         //again with other username
-        req.payload.username += 'Bazingaish';
+        req.payload.email = 'Bazingaish' + req.payload.email;
 
         return handler.updateUserProfile(req, (result2) => {
           //console.log(result2);
@@ -230,7 +230,7 @@ describe('User service', () => {
         }
       };
       return handler.checkUsername(req, (result) => {
-        //console.log('testresult: ', result);
+        //console.log('testresult1: ', result);
 
         //should not be taken
         expect(result).to.not.equal(undefined);
@@ -238,20 +238,20 @@ describe('User service', () => {
         expect(result.alsoTaken.length).to.equal(0);
 
         //again with similar username
-        req.params.username = correct_user1.username;
+        req.params.username = correct_user1.username.substring(0,3);
 
         return handler.checkUsername(req, (result2) => {
-          //console.log('testresult: ', result2);
+          //console.log('testresult2: ', result2);
 
           expect(result2).to.not.equal(undefined);
           expect(result2.taken).to.equal(false);
           expect(result2.alsoTaken.length).to.equal(0);
 
           //again with existing username
-          req.params.username += 'Bazingaish';
+          req.params.username = correct_user1.username;
 
           return handler.checkUsername(req, (result3) => {
-            //console.log('testresult: ', result3);
+            //console.log('testresult3: ', result3);
 
             expect(result3).to.not.equal(undefined);
             expect(result3.taken).to.equal(true);

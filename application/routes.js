@@ -24,7 +24,7 @@ module.exports = function (server) {
         }).requiredKeys('username', 'email', 'password'),
       },
       tags: ['api'],
-      description: 'Register a new user',
+      description: 'Register a new user with unique username and email',
       response: {
         schema: Joi.object().keys({
           userid: Joi.string().alphanum()
