@@ -11,7 +11,7 @@ const hapi = require('hapi'),
   jwt = require('./controllers/jwt');
 
 //Initiate the webserver with standard or given port
-const server = new hapi.Server();
+const server = new hapi.Server({ connections: {routes: {validate: { options: {convert : false}}}}});
 
 let port = (!co.isEmpty(process.env.APPLICATION_PORT)) ? process.env.APPLICATION_PORT : 3000;
 server.connection({
