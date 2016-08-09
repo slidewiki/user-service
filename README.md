@@ -9,6 +9,14 @@ This service manages the user accounts in terms of CRUD operations with their cr
 There is a collaboration with the authentification service, with handles OAuth2.
 The API is just a draft.
 
-API:
+##API:
 
 See http://userservice.manfredfris.ch/documentation
+
+##Installation and running (in a container, works both on unix and Windows):
+
+git clone http://github.com/slidewiki/user-service
+cd user-service/
+docker build -t test-user-service .
+docker run -d --name mongodb mongo
+docker run -it --rm -p 8880:3000 test-user-service
