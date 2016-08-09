@@ -15,8 +15,9 @@ See http://userservice.manfredfris.ch/documentation
 
 ##Installation and running (in a container, works both on unix and Windows):
 
-git clone http://github.com/slidewiki/user-service
-cd user-service/
-docker build -t test-user-service .
-docker run -d --name mongodb mongo
-docker run -it --rm -p 8880:3000 test-user-service
+1. git clone http://github.com/slidewiki/user-service
+2. cd user-service/
+3. docker build -t test-user-service .
+4. docker run -d --name mongodb mongo
+5. docker run -it --rm -p 8880:3000 test-user-service
+6. the service will be available at localhost:8880 with the documentation available at localhost:8880/documentation
