@@ -19,7 +19,11 @@ module.exports = {
       username: parseAPIParameter(req.payload.username),
       email:    parseAPIParameter(req.payload.email),
       password: parseAPIParameter(req.payload.password),
-      language: parseAPIParameter(req.payload.language)
+      language: parseAPIParameter(req.payload.language),
+      country: '',
+      picture: '',
+      description: '',
+      organization: ''
     };
 
     //check if username already exists
@@ -306,7 +310,7 @@ module.exports = {
         if (array.length > 1)
           return res(boom.badImplementation());
 
-        res(preparePublicUserData(user));
+        res(preparePublicUserData(array[0]));
       })
       .catch((error) => {
         console.log('handler: getPublicUser: Error', error);

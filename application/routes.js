@@ -187,7 +187,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          identifier: Joi.string().length(24).alphanum()
+          identifier: Joi.string().alphanum()
         }
       },
       tags: ['api'],
