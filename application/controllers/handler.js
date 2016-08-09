@@ -365,7 +365,7 @@ function isUsernameAlreadyTaken(username) {
 function isEMailAlreadyTaken(email) {
   let myPromise = new Promise((resolve, reject) => {
     return userCtrl.find({
-      usernaemailme: email
+      email: email
     })
       .then((cursor) => cursor.count())
       .then((count) => {
