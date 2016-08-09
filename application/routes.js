@@ -182,12 +182,12 @@ module.exports = function (server) {
   //Get a user
   server.route({
     method: 'GET',
-    path: '/user/{id}',
+    path: '/user/{identifier}',
     handler: handlers.getPublicUser,
     config: {
       validate: {
         params: {
-          id: Joi.string().length(24).alphanum()
+          identifier: Joi.string().length(24).alphanum()
         }
       },
       tags: ['api'],

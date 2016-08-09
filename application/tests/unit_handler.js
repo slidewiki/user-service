@@ -74,7 +74,7 @@ describe('User service', () => {
     it('Get user public', () => {
       let req = {
         params: {
-          id: userid
+          identifier: userid
         }
       };
       return handler.getPublicUser(req, (result) => {

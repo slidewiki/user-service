@@ -287,18 +287,30 @@ module.exports = {
   },
 
   getPublicUser: (req, res) => {
-    return userCtrl.read(new mongodb.ObjectID(decodeURI(req.params.id)))
-      .then((user) => {
-        console.log('handler: getPublicUser: ', user);
-        if (user !== undefined && user !== null && user.username !== undefined)
-          res(preparePublicUserData(user));
-        else {
-          res(boom.notFound());
-        }
+    let identifier = decodeURI(req.params.identifier);
+    let query = {};
+    if (Number.isInteger(identifier)) {
+      query._id = new mongodb.ObjectID(Number.parseInt(identifier));
+    }
+    else {
+      query.username = identifier;
+    }
+
+    return userCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        console.log('handler: getPublicUser: ', query, array);
+
+        if (array.length === 0)
+          return res(boom.notFound());
+        if (array.length > 1)
+          return res(boom.badImplementation());
+
+        res(preparePublicUserData(user));
       })
       .catch((error) => {
         console.log('handler: getPublicUser: Error', error);
-        res(boom.notFound('Wrong user id', error));
+        res(boom.notFound('Wrong user identifier?', error));
       });
   },
 
