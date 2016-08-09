@@ -62,8 +62,17 @@ module.exports = function (server) {
               schema: Joi.object().keys({
                 access_token: Joi.string(),
                 expires_in: Joi.number(),
-                userid: Joi.string()
+                userid: Joi.string(),
+                username: Joi.string()
               })
+            },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': '{"email":"", "password": ""}'
+                }
+              }
             }
           },
           payloadType: 'form'

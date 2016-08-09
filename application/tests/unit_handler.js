@@ -102,6 +102,7 @@ describe('User service', () => {
         //console.log('result', result);
 
         expect(result.userid).to.equal(userid);
+        expect(result.username).to.not.equal(undefined);
 
         return {
           header: (name, data) => {

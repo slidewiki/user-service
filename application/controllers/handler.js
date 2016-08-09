@@ -78,13 +78,14 @@ module.exports = {
 
         switch (result.length) {
           case 0:
-            res(boom.notFound('credentials are wrong'));
+            res(boom.unauthorized('The credentials are wrong', '{"email":"", "password": ""}'));
             break;
           case 1:
             //TODO: call authorization service for OAuth2 token
 
             res({
               userid: result[0]._id.toString(),
+              username: result[0].username,
               access_token: 'dummy',
               expires_in: 0
             })
@@ -98,7 +99,7 @@ module.exports = {
         }
       })
       .catch((error) => {
-        res(boom.notFound('Wrong user id', error));
+        res(boom.badImplementation(error));
       });
   },
 
