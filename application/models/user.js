@@ -17,6 +17,9 @@ const objectid = {
 const user = {
   type: 'object',
   properties: {
+    _id: {
+      type: 'integer'
+    },
     email: {
       type: 'string',
       format: 'email'

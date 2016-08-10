@@ -43,7 +43,7 @@ describe('User service', () => {
 
         expect(result.userid).to.not.equal(undefined);
 
-        userid = result.userid.toString();
+        userid = result.userid;
 
         return;
       })
@@ -72,6 +72,7 @@ describe('User service', () => {
       });
     });
     it('Get user public', () => {
+      //first with _id
       let req = {
         params: {
           identifier: userid
@@ -80,10 +81,20 @@ describe('User service', () => {
       return handler.getPublicUser(req, (result) => {
         //console.log(result);
 
-        expect(result._id.toString()).to.equal(userid);
+        expect(result._id).to.equal(userid);
         expect(result.username).to.equal(correct_user1.username);
 
-        return;
+        //now with username
+        req.params.identifier = correct_user1.username;
+
+        return handler.getPublicUser(req, (result2) => {
+          //console.log(result);
+
+          expect(result2._id).to.equal(userid);
+          expect(result2.username).to.equal(correct_user1.username);
+
+          return;
+        });
       })
       .catch((Error) => {
         console.log('Error', Error);
@@ -135,7 +146,7 @@ describe('User service', () => {
         }
       };
       return handler.updateUserProfile(req, (result) => {
-        //console.log(result);
+        // console.log('testresult', result);
 
         //should be possible (updates fields)
         expect(result).to.equal(undefined);
@@ -144,7 +155,7 @@ describe('User service', () => {
         req.payload.email = 'Bazingaish' + req.payload.email;
 
         return handler.updateUserProfile(req, (result2) => {
-          //console.log(result2);
+          // console.log('testresult2', result2);
 
           //updates username
           expect(result2).to.equal(undefined);
@@ -172,7 +183,7 @@ describe('User service', () => {
       return handler.getUser(req, (result) => {
         //console.log('testresult: ', result);
 
-        expect(result._id.toString()).to.equal(userid);
+        expect(result._id).to.equal(userid);
         expect(result.password).to.equal(undefined);
 
         return;
@@ -280,9 +291,9 @@ describe('User service', () => {
         }
       };
       return handler.deleteUser(req, (result) => {
-        //console.log('result', result);
+        console.log('result', result);
 
-        expect(result.success).to.equal(true);
+        expect(result).to.equal(undefined);
 
         return;
       })

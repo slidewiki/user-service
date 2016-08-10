@@ -11,7 +11,7 @@ module.exports = {
   validate: (decoded, request, callback) => {
     console.log('JWT validation called - data: ', decoded);
     let isValid = false;
-    if (decoded.userid !== undefined && decoded.userid !== null)
+    if ((decoded.userid !== undefined && decoded.userid !== null) && (decoded.username !== undefined && decoded.username !== null))
       isValid = true;
     console.log('Data is valid:', isValid);
     callback(null, isValid);

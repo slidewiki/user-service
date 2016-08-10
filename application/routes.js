@@ -27,7 +27,7 @@ module.exports = function (server) {
       description: 'Register a new user with unique username and email',
       response: {
         schema: Joi.object().keys({
-          userid: Joi.string().alphanum()
+          userid: Joi.number().integer()
         })
       },
       auth: false
@@ -62,7 +62,7 @@ module.exports = function (server) {
               schema: Joi.object().keys({
                 access_token: Joi.string(),
                 expires_in: Joi.number(),
-                userid: Joi.string(),
+                userid: Joi.number().integer(),
                 username: Joi.string()
               })
             },
@@ -89,7 +89,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.string().alphanum()
+          id: Joi.number().integer()
         },
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -109,7 +109,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.string().alphanum()
+          id: Joi.number().integer()
         },
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -131,7 +131,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.string().alphanum()
+          id: Joi.number().integer()
         },
         payload: Joi.object().keys({
           oldPassword: Joi.string(),
@@ -155,7 +155,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.string().alphanum()
+          id: Joi.number().integer()
         },
         payload: Joi.object().keys({
           email: Joi.string().email(),
@@ -187,7 +187,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          identifier: Joi.string().alphanum()
+          identifier: Joi.string()
         }
       },
       tags: ['api'],

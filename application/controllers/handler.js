@@ -7,9 +7,9 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
   co = require('../common'),
   userCtrl = require('../database/user'),
-  mongodb = require('mongodb'),
   config = require('../configuration'),
-  jwt = require('./jwt');
+  jwt = require('./jwt'),
+  Joi = require('joi');
 
 module.exports = {
   register: (req, res) => {
@@ -45,7 +45,7 @@ module.exports = {
               if (result.insertedCount === 1) {
                 //success
                 return res({
-                  userid: result.insertedId.toString()
+                  userid: result.insertedId
                 });
               }
 
@@ -88,13 +88,14 @@ module.exports = {
             //TODO: call authorization service for OAuth2 token
 
             res({
-              userid: result[0]._id.toString(),
+              userid: result[0]._id,
               username: result[0].username,
               access_token: 'dummy',
               expires_in: 0
             })
               .header(config.JWT.HEADER, jwt.createToken({
-                userid: result[0]._id.toString()
+                userid: result[0]._id,
+                username: result[0].username
               }));
             break;
           default:
@@ -114,7 +115,7 @@ module.exports = {
       return res(boom.unauthorized('You cannot get detailed information about another user'));
     }
 
-    return userCtrl.read(new mongodb.ObjectID(decodeURI(req.params.id)))
+    return userCtrl.read(parseStringToInteger(req.params.id))
       .then((user) => {
         //console.log('getUser: got user:', user);
         if (user !== undefined && user !== null && user.username !== undefined)
@@ -130,7 +131,7 @@ module.exports = {
   },
 
   deleteUser: (req, res) => {
-    let userid = new mongodb.ObjectID(decodeURI(req.params.id));
+    let userid = parseStringToInteger(req.params.id);
 
     //check if the user which should be deleted have the right JWT data
     const isUseridMatching = isJWTValidForTheGivenUserId(req);
@@ -140,10 +141,9 @@ module.exports = {
 
     return userCtrl.delete(userid)
       .then((result) => {
+        // console.log('deleteUser: delete with', userid, 'results in', result.result);
         if (result.result.n === 1) {
-          return res({
-            success: true
-          });
+          return res();
         }
 
         res(boom.notFound('Deletion failed - no matched id'));
@@ -157,7 +157,7 @@ module.exports = {
   updateUserPasswd: (req, res) => {
     let oldPassword = req.payload.oldPassword;
     let newPassword = req.payload.newPassword;
-    const user__id = new mongodb.ObjectID(decodeURI(req.params.id));
+    const user__id = parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
     const isUseridMatching = isJWTValidForTheGivenUserId(req);
@@ -211,13 +211,15 @@ module.exports = {
 
   updateUserProfile: (req, res) => {
     let user = req.payload;
-    user._id = new mongodb.ObjectID(decodeURI(req.params.id));
+    user._id = parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
     const isUseridMatching = isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
       return res(boom.unauthorized('You cannot change the user profile of another user'));
     }
+
+    console.log('updateUserProfile: use user', user);
 
     let updateCall = function() {
       const findQuery = {
@@ -293,8 +295,10 @@ module.exports = {
   getPublicUser: (req, res) => {
     let identifier = decodeURI(req.params.identifier);
     let query = {};
-    if (Number.isInteger(identifier)) {
-      query._id = new mongodb.ObjectID(Number.parseInt(identifier));
+    const integerSchema = Joi.number().integer();
+    const validationResult = integerSchema.validate(identifier);
+    if (validationResult.error === null) {
+      query._id = validationResult.value;
     }
     else {
       query.username = identifier;
@@ -303,7 +307,7 @@ module.exports = {
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((array) => {
-        console.log('handler: getPublicUser: ', query, array);
+        // console.log('handler: getPublicUser: ', query, array);
 
         if (array.length === 0)
           return res(boom.notFound());
@@ -491,7 +495,7 @@ function isJWTValidForTheGivenUserId(req) {
     jwt_userid = req.auth.credentials.userid;
   } catch (e) {}
   //console.log(decodeURI(req.params.id), 'vs', jwt_data);
-  if (decodeURI(req.params.id) !== jwt_userid) {
+  if (decodeURI(req.params.id).toString() !== jwt_userid.toString()) {
     return false;
   }
   return true;
@@ -502,4 +506,13 @@ function parseAPIParameter(parameter) {
     return null;
 
   return decodeURI(parameter);
+}
+
+function parseStringToInteger(string) {
+  const integerSchema = Joi.number().integer();
+  const validationResult = integerSchema.validate(string);
+  if (validationResult.error === null) {
+    return validationResult.value;
+  }
+  return undefined;
 }

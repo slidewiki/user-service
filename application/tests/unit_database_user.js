@@ -70,7 +70,7 @@ describe('User service database', () => {
         .then((result) => { //user
           //console.log(result);
 
-          expect(result._id.toString()).to.equal(userid.toString());
+          expect(result._id).to.equal(userid);
           expect(result.email).to.equal(correct_user1.email);
 
           return;
