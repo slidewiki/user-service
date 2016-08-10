@@ -30,7 +30,30 @@ module.exports = function (server) {
           userid: Joi.number().integer()
         })
       },
-      auth: false
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              }
+            },
+            ' 422 ': {
+              'description': 'Wrong user data - see error message',
+              schema: Joi.object().keys({
+                statusCode: Joi.number().integer(),
+                error: Joi.string(),
+                message: Joi.string()
+              }).required()
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
@@ -64,7 +87,7 @@ module.exports = function (server) {
                 expires_in: Joi.number(),
                 userid: Joi.number().integer(),
                 username: Joi.string()
-              })
+              }).required()
             },
             ' 401 ': {
               'description': 'The credentials are wrong',
@@ -97,7 +120,28 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Get detailed information about a user by id - JWT needed',
-      auth: 'jwt'
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to access another users profile',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
@@ -117,7 +161,28 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Delete a user - JWT needed',
-      auth: 'jwt'
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to delete another user.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
@@ -144,6 +209,27 @@ module.exports = function (server) {
       tags: ['api'],
       description: 'Update a users password - JWT needed',
       auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to change the password of another user.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
@@ -175,7 +261,31 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Update a user - JWT needed',
-      auth: 'jwt'
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to update another users profile.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            },
+            ' 422 ': {
+              'description': 'The new email adress is already taken by another user.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
@@ -187,12 +297,25 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          identifier: Joi.string()
+          identifier: Joi.string().description('Could be the id as integer or the username as string')
         }
       },
       tags: ['api'],
       description: 'Get public information about a user by id',
-      auth: false
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
@@ -211,11 +334,21 @@ module.exports = function (server) {
       description: 'Checks if username exists already',
       response: {
         schema: Joi.object().keys({
-          taken: Joi.boolean(),
-          alsoTaken: Joi.array().items(Joi.string())
-        })
+          taken: Joi.boolean().required(),
+          alsoTaken: Joi.array().items(Joi.string()).required()
+        }).required()
       },
-      auth: false
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 };
