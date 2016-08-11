@@ -241,7 +241,7 @@ module.exports = {
 
       return userCtrl.partlyUpdate(findQuery, updateQuery)
         .then((result) => {
-          //console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
+          console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
           if (result.result.nModified === 1) {
             //success
             return res();
@@ -259,10 +259,10 @@ module.exports = {
       .then((cursor) => cursor.project({username: 1, email: 1}))
       .then((cursor2) => cursor2.next())
       .then((document) => {
-        //console.log('handler: updateUserProfile: got user as document', document);
+        console.log('handler: updateUserProfile: got user as document', document);
 
         if (document === null)
-          return res(boom.badImplementation());
+          return res(boom.notFound('No user with the given id'));
 
         const oldUsername = document.username,
           oldEMail = document.email;
@@ -286,9 +286,15 @@ module.exports = {
             });
         }
       })
-      .catch((error) => {
-        //console.log('handler: updateUserProfile: Error while getting user');
-        return res(boom.badImplementation(error));
+      .catch((error1) => {
+        console.log('handler: updateUserProfile: Error while getting user', error1);
+        // return res(boom.badImplementation(error));
+
+        const error = boom.badImplementation('Unknown error');
+
+        error.output.payload.custom = error1;
+
+        return res(error);
       });
   },
 
