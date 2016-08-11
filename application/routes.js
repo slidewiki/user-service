@@ -112,7 +112,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.number().integer()
+          id: Joi.number().integer().options({convert: true})
         },
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -153,7 +153,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.number().integer()
+          id: Joi.number().integer().options({convert: true})
         },
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -196,7 +196,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.number().integer()
+          id: Joi.number().integer().options({convert: true})
         },
         payload: Joi.object().keys({
           oldPassword: Joi.string(),
@@ -241,7 +241,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.number().integer()
+          id: Joi.number().integer().options({convert: true})
         },
         payload: Joi.object().keys({
           email: Joi.string().email(),
