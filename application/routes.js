@@ -15,58 +15,45 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-          forename: Joi.string(),
-          surname: Joi.string(),
+          forename: Joi.string().allow('').optional(),
+          surname: Joi.string().allow('').optional(),
           username: Joi.string().alphanum(),
           email: Joi.string().email(),
-          password: Joi.string(),
-          language: Joi.string()
-        }).requiredKeys('username', 'email', 'password'),
+          password: Joi.string().min(8),
+          language: Joi.string().length(5)
+        }).requiredKeys('username', 'email', 'password', 'language'),
       },
       tags: ['api'],
-      description: 'Register a new user',
+      description: 'Register a new user with unique username and email',
       response: {
         schema: Joi.object().keys({
-          success: Joi.boolean(),
-          userid: Joi.string().alphanum()
+          userid: Joi.number().integer()
         })
       },
-      auth: false
-    }
-  });
-
-  //Create user - used by authorization service and for migration
-  //returns new _id
-  server.route({
-    method: 'POST',
-    path: '/create',
-    handler: handlers.create,
-    config: {
-      validate: {
-        payload: Joi.object().keys({
-          email: Joi.string().email(),
-          username: Joi.string().alphanum(),
-          password: Joi.string(),
-          registered: Joi.date(),
-          surname: Joi.string(),
-          forename: Joi.string(),
-          gender: Joi.string().regex(/^(fe)?male$/),
-          locale: Joi.string(),
-          hometown: Joi.string(),
-          location: Joi.string(),
-          picture: Joi.string().uri(),
-          desription: Joi.string(),
-          birthday: Joi.date().timestamp()
-        }).requiredKeys('email', 'username', 'password'),
-      },
-      tags: ['api'],
-      description: 'Register a new user',
-      response: {
-        schema: Joi.object().keys({
-          new_id: Joi.string().alphanum()
-        })
-      },
-      auth: false
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              }
+            },
+            ' 422 ': {
+              'description': 'Wrong user data - see error message',
+              schema: Joi.object().keys({
+                statusCode: Joi.number().integer(),
+                error: Joi.string(),
+                message: Joi.string()
+              }).required()
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
@@ -78,37 +65,83 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-          username: Joi.string().alphanum(),
+          email: Joi.string().email(),
           password: Joi.string()
         })
       },
       tags: ['api'],
       description: 'Login',
-      response: {
-        schema: Joi.object().keys({
-          access_token: Joi.string(),
-          expires_in: Joi.number(),
-          userid: Joi.string()
-        })
-      },
-      auth: false
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.number().integer(),
+                username: Joi.string()
+              }).required()
+            },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': '{"email":"", "password": ""}'
+                }
+              }
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
   //Get a user
   server.route({
     method: 'GET',
-    path: '/user/{id}',
+    path: '/user/{id}/profile',
     handler: handlers.getUser,
     config: {
       validate: {
         params: {
-          id: Joi.string().alphanum()
-        }
+          id: Joi.number().integer().options({convert: true})
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
       },
       tags: ['api'],
-      description: 'Get user by id',
-      auth: false
+      description: 'Get detailed information about a user by id - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to access another users profile',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
@@ -120,40 +153,237 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.string().alphanum()
-        }
+          id: Joi.number().integer().options({convert: true})
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
       },
       tags: ['api'],
       description: 'Delete a user - JWT needed',
-      response: {
-        schema: Joi.object().keys({
-          success: Joi.boolean()
-        })
-      },
-      auth: 'jwt'
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to delete another user.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
     }
   });
 
-  //Update a user with a new JSON representation
+  //User Profile
+
+  //Update a users password
   server.route({
     method: 'PUT',
-    path: '/user/{id}',
-    handler: handlers.updateUser,
+    path: '/user/{id}/passwd',
+    handler: handlers.updateUserPasswd,
     config: {
       validate: {
         params: {
-          id: Joi.string().alphanum()
+          id: Joi.number().integer().options({convert: true})
+        },
+        payload: Joi.object().keys({
+          oldPassword: Joi.string().min(8),
+          newPassword: Joi.string().min(8)
+        }),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Update a users password - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to change the password of another user.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  //Update a users profile with the given JSON representation
+  server.route({
+    method: 'PUT',
+    path: '/user/{id}/profile',
+    handler: handlers.updateUserProfile,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true})
+        },
+        payload: Joi.object().keys({
+          email: Joi.string().email(),
+          username: Joi.string().alphanum(),
+          surname: Joi.string().allow('').optional(),
+          forename: Joi.string().allow('').optional(),
+          //sex: Joi.string(),  //not used right now
+          language: Joi.string().length(5),
+          country: Joi.string().allow('').optional(),
+          picture: Joi.string().uri().allow('').optional(),
+          description: Joi.string().allow('').optional(),
+          organization: Joi.string().allow('').optional()
+        }).requiredKeys('email', 'username', 'language'),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Update a user - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to update another users profile.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            },
+            ' 406 ': {
+              'description': 'Username could not be changed with the API.'
+            },
+            ' 409 ': {
+              'description': 'The new email adress is already taken by another user.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  //Get a user
+  server.route({
+    method: 'GET',
+    path: '/user/{identifier}',
+    handler: handlers.getPublicUser,
+    config: {
+      validate: {
+        params: {
+          identifier: Joi.string().description('Could be the id as integer or the username as string')
         }
       },
       tags: ['api'],
-      description: 'Update a user',
+      description: 'Get public information about a user by id',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  //Check if username is already taken
+  server.route({
+    method: 'GET',
+    path: '/information/username/{username}',
+    handler: handlers.checkUsername,
+    config: {
+      validate: {
+        params: {
+          username: Joi.string()
+        }
+      },
+      tags: ['api'],
+      description: 'Checks if username exists already',
       response: {
         schema: Joi.object().keys({
-          success: Joi.boolean(),
-          userid: Joi.string()
-        })
+          taken: Joi.boolean().required(),
+          alsoTaken: Joi.array().items(Joi.string()).required()
+        }).required()
       },
-      auth: false
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  //Check if email is already in use
+  server.route({
+    method: 'GET',
+    path: '/information/email/{email}',
+    handler: handlers.checkEmail,
+    config: {
+      validate: {
+        params: {
+          email: Joi.string().email()
+        }
+      },
+      tags: ['api'],
+      description: 'Checks if email is already in use',
+      response: {
+        schema: Joi.object().keys({
+          taken: Joi.boolean().required()
+        }).required()
+      },
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          },
+          payloadType: 'json'
+        }
+      }
     }
   });
 };

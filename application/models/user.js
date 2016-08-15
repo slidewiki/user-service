@@ -17,6 +17,9 @@ const objectid = {
 const user = {
   type: 'object',
   properties: {
+    _id: {
+      type: 'integer'
+    },
     email: {
       type: 'string',
       format: 'email'
@@ -43,24 +46,17 @@ const user = {
     forename: {
       type: 'string'
     },
-    gender: {
-      type: 'string',
-      enum: ['male', 'female']
-    },
-    locale: {
+    country: {
       type: 'string'
     },
-    hometown: {
-      type: 'string'
-    },
-    location: {
-      type: 'string'
-    },
-    languages: {
+    spokenLanguages: {
       type: 'array',
       items: {
         type: 'string'
       }
+    },
+    frontendLanguage: {
+      type: 'string'
     },
     picture: {
       type: 'string'
@@ -72,22 +68,23 @@ const user = {
       type: 'string'
     },
     birthday: {
+      type: 'string',
+      format: 'date'
+    },
+    infodeck: {
       type: 'object',
       properties: {
-        year: {
-          type: 'number'
-        },
-        month: {
-          type: 'number'
-        },
-        day: {
-          type: 'number'
+        id: objectid,
+        revision: {
+          type: 'integer'
         }
       }
     },
-    infodeck: objectid
+    organization: {
+      type: 'string'
+    }
   },
-  required: ['email', 'username']
+  required: ['email', 'username', 'frontendLanguage']
 };
 
 //export

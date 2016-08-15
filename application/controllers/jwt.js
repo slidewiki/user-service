@@ -11,14 +11,15 @@ module.exports = {
   validate: (decoded, request, callback) => {
     console.log('JWT validation called - data: ', decoded);
     let isValid = false;
-    if (decoded.userid !== undefined && decoded.userid !== null)
+    if ((decoded.userid !== undefined && decoded.userid !== null) && (decoded.username !== undefined && decoded.username !== null))
       isValid = true;
     console.log('Data is valid:', isValid);
     callback(null, isValid);
   },
   createToken: (data) => {
     return jwt.sign(data, config.JWT.SERIAL, {
-      algorithm: config.JWT.ALGORITHM
+      algorithm: config.JWT.ALGORITHM,
+      // expiresIn: 60 * 60 * 24 * 2 //two days
     });
   }
 };

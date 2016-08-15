@@ -25,7 +25,7 @@ describe('User service database', () => {
       surname: 'Junghanns',
       email: 'tboonx@gmail.com',
       password: '234729834782364826348623846284t374t',
-      languages: ['de'],
+      frontendLanguage: 'de',
       defaults: [{
         language: 'de'
       }]
@@ -70,7 +70,7 @@ describe('User service database', () => {
         .then((result) => { //user
           //console.log(result);
 
-          expect(result._id.toString()).to.equal(userid.toString());
+          expect(result._id).to.equal(userid);
           expect(result.email).to.equal(correct_user1.email);
 
           return;
