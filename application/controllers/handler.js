@@ -24,7 +24,7 @@ module.exports = {
       picture: '',
       description: '',
       organization: '',
-      registered: (new Date()).toUTCString()
+      registered: (new Date()).toISOString()
     };
     console.log('Registration: ', user);
 
