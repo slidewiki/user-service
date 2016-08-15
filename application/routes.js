@@ -20,7 +20,7 @@ module.exports = function (server) {
           username: Joi.string().alphanum(),
           email: Joi.string().email(),
           password: Joi.string().min(8),
-          language: Joi.string()
+          language: Joi.string().length(5)
         }).requiredKeys('username', 'email', 'password', 'language'),
       },
       tags: ['api'],
@@ -249,7 +249,7 @@ module.exports = function (server) {
           surname: Joi.string().allow('').optional(),
           forename: Joi.string().allow('').optional(),
           //sex: Joi.string(),  //not used right now
-          language: Joi.string(),
+          language: Joi.string().length(5),
           country: Joi.string().allow('').optional(),
           picture: Joi.string().uri().allow('').optional(),
           description: Joi.string().allow('').optional(),
