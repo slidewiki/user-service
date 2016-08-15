@@ -270,7 +270,7 @@ module.exports = {
           oldEMail = document.email;
 
         if (decodeURI(req.payload.username) !== oldUsername) {
-          return res(boom.badImplementation('username could not be changed!'));
+          return res(boom.notAcceptable('username could not be changed!'));
         }
 
         if (decodeURI(req.payload.email) === oldEMail) {
@@ -283,7 +283,7 @@ module.exports = {
               if (isTaken === false) {
                 return updateCall();
               } else {
-                return res(boom.badData('The email is already taken'));
+                return res(boom.conflict('The email is already taken'));
               }
             });
         }

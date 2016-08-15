@@ -279,7 +279,10 @@ module.exports = function (server) {
             ' 404 ': {
               'description': 'User not found. Check the id.'
             },
-            ' 422 ': {
+            ' 406 ': {
+              'description': 'Username could not be changed with the API.'
+            },
+            ' 409 ': {
               'description': 'The new email adress is already taken by another user.'
             }
           },
