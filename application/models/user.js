@@ -84,7 +84,7 @@ const user = {
       type: 'string'
     }
   },
-  required: ['email', 'username']
+  required: ['email', 'username', 'frontendLanguage']
 };
 
 //export

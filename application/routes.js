@@ -21,7 +21,7 @@ module.exports = function (server) {
           email: Joi.string().email(),
           password: Joi.string(),
           language: Joi.string()
-        }).requiredKeys('username', 'email', 'password'),
+        }).requiredKeys('username', 'email', 'password', 'language'),
       },
       tags: ['api'],
       description: 'Register a new user with unique username and email',

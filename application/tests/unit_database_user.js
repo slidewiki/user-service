@@ -25,7 +25,7 @@ describe('User service database', () => {
       surname: 'Junghanns',
       email: 'tboonx@gmail.com',
       password: '234729834782364826348623846284t374t',
-      language: 'de',
+      frontendLanguage: 'de',
       defaults: [{
         language: 'de'
       }]

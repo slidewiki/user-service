@@ -19,11 +19,12 @@ module.exports = {
       username: parseAPIParameter(req.payload.username),
       email:    parseAPIParameter(req.payload.email),
       password: parseAPIParameter(req.payload.password),
-      language: parseAPIParameter(req.payload.language),
+      frontendLanguage: parseAPIParameter(req.payload.language),
       country: '',
       picture: '',
       description: '',
-      organization: ''
+      organization: '',
+      registered: (new Date()).toUTCString()
     };
 
     //check if username already exists
