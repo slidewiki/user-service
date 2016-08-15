@@ -192,7 +192,7 @@ module.exports = {
             return userCtrl.partlyUpdate(findQuery, updateQuery)
               .then((result) => {
                 console.log('handler: updateUserPasswd:',  result.result);
-                if (result.result.nModified === 1) {
+                if (result.result.ok === 1 && result.result.n === 1) {
                   //success
                   return res();
                 }
@@ -244,7 +244,7 @@ module.exports = {
       return userCtrl.partlyUpdate(findQuery, updateQuery)
         .then((result) => {
           console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
-          if (result.result.nModified === 1) {
+          if (result.result.ok === 1 && result.result.n === 1) {
             //success
             return res();
           }
