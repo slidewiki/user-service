@@ -46,24 +46,16 @@ const user = {
     forename: {
       type: 'string'
     },
-    gender: {
-      type: 'string',
-      enum: ['male', 'female']
-    },
-    sex: {  //Neither life is easy or descriping a humans sex - thus a user should be able to choose one of these four options
-      type: 'string',
-      enum: ['male', 'female', 'other', '']
-    },
-    locale: {
-      type: 'string'
-    },
-    hometown: {
-      type: 'string'
-    },
     country: {
       type: 'string'
     },
-    language: {
+    spokenLanguages: {
+      type: 'array',
+      items: {
+        type: 'string'
+      }
+    },
+    frontendLanguage: {
       type: 'string'
     },
     picture: {
@@ -79,7 +71,15 @@ const user = {
       type: 'string',
       format: 'date'
     },
-    infodeck: objectid,
+    infodeck: {
+      type: 'object',
+      properties: {
+        id: objectid,
+        revision: {
+          type: 'integer'
+        }
+      }
+    },
     organization: {
       type: 'string'
     }
