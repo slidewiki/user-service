@@ -360,7 +360,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          email: Joi.string()
+          email: Joi.string().email()
         }
       },
       tags: ['api'],

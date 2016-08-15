@@ -18,7 +18,8 @@ module.exports = {
   },
   createToken: (data) => {
     return jwt.sign(data, config.JWT.SERIAL, {
-      algorithm: config.JWT.ALGORITHM
+      algorithm: config.JWT.ALGORITHM,
+      // expiresIn: 60 * 60 * 24 * 2 //two days
     });
   }
 };
