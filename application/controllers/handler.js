@@ -364,6 +364,27 @@ module.exports = {
         console.log('handler: checkUsername: error', error);
         res(boom.badImplementation(error));
       });
+  },
+
+  checkEmail: (req, res) => {
+    const email = decodeURI(req.params.email);
+
+    return userCtrl.find({
+      email: email
+    })
+      .then((cursor) => cursor.count())
+      .then((count) => {
+        //console.log('checkEmail: username:', username, '  cursor.count():', count);
+        if (count === 0) {
+          return res({taken: false});
+        }
+
+        return res({taken: true});
+      })
+      .catch((error) => {
+        console.log('handler: checkEmail: error', error);
+        res(boom.badImplementation(error));
+      });
   }
 };
 

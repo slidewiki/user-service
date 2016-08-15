@@ -319,10 +319,10 @@ module.exports = function (server) {
     }
   });
 
-  //Get a user
+  //Check if username is already taken
   server.route({
     method: 'GET',
-    path: '/information/{username}',
+    path: '/information/username/{username}',
     handler: handlers.checkUsername,
     config: {
       validate: {
@@ -347,6 +347,38 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  //Check if email is already in use
+  server.route({
+    method: 'GET',
+    path: '/information/email/{email}',
+    handler: handlers.checkEmail,
+    config: {
+      validate: {
+        params: {
+          email: Joi.string()
+        }
+      },
+      tags: ['api'],
+      description: 'Checks if email is already in use',
+      response: {
+        schema: Joi.object().keys({
+          taken: Joi.boolean().required()
+        }).required()
+      },
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          },
+          payloadType: 'json'
         }
       }
     }
