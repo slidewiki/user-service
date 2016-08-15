@@ -26,6 +26,7 @@ module.exports = {
       organization: '',
       registered: (new Date()).toUTCString()
     };
+    console.log('Registration: ', user);
 
     //check if username already exists
     return isIdentityAssigned(user.email, user.username)
@@ -36,7 +37,7 @@ module.exports = {
 
           return userCtrl.create(user)
             .then((result) => {
-              //console.log('register: user create result: ', result);
+              // console.log('register: user create result: ', result);
 
               if (result[0] !== undefined && result[0] !== null) {
                 //Error
@@ -531,7 +532,7 @@ function isJWTValidForTheGivenUserId(req) {
 
 function parseAPIParameter(parameter) {
   if (parameter === undefined || parameter === null || parameter.replace(' ', '') === '')
-    return null;
+    return '';
 
   return decodeURI(parameter);
 }

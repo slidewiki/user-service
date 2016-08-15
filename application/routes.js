@@ -15,8 +15,8 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-          forename: Joi.string(),
-          surname: Joi.string(),
+          forename: Joi.string().allow('').optional(),
+          surname: Joi.string().allow('').optional(),
           username: Joi.string().alphanum(),
           email: Joi.string().email(),
           password: Joi.string(),
