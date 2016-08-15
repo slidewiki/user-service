@@ -191,7 +191,7 @@ module.exports = {
 
             return userCtrl.partlyUpdate(findQuery, updateQuery)
               .then((result) => {
-                //console.log('handler: updateUserPasswd:',  result);
+                console.log('handler: updateUserPasswd:',  result.result);
                 if (result.result.nModified === 1) {
                   //success
                   return res();

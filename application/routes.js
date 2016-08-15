@@ -19,7 +19,7 @@ module.exports = function (server) {
           surname: Joi.string().allow('').optional(),
           username: Joi.string().alphanum(),
           email: Joi.string().email(),
-          password: Joi.string(),
+          password: Joi.string().min(8),
           language: Joi.string()
         }).requiredKeys('username', 'email', 'password', 'language'),
       },
@@ -199,8 +199,8 @@ module.exports = function (server) {
           id: Joi.number().integer().options({convert: true})
         },
         payload: Joi.object().keys({
-          oldPassword: Joi.string(),
-          newPassword: Joi.string()
+          oldPassword: Joi.string().min(8),
+          newPassword: Joi.string().min(8)
         }),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
