@@ -233,7 +233,7 @@ module.exports = {
             username:    parseAPIParameter(req.payload.username),
             surname:     parseAPIParameter(req.payload.surname),
             forename:    parseAPIParameter(req.payload.forename),
-            language:    parseAPIParameter(req.payload.language),
+            frontendLanguage:    parseAPIParameter(req.payload.language),
             country:     parseAPIParameter(req.payload.country),
             picture:     parseAPIParameter(req.payload.picture),
             description: parseAPIParameter(req.payload.description),
@@ -492,6 +492,10 @@ function prepareDetailedUserData(user) {
       minimizedUser[key] = user[key];
     }
   }
+
+  //map attributes for better API
+  minimizedUser.language = minimizedUser.frontendLanguage;
+  minimizedUser.frontendLanguage = undefined;
 
   return minimizedUser;
 }
