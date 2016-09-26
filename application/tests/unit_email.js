@@ -16,7 +16,7 @@ describe('User service', () => {
     chai.use(chaiAsPromised);
     expect = require('chai').expect;
     handler = require('../controllers/handler.js');
-    config = require('configuration.js');
+    config = require('../configuration.js');
     done();
   });
 
@@ -34,11 +34,6 @@ describe('User service', () => {
         expect(result.statusCode.toString()).to.equal('200');
 
         return;
-      })
-      .catch((Error) => {
-        console.log(Error);
-        throw Error;
-        expect(1).to.equals(2);
       });
     });
   });

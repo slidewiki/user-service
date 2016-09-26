@@ -32,9 +32,9 @@ if (!co.isEmpty(process.env.JWT_SERIAL)){
 }
 
 let SMTP_port = 25,
-  SMTP_host: 'localhost',
-  SMTP_from: 'kjunghanns@informatik.uni-leipzig.de',
-  SMTP_clientName: undefined;
+  SMTP_host = 'localhost',
+  SMTP_from = 'kjunghanns@informatik.uni-leipzig.de',
+  SMTP_clientName = undefined;
 if (!co.isEmpty(process.env.SMTP_PORT)){
   SMTP_port = process.env.SMTP_PORT;
 }

@@ -389,12 +389,12 @@ module.exports = function (server) {
 
   //Reset password with email notification
   server.route({
-    method: 'GET',
+    method: 'PUT',
     path: '/resetPassword',
     handler: handlers.resetPassword,
     config: {
       validate: {
-        params: {
+        payload: {
           email: Joi.string().email(),
           APIKey: Joi.string().alphanum()
         }
@@ -413,6 +413,9 @@ module.exports = function (server) {
             },
             ' 500 ': {
               'description': 'The action failed. Please try again.',
+            },
+            ' 404 ': {
+              'description': 'The email is not used by a user.',
             }
           },
           payloadType: 'json'

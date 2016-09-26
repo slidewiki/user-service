@@ -392,66 +392,100 @@ module.exports = {
   },
 
   resetPassword: (req, res) => {
-    const email = req.params.email;
-    const APIKey = req.params.APIKey;
+    const email = req.payload.email;
+    const APIKey = req.payload.APIKey;
 
     if (APIKey !== config.SMTP.APIKey) {
       return res(boom.forbidden('Wrong APIKey was used'));
     }
 
-    const newPassword = require('crypto').randomBytes(18).toString('hex');
-    const hashedPassword = JSSHA.sha512.sha512(newPassword + config.SMTP.salt);
+    console.log('ResetPassword: APIKey is ok');
 
-    //send email before changing data on MongoDB
-    let connection = new SMTPConnection({
-      host: config.SMTP.host,
-      port: config.SMTP.port,
-      name: config.SMTP.clientName
-    });
-    connection.connect((result) => {
-      //Result of connected event
-      console.log('Connection established with result', result, 'and connection', connection);
+    return isEMailAlreadyTaken(email)
+    .then((isTaken) => {
+      console.log('resetPassword: email taken:', isTaken);
+      if (!isTaken) {
+        return res(boom.notFound('EMail adress is not taken.'));
+      }
 
-      connection.send({
-        from: config.SMTP.from,
-        to: email
-      },
-      'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
-      (err, info) => {
-        console.log('tried to send the email:', err, info);
-        if (err) {
-          connection.quit();
-          return res(boom.badImplementation(err));
+      const newPassword = require('crypto').randomBytes(18).toString('hex');
+      const hashedPassword = JSSHA.sha512(newPassword + config.SMTP.salt);
+
+      console.log('resetPassword: email is in use thus we connect to the SMTP server');
+
+      let connectionPromise = new Promise((resolve, reject) => {
+        //send email before changing data on MongoDB
+        let connection;
+        try {
+          connection = new SMTPConnection({
+            host: config.SMTP.host,
+            port: config.SMTP.port,
+            name: config.SMTP.clientName,
+            connectionTimeout: 4000
+          });
+        }
+        catch (e) {
+          console.log(e);
+          return reject(boom.badImplementation('Wrong SMTP configuration'));
         }
 
-        //TODO: handle info object
+        connection.on('error', (err) => {
+          console.log('ERROR on SMTP Client:', err);
+          return reject(err);
+        });
+
+        connection.connect((result) => {
+          //Result of connected event
+          console.log('Connection established with result', result, 'and connection', connection);
+
+          connection.send({
+            from: config.SMTP.from,
+            to: email
+          },
+          'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
+          (err, info) => {
+            console.log('tried to send the email:', err, info);
+            connection.quit();
+
+            if (err) {
+              return reject(boom.badImplementation(err));
+            }
+
+            //TODO: handle info object
 
 
+            resolve({email: email, newPassword: newPassword});
+          });
+        });
+      });
+
+      return connectionPromise()
+      .then((data) => {
         //change password in the database
         const findQuery = {
-          email: email
+          email: data.email
         };
         const updateQuery = {
           $set: {
-            password: newPassword
+            password: data.newPassword
           }
         };
-        userCtrl.partlyUpdate(findQuery, updateQuery)
+        return userCtrl.partlyUpdate(findQuery, updateQuery)
           .then((result) => {
             console.log('handler: resetPassword:',  result.result);
-            connection.quit();
 
             if (result.result.ok === 1 && result.result.n === 1) {
               //success
               return res();
             }
 
-            res(boom.badImplementation());
+            return res(boom.badImplementation());
           })
           .catch((error) => {
-            res(boom.notFound('Update failed', error));
+            res(boom.notFound('Update of user password failed', error));
           });
-      });
+      })
+      .catch((error) => res(error));
     });
   }
 };
