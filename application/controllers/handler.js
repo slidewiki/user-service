@@ -9,7 +9,9 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   userCtrl = require('../database/user'),
   config = require('../configuration'),
   jwt = require('./jwt'),
-  Joi = require('joi');
+  Joi = require('joi'),
+  JSSHA = require('js-sha512'),
+  SMTPConnection = require('smtp-connection');;
 
 module.exports = {
   register: (req, res) => {
@@ -387,6 +389,48 @@ module.exports = {
         console.log('handler: checkEmail: error', error);
         res(boom.badImplementation(error));
       });
+  },
+
+  resetPassword: (req, res) => {
+    const email = req.params.email;
+    const APIKey = req.params.APIKey;
+
+    if (APIKey !== config.SMTP.APIKey) {
+      return res(boom.forbidden('Wrong APIKey was used'));
+    }
+
+    const newPassword = require('crypto').randomBytes(18).toString('hex');
+    const hashedPassword = JSSHA.sha512.sha512(newPassword + config.SMTP.salt);
+
+    //send email before changing data on MongoDB
+    let connection = new SMTPConnection({
+      host: config.SMTP.host,
+      port: config.SMTP.port,
+      name: config.SMTP.clientName
+    });
+    connection.connect((result) => {
+      //Result of connected event
+      console.log('Connection established with result', result, 'and connection', connection);
+
+      connection.send({
+        from: config.SMTP.from,
+        to: email
+      },
+      'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
+      (err, info) => {
+        console.log('tried to send the email:', err, info);
+        if (err) {
+          connection.quit();
+          return res(boom.badImplementation(err));
+        }
+
+        //TODO: handle info object
+        //TODO: change password in the database
+
+        connection.quit();
+        res();
+      });
+    });
   }
 };
 

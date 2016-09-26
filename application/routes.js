@@ -386,4 +386,38 @@ module.exports = function (server) {
       }
     }
   });
+
+  //Reset password with email notification
+  server.route({
+    method: 'GET',
+    path: '/resetPassword',
+    handler: handlers.resetPassword,
+    config: {
+      validate: {
+        params: {
+          email: Joi.string().email(),
+          APIKey: Joi.string().alphanum()
+        }
+      },
+      tags: ['api'],
+      description: 'Reset the password of a user using the email adress',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful - password reseted and email was send',
+            },
+            ' 403 ': {
+              'description': 'Wrong APIKey was used',
+            },
+            ' 500 ': {
+              'description': 'The action failed. Please try again.',
+            }
+          },
+          payloadType: 'json'
+        }
+      }
+    }
+  });
 };
