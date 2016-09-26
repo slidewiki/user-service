@@ -20,7 +20,7 @@ describe('User service', () => {
     done();
   });
 
-  context('Send email with new password', () => {
+  context('Send email for new password', () => {
     it('call it with wrong email', () => {
       let req = {
         payload: {
