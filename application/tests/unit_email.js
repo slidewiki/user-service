@@ -21,9 +21,24 @@ describe('User service', () => {
   });
 
   context('Send email with new password', () => {
+    it('call it with wrong email', () => {
+      let req = {
+        payload: {
+          email: 'wrong@wrong.wrong',
+          APIKey: config.SMTP.APIKey
+        }
+      };
+      return handler.resetPassword(req, (result) => {
+        console.log(result);
+
+        expect(result.output.statusCode.toString()).to.equal('404');
+
+        return;
+      });
+    });
     it('call it correct', () => {
       let req = {
-        params: {
+        payload: {
           email: 'me@host.net',
           APIKey: config.SMTP.APIKey
         }
@@ -31,7 +46,7 @@ describe('User service', () => {
       return handler.resetPassword(req, (result) => {
         console.log(result);
 
-        expect(result.statusCode.toString()).to.equal('200');
+        expect(result.output.statusCode.toString()).to.equal('200');
 
         return;
       });
