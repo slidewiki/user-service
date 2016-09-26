@@ -425,10 +425,32 @@ module.exports = {
         }
 
         //TODO: handle info object
-        //TODO: change password in the database
 
-        connection.quit();
-        res();
+
+        //change password in the database
+        const findQuery = {
+          email: email
+        };
+        const updateQuery = {
+          $set: {
+            password: newPassword
+          }
+        };
+        userCtrl.partlyUpdate(findQuery, updateQuery)
+          .then((result) => {
+            console.log('handler: resetPassword:',  result.result);
+            connection.quit();
+
+            if (result.result.ok === 1 && result.result.n === 1) {
+              //success
+              return res();
+            }
+
+            res(boom.badImplementation());
+          })
+          .catch((error) => {
+            res(boom.notFound('Update failed', error));
+          });
       });
     });
   }
