@@ -24,7 +24,8 @@ module.exports = {
       picture: '',
       description: '',
       organization: parseAPIParameter(req.payload.organization),
-      registered: (new Date()).toISOString()
+      registered: (new Date()).toISOString(),
+      authorized: false
     };
     console.log('Registration: ', user);
 
@@ -88,6 +89,12 @@ module.exports = {
             break;
           case 1:
             //TODO: call authorization service for OAuth2 token
+
+            //check if enabled for trials
+            if (result[0].authorized !== true) {
+              res(boom.locked('Not authorized for trials'));
+              break;
+            }
 
             res({
               userid: result[0]._id,

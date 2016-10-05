@@ -82,6 +82,9 @@ const user = {
     },
     organization: {
       type: 'string'
+    },
+    authorized: {
+      type: 'boolean'
     }
   },
   required: ['email', 'username', 'frontendLanguage']
