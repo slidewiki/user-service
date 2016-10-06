@@ -408,8 +408,8 @@ module.exports = {
         return res(boom.notFound('EMail adress is not taken.'));
       }
 
-      const newPassword = require('crypto').randomBytes(18).toString('hex');
-      const hashedPassword = JSSHA.sha512(newPassword.toString() + config.SMTP.salt);
+      const newPassword = require('crypto').randomBytes(9).toString('hex');
+      const hashedPassword = JSSHA.sha512(newPassword + config.SMTP.salt);
 
       console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
