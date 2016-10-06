@@ -82,6 +82,9 @@ const user = {
     },
     organization: {
       type: 'string'
+    },
+    deactivated: {
+      type: 'boolean'
     }
   },
   required: ['email', 'username', 'frontendLanguage']

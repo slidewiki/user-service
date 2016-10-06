@@ -418,6 +418,14 @@ module.exports = function (server) {
             },
             ' 404 ': {
               'description': 'The email is not used by a user.',
+            },
+            ' 401 ': {
+              'description': 'User is deactivated.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Contact the server admin in order to re-activate your account.'
+                }
+              }
             }
           },
           payloadType: 'json'

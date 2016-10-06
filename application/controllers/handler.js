@@ -91,6 +91,11 @@ module.exports = {
           case 1:
             //TODO: call authorization service for OAuth2 token
 
+            if (result[0].deactivated === true) {
+              res(boom.unauthorized('This user is deactivated.'));
+              break;
+            }
+
             res({
               userid: result[0]._id,
               username: result[0].username,
@@ -122,8 +127,13 @@ module.exports = {
     return userCtrl.read(parseStringToInteger(req.params.id))
       .then((user) => {
         //console.log('getUser: got user:', user);
-        if (user !== undefined && user !== null && user.username !== undefined)
+        if (user !== undefined && user !== null && user.username !== undefined) {
+          if (user.deactivated === true) {
+            return res(boom.unauthorized('This user is deactivated.'));
+          }
+
           return res(prepareDetailedUserData(user));
+        }
         else {
           return res(boom.notFound());
         }
@@ -134,6 +144,7 @@ module.exports = {
       });
   },
 
+  //add attribute "deactivated" to user document
   deleteUser: (req, res) => {
     let userid = parseStringToInteger(req.params.id);
 
@@ -143,17 +154,27 @@ module.exports = {
       return res(boom.unauthorized('You cannot delete another user'));
     }
 
-    return userCtrl.delete(userid)
+    const findQuery = {
+      _id: userid
+    };
+    const updateQuery = {
+      $set: {
+        deactivated: true
+      }
+    };
+
+    return userCtrl.partlyUpdate(findQuery, updateQuery)
       .then((result) => {
         // console.log('deleteUser: delete with', userid, 'results in', result.result);
-        if (result.result.n === 1) {
+        if (result.result.ok === 1 && result.result.n === 1) {
+          //success
           return res();
         }
 
         res(boom.notFound('Deletion failed - no matched id'));
       })
       .catch((error) => {
-        res(boom.badImplementation('Deletion failed', error));
+        return res(boom.badImplementation('Deletion failed', error));
       });
   },
 
@@ -323,6 +344,10 @@ module.exports = {
           return res(boom.notFound());
         if (array.length > 1)
           return res(boom.badImplementation());
+
+        if (array[0].deactivated === true) {
+          return res(boom.unauthorized('This user is deactivated.'));
+        }
 
         res(preparePublicUserData(array[0]));
       })
