@@ -409,7 +409,7 @@ module.exports = {
       }
 
       const newPassword = require('crypto').randomBytes(18).toString('hex');
-      const hashedPassword = JSSHA.sha512(newPassword + config.SMTP.salt);
+      const hashedPassword = JSSHA.sha512(newPassword.toString() + config.SMTP.salt);
 
       console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
@@ -462,7 +462,7 @@ module.exports = {
               return reject(boom.badImplementation('Email was rejected'));
             }
 
-            resolve({email: email, newPassword: newPassword, message: info.response});
+            resolve({email: email, message: info.response});
           });
         });
       });
@@ -477,7 +477,7 @@ module.exports = {
         };
         const updateQuery = {
           $set: {
-            password: data.newPassword
+            password: hashedPassword
           }
         };
         return userCtrl.partlyUpdate(findQuery, updateQuery)
