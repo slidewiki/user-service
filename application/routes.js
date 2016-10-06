@@ -396,6 +396,7 @@ module.exports = function (server) {
       validate: {
         payload: {
           email: Joi.string().email(),
+          language: Joi.string().length(5),
           APIKey: Joi.string().alphanum()
         }
       },
