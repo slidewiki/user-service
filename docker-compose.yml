@@ -9,3 +9,7 @@ template:
     - APPLICATION_PORT=80
     - DATABASE_PORT=27017
     - VIRTUAL_HOST=userservice.experimental.slidewiki.org
+    - SMTP_PORT=25
+    - SMTP_HOST=localhost
+    - SMTP_FROM=me@hostername.org
+#    - SMTP_CLIENTNAME=
