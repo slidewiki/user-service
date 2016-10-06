@@ -11,7 +11,7 @@ The API is just a draft.
 
 ##API:
 
-See http://userservice.manfredfris.ch/documentation
+See http://userservice.experimental.slidewiki.org/documentation
 
 ##Installation and running (in a container, works both on unix and Windows):
 
