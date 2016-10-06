@@ -20,7 +20,8 @@ module.exports = function (server) {
           username: Joi.string().alphanum(),
           email: Joi.string().email(),
           password: Joi.string().min(8),
-          language: Joi.string().length(5)
+          language: Joi.string().length(5),
+          organization: Joi.string()
         }).requiredKeys('username', 'email', 'password', 'language'),
       },
       tags: ['api'],
