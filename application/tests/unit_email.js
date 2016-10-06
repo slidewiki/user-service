@@ -21,35 +21,35 @@ describe('User service', () => {
   });
 
   context('Send email for new password', () => {
-    it('call it with wrong email', () => {
-      let req = {
-        payload: {
-          email: 'wrong@wrong.wrong',
-          APIKey: config.SMTP.APIKey
-        }
-      };
-      return handler.resetPassword(req, (result) => {
-        console.log(result);
-
-        expect(result.output.statusCode.toString()).to.equal('404');
-
-        return;
-      });
-    });
-    it('call it correct', () => {
-      let req = {
-        payload: {
-          email: 'me@host.net',
-          APIKey: config.SMTP.APIKey
-        }
-      };
-      return handler.resetPassword(req, (result) => {
-        console.log(result);
-
-        expect(result.output.statusCode.toString()).to.equal('200');
-
-        return;
-      });
-    });
+    // it('call it with wrong email', () => {
+    //   let req = {
+    //     payload: {
+    //       email: 'wrong@wrong.wrong',
+    //       APIKey: config.SMTP.APIKey
+    //     }
+    //   };
+    //   return handler.resetPassword(req, (result) => {
+    //     console.log(result);
+    //
+    //     expect(result.output.statusCode.toString()).to.equal('404');
+    //
+    //     return;
+    //   });
+    // });
+    // it('call it correct', () => {
+    //   let req = {
+    //     payload: {
+    //       email: 'me@host.net',
+    //       APIKey: config.SMTP.APIKey
+    //     }
+    //   };
+    //   return handler.resetPassword(req, (result) => {
+    //     console.log(result);
+    //
+    //     expect(result.output.statusCode.toString()).to.equal('200');
+    //
+    //     return;
+    //   });
+    // });
   });
 });
