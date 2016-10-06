@@ -436,7 +436,7 @@ module.exports = {
 
         connection.connect((result) => {
           //Result of connected event
-          console.log('Connection established with result', result, 'and connection', connection);
+          console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
 
           connection.send({
             from: config.SMTP.from,
@@ -445,22 +445,32 @@ module.exports = {
           'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
           (err, info) => {
             console.log('tried to send the email:', err, info);
-            connection.quit();
 
-            if (err) {
+            try {
+              connection.quit();
+            }
+            catch (e) {
+              console.log('SMTP connection quit failed:', e);
+            }
+
+            if (err !== null) {
               return reject(boom.badImplementation(err));
             }
 
-            //TODO: handle info object
+            //handle info object
+            if (info.rejected.length > 0) {
+              return reject(boom.badImplementation('Email was rejected'));
+            }
 
-
-            resolve({email: email, newPassword: newPassword});
+            resolve({email: email, newPassword: newPassword, message: info.response});
           });
         });
       });
 
-      return connectionPromise()
+      return connectionPromise
       .then((data) => {
+        console.log('connectionPromise returned', data);
+
         //change password in the database
         const findQuery = {
           email: data.email
@@ -476,7 +486,7 @@ module.exports = {
 
             if (result.result.ok === 1 && result.result.n === 1) {
               //success
-              return res();
+              return res(data.message);
             }
 
             return res(boom.badImplementation());
