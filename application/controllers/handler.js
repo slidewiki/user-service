@@ -51,7 +51,7 @@ module.exports = {
                 //success
                 sendMail('registration@slidewiki.org', config.ADMIN.email,
                   'subject: User sign-up\n\n' +
-                  user.username + ' : ' + user.forename + ' ' + user.surename + '\n' +
+                  user.username + ' : ' + user.forename + ' ' + user.surname + '\n' +
                   user.organization + '\n' +
                   user.email
                   );
@@ -674,7 +674,7 @@ function sendMail(adr_from, adr_to, message) {
           return reject(boom.badImplementation('Email was rejected'));
         }
 
-        resolve({email: email, message: info.response});
+        resolve({email: adr_to, message: info.response});
       });
     });
   });
