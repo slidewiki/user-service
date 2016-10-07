@@ -102,32 +102,32 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     });
-    it('Login with user', () => {
-      let req = {
-        payload: {
-          email: correct_user1.email,
-          password: correct_user1.password
-        }
-      };
-      return handler.login(req, (result) => {
-        //console.log('result', result);
-
-        expect(result.userid).to.equal(userid);
-        expect(result.username).to.not.equal(undefined);
-
-        return {
-          header: (name, data) => {
-            console.log('got header:', name, data);
-            jwt = data;
-          }
-        };
-      })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-        expect(1).to.equals(2);
-      });
-    });
+    // it('Login with user', () => {
+    //   let req = {
+    //     payload: {
+    //       email: correct_user1.email,
+    //       password: correct_user1.password
+    //     }
+    //   };
+    //   return handler.login(req, (result) => {
+    //     //console.log('result', result);
+    //
+    //     expect(result.userid).to.equal(userid);
+    //     expect(result.username).to.not.equal(undefined);
+    //
+    //     return {
+    //       header: (name, data) => {
+    //         console.log('got header:', name, data);
+    //         jwt = data;
+    //       }
+    //     };
+    //   })
+    //   .catch((Error) => {
+    //     console.log('Error', Error);
+    //     throw Error;
+    //     expect(1).to.equals(2);
+    //   });
+    // });
     it('Update user profile', () => {
       let req = {
         payload: {

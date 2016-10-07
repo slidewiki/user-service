@@ -97,6 +97,9 @@ module.exports = function (server) {
                   'description': '{"email":"", "password": ""}'
                 }
               }
+            },
+            ' 423 ': {
+              'description': 'Not authorized for trials'
             }
           },
           payloadType: 'form'

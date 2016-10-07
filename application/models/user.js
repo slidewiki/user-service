@@ -83,7 +83,7 @@ const user = {
     organization: {
       type: 'string'
     },
-    deactivated: {
+    authorized: {
       type: 'boolean'
     }
   },

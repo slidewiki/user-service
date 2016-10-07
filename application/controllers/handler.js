@@ -26,7 +26,8 @@ module.exports = {
       picture: '',
       description: '',
       organization: parseAPIParameter(req.payload.organization),
-      registered: (new Date()).toISOString()
+      registered: (new Date()).toISOString(),
+      authorized: false
     };
     console.log('Registration: ', user);
 
@@ -91,8 +92,9 @@ module.exports = {
           case 1:
             //TODO: call authorization service for OAuth2 token
 
-            if (result[0].deactivated === true) {
-              res(boom.unauthorized('This user is deactivated.'));
+            //check if enabled for trials
+            if (result[0].authorized !== true) {
+              res(boom.locked('Not authorized for trials'));
               break;
             }
 
@@ -127,13 +129,8 @@ module.exports = {
     return userCtrl.read(parseStringToInteger(req.params.id))
       .then((user) => {
         //console.log('getUser: got user:', user);
-        if (user !== undefined && user !== null && user.username !== undefined) {
-          if (user.deactivated === true) {
-            return res(boom.unauthorized('This user is deactivated.'));
-          }
-
+        if (user !== undefined && user !== null && user.username !== undefined)
           return res(prepareDetailedUserData(user));
-        }
         else {
           return res(boom.notFound());
         }
@@ -144,7 +141,6 @@ module.exports = {
       });
   },
 
-  //add attribute "deactivated" to user document
   deleteUser: (req, res) => {
     let userid = parseStringToInteger(req.params.id);
 
@@ -154,27 +150,17 @@ module.exports = {
       return res(boom.unauthorized('You cannot delete another user'));
     }
 
-    const findQuery = {
-      _id: userid
-    };
-    const updateQuery = {
-      $set: {
-        deactivated: true
-      }
-    };
-
-    return userCtrl.partlyUpdate(findQuery, updateQuery)
+    return userCtrl.delete(userid)
       .then((result) => {
         // console.log('deleteUser: delete with', userid, 'results in', result.result);
-        if (result.result.ok === 1 && result.result.n === 1) {
-          //success
+        if (result.result.n === 1) {
           return res();
         }
 
         res(boom.notFound('Deletion failed - no matched id'));
       })
       .catch((error) => {
-        return res(boom.badImplementation('Deletion failed', error));
+        res(boom.badImplementation('Deletion failed', error));
       });
   },
 
@@ -344,10 +330,6 @@ module.exports = {
           return res(boom.notFound());
         if (array.length > 1)
           return res(boom.badImplementation());
-
-        if (array[0].deactivated === true) {
-          return res(boom.unauthorized('This user is deactivated.'));
-        }
 
         res(preparePublicUserData(array[0]));
       })
