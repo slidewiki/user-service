@@ -48,6 +48,11 @@ if (!co.isEmpty(process.env.SMTP_CLIENTNAME)){
   SMTP_clientName = process.env.SMTP_CLIENTNAME;
 }
 
+let adminEmail = 'admin@slidewiki.org';
+if (!co.isEmpty(process.env.ADMIN_EMAIL)){
+  adminEmail = process.env.ADMIN_EMAIL;
+}
+
 module.exports = {
   MongoDB: {
     PORT: port,
@@ -68,4 +73,7 @@ module.exports = {
     clientName: SMTP_clientName,
     from: SMTP_from
   },
+  ADMIN: {
+    email: adminEmail
+  }
 };

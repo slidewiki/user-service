@@ -49,6 +49,13 @@ module.exports = {
 
               if (result.insertedCount === 1) {
                 //success
+                sendMail('registration@slidewiki.org', config.ADMIN.email,
+                  'subject: User sign-up\n\n' +
+                  user.username + ' : ' + user.forename + ' ' + user.surename + '\n' +
+                  user.organization + '\n' +
+                  user.email
+                  );
+
                 return res({
                   userid: result.insertedId
                 });
