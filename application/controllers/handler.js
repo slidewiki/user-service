@@ -623,7 +623,7 @@ function parseStringToInteger(string) {
   return undefined;
 }
 
-function sendMail(adr_froml, adr_to, message) {
+function sendMail(adr_from, adr_to, message) {
   new Promise((resolve, reject) => {
     let connection;
     try {
