@@ -418,63 +418,10 @@ module.exports = {
       const newPassword = require('crypto').randomBytes(9).toString('hex');
       const hashedPassword = JSSHA.sha512(newPassword + config.SMTP.salt);
 
-      console.log('resetPassword: email is in use thus we connect to the SMTP server');
-
-      let connectionPromise = new Promise((resolve, reject) => {
-        //send email before changing data on MongoDB
-        let connection;
-        try {
-          connection = new SMTPConnection({
-            host: config.SMTP.host,
-            port: config.SMTP.port,
-            name: config.SMTP.clientName,
-            connectionTimeout: 4000
-          });
-        }
-        catch (e) {
-          console.log(e);
-          return reject(boom.badImplementation('Wrong SMTP configuration'));
-        }
-
-        connection.on('error', (err) => {
-          console.log('ERROR on SMTP Client:', err);
-          return reject(err);
-        });
-
-        connection.connect((result) => {
-          //Result of connected event
-          console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
-
-          //TODO handle different languages
-
-          connection.send({
-            from: config.SMTP.from,
-            to: email
-          },
-          'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
-          (err, info) => {
-            console.log('tried to send the email:', err, info);
-
-            try {
-              connection.quit();
-            }
-            catch (e) {
-              console.log('SMTP connection quit failed:', e);
-            }
-
-            if (err !== null) {
-              return reject(boom.badImplementation(err));
-            }
-
-            //handle info object
-            if (info.rejected.length > 0) {
-              return reject(boom.badImplementation('Email was rejected'));
-            }
-
-            resolve({email: email, message: info.response});
-          });
-        });
-      });
+      console.log('resetPassword: email is in use thus we send a mail');
+      sendMail(config.SMTP.from, email,
+        'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team'
+        );
 
       return connectionPromise
       .then((data) => {
@@ -667,4 +614,61 @@ function parseStringToInteger(string) {
     return validationResult.value;
   }
   return undefined;
+}
+
+function sendMail(adr_froml, adr_to, message) {
+  new Promise((resolve, reject) => {
+    let connection;
+    try {
+      connection = new SMTPConnection({
+        host: config.SMTP.host,
+        port: config.SMTP.port,
+        name: config.SMTP.clientName,
+        connectionTimeout: 4000
+      });
+    }
+    catch (e) {
+      console.log(e);
+      return reject(boom.badImplementation('Wrong SMTP configuration'));
+    }
+
+    connection.on('error', (err) => {
+      console.log('ERROR on SMTP Client:', err);
+      return reject(err);
+    });
+
+    connection.connect((result) => {
+      //Result of connected event
+      console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
+
+      //TODO handle different languages
+
+      connection.send({
+        from: adr_from,
+        to: adr_to
+      },
+      message,
+      (err, info) => {
+        console.log('tried to send the email:', err, info);
+
+        try {
+          connection.quit();
+        }
+        catch (e) {
+          console.log('SMTP connection quit failed:', e);
+        }
+
+        if (err !== null) {
+          return reject(boom.badImplementation(err));
+        }
+
+        //handle info object
+        if (info.rejected.length > 0) {
+          return reject(boom.badImplementation('Email was rejected'));
+        }
+
+        resolve({email: email, message: info.response});
+      });
+    });
+  });
 }
