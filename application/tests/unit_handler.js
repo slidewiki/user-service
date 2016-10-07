@@ -303,5 +303,48 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     });
+
+    it('Login with deleted user', () => {
+      let req = {
+        payload: {
+          email: correct_user1.email,
+          password: correct_user1.password
+        }
+      };
+      return handler.login(req, (result) => {
+        // console.log('result', result);
+
+        expect(result.isBoom).to.equal(true);
+        expect(result.output.statusCode).to.equal(401);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Get deleted user as public', () => {
+      //first with _id
+      let req = {
+        params: {
+          identifier: userid
+        }
+      };
+      return handler.getPublicUser(req, (result) => {
+        // console.log(result);
+
+        expect(result.isBoom).to.equal(true);
+        expect(result.output.statusCode).to.equal(401);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
   });
 });
