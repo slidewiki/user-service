@@ -624,7 +624,7 @@ function parseStringToInteger(string) {
 }
 
 function sendMail(adr_from, adr_to, message) {
-  let myPromise = Promise((resolve, reject) => {
+  let myPromise = new Promise((resolve, reject) => {
     let connection;
     try {
       connection = new SMTPConnection({
