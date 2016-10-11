@@ -426,7 +426,7 @@ module.exports = {
       const hashedPassword = JSSHA.sha512(newPassword + config.SMTP.salt);
 
       console.log('resetPassword: email is in use thus we send a mail');
-      sendMail(config.SMTP.from, email,
+      let connectionPromise = sendMail(config.SMTP.from, email,
         'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team'
         );
 
@@ -624,7 +624,7 @@ function parseStringToInteger(string) {
 }
 
 function sendMail(adr_from, adr_to, message) {
-  new Promise((resolve, reject) => {
+  let myPromise = Promise((resolve, reject) => {
     let connection;
     try {
       connection = new SMTPConnection({
@@ -678,4 +678,5 @@ function sendMail(adr_from, adr_to, message) {
       });
     });
   });
+  return myPromise;
 }
