@@ -674,7 +674,7 @@ function sendMail(adr_from, adr_to, message) {
           return reject(boom.badImplementation('Email was rejected'));
         }
 
-        resolve({email: email, message: info.response});
+        resolve({email: adr_to, message: info.response});
       });
     });
   });
