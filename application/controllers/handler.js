@@ -427,7 +427,7 @@ module.exports = {
 
       console.log('resetPassword: email is in use thus we send a mail');
       let connectionPromise = sendMail(config.SMTP.from, email,
-        'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team'
+        'Subject: Password reset\n\nDear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team'
         );
 
       return connectionPromise
