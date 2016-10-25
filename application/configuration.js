@@ -48,6 +48,11 @@ if (!co.isEmpty(process.env.SMTP_CLIENTNAME)){
   SMTP_clientName = process.env.SMTP_CLIENTNAME;
 }
 
+let APIKey = '2cbc621f86e97189239ee8c4c80b10b3a935b8a9f5db3def7b6a3ae7c4b75cb5';
+if (!co.isEmpty(process.env.APIKEY)){
+  APIKey = process.env.APIKEY;
+}
+
 module.exports = {
   MongoDB: {
     PORT: port,
@@ -61,7 +66,7 @@ module.exports = {
     ALGORITHM:  'HS512'
   },
   SMTP: {
-    APIKey: '2cbc621f86e97189239ee8c4c80b10b3a935b8a9f5db3def7b6a3ae7c4b75cb5',
+    APIKey: APIKey,
     salt: '6cee6c6a420e0573d1a4ad8ecb44f2113d010a0c3aadd3c1251b9aa1406ba6a3',
     host: SMTP_host,
     port: SMTP_port,
