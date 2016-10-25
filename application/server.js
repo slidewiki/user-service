@@ -8,7 +8,9 @@ This service manages user accounts. Used for credential login and user informati
 const hapi = require('hapi'),
   co = require('./common'),
   config = require('./configuration'),
-  jwt = require('./controllers/jwt');
+  jwt = require('./controllers/jwt'),
+  yar = require('yar'),
+  Grant = require('grant-hapi');
 
 //Initiate the webserver with standard or given port
 const server = new hapi.Server({ connections: {routes: {validate: { options: {convert : false}}}}});
@@ -56,7 +58,21 @@ let plugins = [
       }
     }
   },
-  require('hapi-auth-jwt2')
+  require('hapi-auth-jwt2'),
+  {
+    register: yar,  //For cookie handling - most OAuth2 providers doing a handshake with a unified cookie value to verify the requests
+    options: {
+      cookieOptions: {
+        password: '12345678901113151234567890111315',
+        isSecure: false
+      }
+    }
+  },
+  // mount grant
+  {
+    register: new Grant(),
+    options: require('./config.json')
+  }
 ];
 
 //Register plugins and start webserver

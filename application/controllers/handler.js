@@ -524,6 +524,10 @@ module.exports = {
       })
       .catch((error) => res(error));
     });
+  },
+
+  handleOAuth2Token: (req, res, provider) => {
+    console.log(provider, req.query);
   }
 };
 

@@ -53,6 +53,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -100,6 +103,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -141,6 +147,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -182,6 +191,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -229,6 +241,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -288,6 +303,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -318,6 +336,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -351,6 +372,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -383,6 +407,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'json'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -429,8 +456,37 @@ module.exports = function (server) {
             }
           },
           payloadType: 'json'
+        },
+        yar: {
+          skip: true
         }
       }
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/handle_github_callback',
+    handler: function(req, res) {
+      //Continue with the token
+      //Remark: third parameter have to be the name of the provider as listet for purest
+      handlers.handleOAuth2Token(req, res, 'github');
+    },
+    config: {
+      auth: false
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/social/google',
+    handler: function(req, res) {
+      handlers.handleOAuth2Token(req, res, 'google');
+    },
+    config: {
+      tags: ['api'],
+      description: 'Handles OAuth2 result from Google',
+      auth: false
     }
   });
 };
