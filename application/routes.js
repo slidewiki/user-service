@@ -466,14 +466,11 @@ module.exports = function (server) {
 
   server.route({
     method: 'GET',
-    path: '/handle_github_callback',
+    path: '/social/github',
     handler: function(req, res) {
       //Continue with the token
       //Remark: third parameter have to be the name of the provider as listet for purest
       handlers.handleOAuth2Token(req, res, 'github');
-    },
-    config: {
-      auth: false
     }
   });
 
@@ -485,8 +482,7 @@ module.exports = function (server) {
     },
     config: {
       tags: ['api'],
-      description: 'Handles OAuth2 result from Google',
-      auth: false
+      description: 'Handles OAuth2 result from Google'
     }
   });
 };

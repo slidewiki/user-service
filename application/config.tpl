@@ -6,7 +6,7 @@
   "github": {
     "key": "",
     "secret": "",
-    "callback": "/handle_github_callback",
+    "callback": "/social/github",
     "scope": ["user"]
   },
   "google": {
