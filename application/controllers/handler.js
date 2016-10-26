@@ -11,7 +11,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   jwt = require('./jwt'),
   Joi = require('joi'),
   JSSHA = require('js-sha512'),
-  SMTPConnection = require('smtp-connection');;
+  SMTPConnection = require('smtp-connection'),
+  socialProvider = require('./social_provider');
 
 module.exports = {
   register: (req, res) => {
@@ -528,7 +529,24 @@ module.exports = {
 
   handleOAuth2Token: (req, res, provider) => {
     console.log(provider, req.query);
-    res();
+
+    return socialProvider.getUserCredentials(req.query.access_token, provider)
+      .then((user) => {
+        let result = {
+          provider: provider,
+          token: req.query.access_token,
+          origin: { //TODO should be removed
+            credentials: req.query,
+            user: user.origin
+          },
+          username: user.nickname,
+          email: user.email,
+          id: user.id,
+          location: user.location
+        };
+
+        res(result);
+      });
   },
 
   addProvider: (req, res) => {
