@@ -92,8 +92,6 @@ server.register(plugins, (err) => {
       headerKey: config.JWT.HEADER
     });
 
-    // server.auth.default('jwt');
-
     server.start(() => {
       server.log('info', 'Server started at ' + server.info.uri);
       //Register routes

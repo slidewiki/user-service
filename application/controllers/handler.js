@@ -528,6 +528,19 @@ module.exports = {
 
   handleOAuth2Token: (req, res, provider) => {
     console.log(provider, req.query);
+    res();
+  },
+
+  addProvider: (req, res) => {
+  },
+
+  deleteProvider: (req, res) => {
+  },
+
+  registerWithOAuth: (req, res) => {
+  },
+
+  loginWithOAuth: (req, res) => {
   }
 };
 

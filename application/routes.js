@@ -464,9 +464,11 @@ module.exports = function (server) {
     }
   });
 
+  //Social logins
+
   server.route({
     method: 'GET',
-    path: '/social/github',
+    path: '/social/provider/github',
     handler: function(req, res) {
       //Continue with the token
       //Remark: third parameter have to be the name of the provider as listet for purest
@@ -476,13 +478,208 @@ module.exports = function (server) {
 
   server.route({
     method: 'GET',
-    path: '/social/google',
+    path: '/social/provider/google',
     handler: function(req, res) {
       handlers.handleOAuth2Token(req, res, 'google');
-    },
+    }
+  });
+
+  server.route({
+    method: 'PUT',
+    path: '/social/provider',
+    handler: handlers.addProvider,
     config: {
+      validate: {
+        payload: Joi.object().keys({
+          username: Joi.string().alphanum(),
+          email: Joi.string().email(),
+          id: Joi.string(),
+          language: Joi.string().length(5),
+          provider: Joi.string(),
+          location: Joi.string(),
+          token: Joi.string()
+        }).requiredKeys('username', 'id', 'provider', 'token'),
+      },
       tags: ['api'],
-      description: 'Handles OAuth2 result from Google'
+      description: 'Add a new OAuth provider for the user - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful'
+            },
+            ' 401 ': {
+              'description': 'Not authorized to add the provider.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Provider not available.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'DELETE',
+    path: '/social/provider',
+    handler: handlers.deleteProvider,
+    config: {
+      validate: {
+        params: {
+          provider: Joi.string()
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Delete a OAuth provider - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to delete the provider.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Provider for the user not found.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/social/register',
+    handler: handlers.registerWithOAuth,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          username: Joi.string().alphanum(),
+          email: Joi.string().email(),
+          id: Joi.string(),
+          language: Joi.string().length(5),
+          provider: Joi.string(),
+          location: Joi.string(),
+          token: Joi.string()
+        }).requiredKeys('username', 'id', 'provider', 'token'),
+      },
+      tags: ['api'],
+      description: 'Register a new user with the data from OAuth',
+      response: {
+        schema: Joi.object().keys({
+          userid: Joi.number().integer()
+        })
+      },
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.number().integer(),
+                username: Joi.string()
+              }).required()
+            },
+            ' 422 ': {
+              'description': 'Wrong user data - see error message',
+              schema: Joi.object().keys({
+                statusCode: Joi.number().integer(),
+                error: Joi.string(),
+                message: Joi.string()
+              }).required()
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/social/login',
+    handler: handlers.loginWithOAuth,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          id: Joi.string(),
+          language: Joi.string().length(5),
+          provider: Joi.string(),
+          token: Joi.string()
+        })
+      },
+      tags: ['api'],
+      description: 'Login with OAuth data',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.number().integer(),
+                username: Joi.string()
+              }).required()
+            },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': '{"email":"", "password": ""}'
+                }
+              }
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
     }
   });
 };

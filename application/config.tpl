@@ -6,13 +6,13 @@
   "github": {
     "key": "",
     "secret": "",
-    "callback": "/social/github",
+    "callback": "/social/provider/github",
     "scope": ["user"]
   },
   "google": {
     "key": "",
     "secret": "",
-    "callback": "/social/google",
+    "callback": "/social/provider/google",
     "scope": ["https://www.googleapis.com/auth/plus.me", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"],
     "custom_params": {
       "access_type": "offline"
