@@ -538,6 +538,7 @@ module.exports = {
           scope: req.query['raw[scope]'],
           expires: req.query['raw[expires_in]'],
           extra_token: req.query['raw[id_token]'],  //atm just for google
+          token_creation: (new Date()).toISOString(),
           // origin: { //TODO should be removed
           //   credentials: req.query,
           //   user: user.origin
@@ -563,6 +564,72 @@ module.exports = {
   },
 
   registerWithOAuth: (req, res) => {
+    let user = {
+      username: parseAPIParameter(req.payload.username),
+      email:    parseAPIParameter(req.payload.email),
+      frontendLanguage: parseAPIParameter(req.payload.language),
+      country: '',
+      picture: parseAPIParameter(req.payload.picture),
+      description: parseAPIParameter(req.payload.description),
+      organization: parseAPIParameter(req.payload.organization),
+      registered: (new Date()).toISOString(),
+      providers: [
+        {
+          provider: parseAPIParameter(req.payload.provider),
+          token: parseAPIParameter(req.payload.token),
+          expires: req.payload.expires,
+          token_creation: parseAPIParameter(req.payload.token_creation),
+          scope: parseAPIParameter(req.payload.scope),
+          extra_token: parseAPIParameter(req.payload.extra_token),
+          id: parseAPIParameter(req.payload.id)
+        }
+      ]
+    };
+    console.log('Registration with OAuth data: ', user);
+
+    //check if username already exists
+    return isIdentityAssigned(user.email, user.username)
+      .then((result) => {
+        console.log('identity already taken: ', user.email, user.username, result);
+        if (result.assigned === false) {
+          return userCtrl.create(user)
+            .then((result) => {
+              // console.log('register: user create result: ', result);
+
+              if (result[0] !== undefined && result[0] !== null) {
+                //Error
+                return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+              }
+
+              if (result.insertedCount === 1) {
+                //success
+                return res({
+                  userid: result.insertedId
+                })
+                .header(config.JWT.HEADER, jwt.createToken({
+                  userid: result.insertedId,
+                  username: user.username
+                }));
+              }
+
+              res(boom.badImplementation());
+            })
+            .catch((error) => {
+              console.log('register: catch: ', error);
+              res(boom.badImplementation('Error', error));
+            });
+        } else {
+          let message = 'The username and email is already taken';
+          if (result.email === false)
+            message = 'The username is already taken';
+          if (result.username === false)
+            message = 'The email is already taken';
+          return res(boom.badData(message));
+        }
+      })
+      .catch((error) => {
+        res(boom.badImplementation('Error', error));
+      });
   },
 
   loginWithOAuth: (req, res) => {

@@ -580,14 +580,22 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-          username: Joi.string().alphanum(),
-          email: Joi.string().email(),
           id: Joi.string(),
-          language: Joi.string().length(5),
           provider: Joi.string(),
           location: Joi.string(),
-          token: Joi.string()
-        }).requiredKeys('username', 'id', 'provider', 'token'),
+          token: Joi.string(),
+          scope: Joi.string(),
+          expires: Joi.number(),
+          token_creation: Joi.string(),//Date
+          extra_token: Joi.string(),
+          username: Joi.string().alphanum(),
+          email: Joi.string().email(),
+          language: Joi.string().length(5),
+          organization: Joi.string(),
+          description: Joi.string(),
+          picture: Joi.string(),
+          name: Joi.string()
+        }).requiredKeys('username', 'email', 'id', 'provider', 'token'),
       },
       tags: ['api'],
       description: 'Register a new user with the data from OAuth',

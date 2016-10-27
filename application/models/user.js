@@ -14,6 +14,34 @@ const objectid = {
   maxLength: 24,
   minLength: 24
 };
+const provider = {
+  type: 'object',
+  properties: {
+    provider: {
+      type: 'string'
+    },
+    token: {
+      type: 'string'
+    },
+    expires: {
+      type: 'number'
+    },
+    extra_token: {
+      type: 'string'
+    },
+    scope: {
+      type: 'string'
+    },
+    token_creation: {
+      type: 'string',
+      format: 'datetime'
+    },
+    id: {
+      type: 'string'
+    }
+  },
+  required: ['provider', 'token', 'token_creation']
+};
 const user = {
   type: 'object',
   properties: {
@@ -85,6 +113,12 @@ const user = {
     },
     deactivated: {
       type: 'boolean'
+    },
+    providers: {
+      type: 'array',
+      items: {
+        type: provider
+      }
     }
   },
   required: ['email', 'username', 'frontendLanguage']
