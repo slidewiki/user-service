@@ -34,7 +34,7 @@ const provider = {
     },
     token_creation: {
       type: 'string',
-      format: 'datetime'
+      format: 'date-time'
     },
     id: {
       type: 'string'
@@ -66,7 +66,7 @@ const user = {
     },
     registered: {
       type: 'string',
-      format: 'datetime'
+      format: 'date-time'
     },
     surname: {
       type: 'string'
@@ -116,9 +116,7 @@ const user = {
     },
     providers: {
       type: 'array',
-      items: {
-        type: provider
-      }
+      items: provider
     }
   },
   required: ['email', 'username', 'frontendLanguage']
