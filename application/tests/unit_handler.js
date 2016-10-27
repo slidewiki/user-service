@@ -30,6 +30,23 @@ describe('User service', () => {
       language: 'de'
     }]
   };
+  const correct_oauth_user = {
+    id: '123',
+    provider: 'github',
+    location: 'Deutschland',
+    token: 'sdifn7as89pf79s7fb7sdfbasf',
+    scope: null,
+    expires: 3600,
+    token_creation: (new Date()).toISOString(),//Date
+    extra_token: undefined,
+    username: 'TBoonX',
+    email: 'test@notindb.true',
+    language: 'de_DE',
+    organization: 'InfAI',
+    description: 'Me - so awesome - much wow',
+    picture: 'https://lh3.googleusercontent.com/-XdUIqdMkCWA/AAAAAAAAAAI/AAAAAAAAAAA/4252rscbv5M/photo.jpg',
+    name: 'Kurt Junghanns'
+  };
   let userid = '',
     jwt = '';
 
@@ -52,7 +69,8 @@ describe('User service', () => {
         throw Error;
         expect(1).to.equals(2);
       });
-    });it('Register a second user with same username - should not be possible', () => {
+    });
+    it('Register a second user with same username - should not be possible', () => {
       let req = {
         payload: correct_user1
       };
@@ -342,6 +360,33 @@ describe('User service', () => {
       })
       .catch((Error) => {
         console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+
+    //Social login stuff
+
+    it('Register user with OAuth data', () => {
+      let req = {
+        payload: correct_oauth_user
+      };
+      return handler.registerWithOAuth(req, (result) => {
+        console.log(result);
+
+        expect(result.userid).to.not.equal(undefined);
+
+        userid = result.userid;
+
+        return {
+          header: (name, data) => {
+            console.log('got header:', name, data);
+            jwt = data;
+          }
+        };
+      })
+      .catch((Error) => {
+        console.log(Error);
         throw Error;
         expect(1).to.equals(2);
       });

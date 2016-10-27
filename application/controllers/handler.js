@@ -568,7 +568,7 @@ module.exports = {
       username: parseAPIParameter(req.payload.username),
       email:    parseAPIParameter(req.payload.email),
       frontendLanguage: parseAPIParameter(req.payload.language),
-      country: '',
+      country: parseAPIParameter(req.payload.location),
       picture: parseAPIParameter(req.payload.picture),
       description: parseAPIParameter(req.payload.description),
       organization: parseAPIParameter(req.payload.organization),
@@ -598,6 +598,7 @@ module.exports = {
 
               if (result[0] !== undefined && result[0] !== null) {
                 //Error
+                console.log('ajv error', result, co.parseAjvValidationErrors(result));
                 return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
               }
 
