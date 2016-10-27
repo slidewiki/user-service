@@ -5,7 +5,7 @@
 
 describe('User service', () => {
 
-  let handler, expect;
+  let handler, handler_social, expect;
 
   beforeEach((done) => {
     //Clean everything up before doing new tests
@@ -16,6 +16,7 @@ describe('User service', () => {
     chai.use(chaiAsPromised);
     expect = require('chai').expect;
     handler = require('../controllers/handler.js');
+    handler_social = require('../controllers/handler_social.js');
     done();
   });
 
@@ -371,7 +372,7 @@ describe('User service', () => {
       let req = {
         payload: correct_oauth_user
       };
-      return handler.registerWithOAuth(req, (result) => {
+      return handler_social.registerWithOAuth(req, (result) => {
         console.log(result);
 
         expect(result.userid).to.not.equal(undefined);

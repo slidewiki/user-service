@@ -4,7 +4,8 @@ Each route implementes a basic parameter/payload validation and a swagger API do
 'use strict';
 
 const Joi = require('joi'),
-  handlers = require('./controllers/handler');
+  handlers = require('./controllers/handler'),
+  handlers_social = require('./controllers/handler_social');
 
 module.exports = function (server) {
   //Register new user with credentials
@@ -473,21 +474,21 @@ module.exports = function (server) {
     handler: function(req, res) {
       //Continue with the token
       //Remark: third parameter have to be the name of the provider as listet for purest
-      handlers.handleOAuth2Token(req, res, 'github');
+      handlers_social.handleOAuth2Token(req, res, 'github');
     }
   });
   server.route({
     method: 'GET',
     path: '/social/provider/google',
     handler: function(req, res) {
-      handlers.handleOAuth2Token(req, res, 'google');
+      handlers_social.handleOAuth2Token(req, res, 'google');
     }
   });
 
   server.route({
     method: 'PUT',
     path: '/social/provider',
-    handler: handlers.addProvider,
+    handler: handlers_social.addProvider,
     config: {
       validate: {
         payload: Joi.object().keys({
@@ -533,7 +534,7 @@ module.exports = function (server) {
   server.route({
     method: 'DELETE',
     path: '/social/provider',
-    handler: handlers.deleteProvider,
+    handler: handlers_social.deleteProvider,
     config: {
       validate: {
         params: {
@@ -576,7 +577,7 @@ module.exports = function (server) {
   server.route({
     method: 'POST',
     path: '/social/register',
-    handler: handlers.registerWithOAuth,
+    handler: handlers_social.registerWithOAuth,
     config: {
       validate: {
         payload: Joi.object().keys({
@@ -651,7 +652,7 @@ module.exports = function (server) {
   server.route({
     method: 'POST',
     path: '/social/login',
-    handler: handlers.loginWithOAuth,
+    handler: handlers_social.loginWithOAuth,
     config: {
       validate: {
         payload: Joi.object().keys({

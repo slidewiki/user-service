@@ -12,27 +12,27 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   Joi = require('joi'),
   JSSHA = require('js-sha512'),
   SMTPConnection = require('smtp-connection'),
-  socialProvider = require('./social_provider');
+  util = require('./util');
 
 module.exports = {
   register: (req, res) => {
     let user = {
-      surname:  parseAPIParameter(req.payload.surname),
-      forename: parseAPIParameter(req.payload.forename),
-      username: parseAPIParameter(req.payload.username),
-      email:    parseAPIParameter(req.payload.email),
-      password: parseAPIParameter(req.payload.password),
-      frontendLanguage: parseAPIParameter(req.payload.language),
+      surname:  util.parseAPIParameter(req.payload.surname),
+      forename: util.parseAPIParameter(req.payload.forename),
+      username: util.parseAPIParameter(req.payload.username),
+      email:    util.parseAPIParameter(req.payload.email),
+      password: util.parseAPIParameter(req.payload.password),
+      frontendLanguage: util.parseAPIParameter(req.payload.language),
       country: '',
       picture: '',
       description: '',
-      organization: parseAPIParameter(req.payload.organization),
+      organization: util.parseAPIParameter(req.payload.organization),
       registered: (new Date()).toISOString()
     };
     console.log('Registration: ', user);
 
     //check if username already exists
-    return isIdentityAssigned(user.email, user.username)
+    return util.isIdentityAssigned(user.email, user.username)
       .then((result) => {
         console.log('identity already taken: ', user.email, user.username, result);
         if (result.assigned === false) {
@@ -120,7 +120,7 @@ module.exports = {
 
   getUser: (req, res) => {
     //check if the request comes from the right user (have the right JWT data)
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
       return res(boom.unauthorized('You cannot get detailed information about another user'));
     }
@@ -150,7 +150,7 @@ module.exports = {
     let userid = parseStringToInteger(req.params.id);
 
     //check if the user which should be deleted have the right JWT data
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
       return res(boom.unauthorized('You cannot delete another user'));
     }
@@ -186,7 +186,7 @@ module.exports = {
     const user__id = parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
       return res(boom.unauthorized('You cannot change the password of another user'));
     }
@@ -240,7 +240,7 @@ module.exports = {
     user._id = parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
       return res(boom.unauthorized('You cannot change the user profile of another user'));
     }
@@ -253,15 +253,15 @@ module.exports = {
         },
         updateQuery = {
           $set: {
-            email:       parseAPIParameter(req.payload.email),
-            username:    parseAPIParameter(req.payload.username),
-            surname:     parseAPIParameter(req.payload.surname),
-            forename:    parseAPIParameter(req.payload.forename),
-            frontendLanguage:    parseAPIParameter(req.payload.language),
-            country:     parseAPIParameter(req.payload.country),
-            picture:     parseAPIParameter(req.payload.picture),
-            description: parseAPIParameter(req.payload.description),
-            organization: parseAPIParameter(req.payload.organization)
+            email:       util.parseAPIParameter(req.payload.email),
+            username:    util.parseAPIParameter(req.payload.username),
+            surname:     util.parseAPIParameter(req.payload.surname),
+            forename:    util.parseAPIParameter(req.payload.forename),
+            frontendLanguage:    util.parseAPIParameter(req.payload.language),
+            country:     util.parseAPIParameter(req.payload.country),
+            picture:     util.parseAPIParameter(req.payload.picture),
+            description: util.parseAPIParameter(req.payload.description),
+            organization: util.parseAPIParameter(req.payload.organization)
           }
         };
 
@@ -525,167 +525,6 @@ module.exports = {
       })
       .catch((error) => res(error));
     });
-  },
-
-  handleOAuth2Token: (req, res, provider) => {
-    console.log('Got token from provider ', provider);
-
-    return socialProvider.getUserCredentials(req.query.access_token, provider)
-      .then((user) => {
-        let result = {
-          provider: provider,
-          token: req.query.access_token,
-          scope: req.query['raw[scope]'],
-          expires: req.query['raw[expires_in]'],
-          extra_token: req.query['raw[id_token]'],  //atm just for google
-          token_creation: (new Date()).toISOString(),
-          // origin: { //TODO should be removed
-          //   credentials: req.query,
-          //   user: user.origin
-          // },
-          username: user.nickname,
-          email: user.email,
-          id: user.id,
-          location: user.location,
-          organization: user.organization,
-          description: user.description,
-          picture: user.picture,
-          name: user.name
-        };
-
-        res(result);
-      })
-      .catch((error) => {
-        console.log('Error', error);
-
-        if (error.wrongCredentials === true) {
-          res(boom.unauthorized('The credentials are wrong', 'OAuth', { providerResponse: error.origin }));
-        }
-        else
-          res(boom.badImplementation(error));
-      });
-  },
-
-  addProvider: (req, res) => {
-  },
-
-  deleteProvider: (req, res) => {
-  },
-
-  registerWithOAuth: (req, res) => {
-    let user = {
-      username: parseAPIParameter(req.payload.username),
-      email:    parseAPIParameter(req.payload.email),
-      frontendLanguage: parseAPIParameter(req.payload.language),
-      country: parseAPIParameter(req.payload.location),
-      picture: parseAPIParameter(req.payload.picture),
-      description: parseAPIParameter(req.payload.description),
-      organization: parseAPIParameter(req.payload.organization),
-      registered: (new Date()).toISOString(),
-      providers: [
-        {
-          provider: parseAPIParameter(req.payload.provider),
-          token: parseAPIParameter(req.payload.token),
-          expires: req.payload.expires,
-          token_creation: parseAPIParameter(req.payload.token_creation),
-          scope: parseAPIParameter(req.payload.scope),
-          extra_token: parseAPIParameter(req.payload.extra_token),
-          id: parseAPIParameter(req.payload.id)
-        }
-      ]
-    };
-    console.log('Registration with OAuth data: ', user);
-
-    //check if username already exists
-    return isIdentityAssigned(user.email, user.username)
-      .then((result) => {
-        console.log('identity already taken: ', user.email, user.username, result);
-        if (result.assigned === false) {
-          return userCtrl.create(user)
-            .then((result) => {
-              // console.log('register: user create result: ', result);
-
-              if (result[0] !== undefined && result[0] !== null) {
-                //Error
-                console.log('ajv error', result, co.parseAjvValidationErrors(result));
-                return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-              }
-
-              if (result.insertedCount === 1) {
-                //success
-                return res({
-                  userid: result.insertedId
-                })
-                .header(config.JWT.HEADER, jwt.createToken({
-                  userid: result.insertedId,
-                  username: user.username
-                }));
-              }
-
-              res(boom.badImplementation());
-            })
-            .catch((error) => {
-              console.log('register: catch: ', error);
-              res(boom.badImplementation('Error', error));
-            });
-        } else {
-          let message = 'The username and email is already taken';
-          if (result.email === false)
-            message = 'The username is already taken';
-          if (result.username === false)
-            message = 'The email is already taken';
-          return res(boom.badData(message));
-        }
-      })
-      .catch((error) => {
-        res(boom.badImplementation('Error', error));
-      });
-  },
-
-  loginWithOAuth: (req, res) => {
-    const query = { //TODO wrong query have to be more accurate
-      _id: req.payload.userid,
-      email: decodeURI(req.payload.email),
-      'providers.provider': decodeURI(req.payload.provider),
-      'providers.id': decodeURI(req.payload.id)
-    };
-
-    return userCtrl.find(query)
-      .then((cursor) => cursor.toArray())
-      .then((result) => {
-        //console.log('login: result: ', result);
-
-        switch (result.length) {
-          case 0:
-            res(boom.unauthorized('The credentials are wrong', 'OAuth', { reason: 'No such userdata' }));
-            break;
-          case 1:
-            //TODO: call authorization service for OAuth2 token
-
-            if (result[0].deactivated === true) {
-              res(boom.unauthorized('This user is deactivated.'));
-              break;
-            }
-
-            res({
-              userid: result[0]._id,
-              username: result[0].username,
-              access_token: 'dummy',
-              expires_in: 0
-            })
-              .header(config.JWT.HEADER, jwt.createToken({
-                userid: result[0]._id,
-                username: result[0].username
-              }));
-            break;
-          default:
-            res(boom.badImplementation('Found multiple users'));
-            break;
-        }
-      })
-      .catch((error) => {
-        res(boom.badImplementation(error));
-      });
   }
 };
 
@@ -722,49 +561,6 @@ function isEMailAlreadyTaken(email) {
           resolve(true);
         } else {
           resolve(false);
-        }
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
-  return myPromise;
-}
-
-function isIdentityAssigned(email, username) {
-  let myPromise = new Promise((resolve, reject) => {
-    return userCtrl.find({
-      $or: [
-        {
-          username: username
-        },
-        {
-          email: email
-        }
-      ]
-    })
-      .then((cursor) => cursor.project({email: 1, username: 1}))
-      .then((cursor2) => cursor2.toArray())
-      .then((array) => {
-        console.log('isIdentityAssigned: cursor.array.length:', array.length);
-
-        if (array.length > 0) {
-          const isEMailAssigned = !(array.reduce((prev, curr) => {
-            const sameEMail = curr.email === email;
-            return prev && !sameEMail;
-          }, true));
-          const isUsernameAssigned = !(array.reduce((prev, curr) => {
-            const sameUsername = curr.username === username;
-            return prev && !sameUsername;
-          }, true));
-
-          resolve({
-            assigned: isEMailAssigned || isUsernameAssigned,
-            username: isUsernameAssigned,
-            email: isEMailAssigned
-          });
-        } else {
-          resolve({assigned: false});
         }
       })
       .catch((error) => {
@@ -818,26 +614,6 @@ function preparePublicUserData(user) {
   }
 
   return minimizedUser;
-}
-
-//JWT validation inserts userid in header which should be the same as the one in the parameters
-function isJWTValidForTheGivenUserId(req) {
-  let jwt_userid = '';
-  try {
-    jwt_userid = req.auth.credentials.userid;
-  } catch (e) {}
-  //console.log(decodeURI(req.params.id), 'vs', jwt_data);
-  if (decodeURI(req.params.id).toString() !== jwt_userid.toString()) {
-    return false;
-  }
-  return true;
-}
-
-function parseAPIParameter(parameter) {
-  if (parameter === undefined || parameter === null || parameter.replace(' ', '') === '')
-    return '';
-
-  return decodeURI(parameter);
 }
 
 function parseStringToInteger(string) {
