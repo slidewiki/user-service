@@ -554,6 +554,15 @@ module.exports = {
         };
 
         res(result);
+      })
+      .catch((error) => {
+        console.log('Error', error);
+
+        if (error.wrongCredentials === true) {
+          res(boom.unauthorized('The credentials are wrong', 'OAuth', { providerResponse: error.origin }));
+        }
+        else
+          res(boom.badImplementation(error));
       });
   },
 
@@ -634,6 +643,49 @@ module.exports = {
   },
 
   loginWithOAuth: (req, res) => {
+    const query = { //TODO wrong query have to be more accurate
+      _id: req.payload.userid,
+      email: decodeURI(req.payload.email),
+      'providers.provider': decodeURI(req.payload.provider),
+      'providers.id': decodeURI(req.payload.id)
+    };
+
+    return userCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((result) => {
+        //console.log('login: result: ', result);
+
+        switch (result.length) {
+          case 0:
+            res(boom.unauthorized('The credentials are wrong', 'OAuth', { reason: 'No such userdata' }));
+            break;
+          case 1:
+            //TODO: call authorization service for OAuth2 token
+
+            if (result[0].deactivated === true) {
+              res(boom.unauthorized('This user is deactivated.'));
+              break;
+            }
+
+            res({
+              userid: result[0]._id,
+              username: result[0].username,
+              access_token: 'dummy',
+              expires_in: 0
+            })
+              .header(config.JWT.HEADER, jwt.createToken({
+                userid: result[0]._id,
+                username: result[0].username
+              }));
+            break;
+          default:
+            res(boom.badImplementation('Found multiple users'));
+            break;
+        }
+      })
+      .catch((error) => {
+        res(boom.badImplementation(error));
+      });
   }
 };
 

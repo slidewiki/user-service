@@ -582,7 +582,6 @@ module.exports = function (server) {
         payload: Joi.object().keys({
           id: Joi.string(),
           provider: Joi.string(),
-          location: Joi.string(),
           token: Joi.string(),
           scope: Joi.string(),
           expires: Joi.number(),
@@ -594,6 +593,7 @@ module.exports = function (server) {
           organization: Joi.string(),
           description: Joi.string(),
           picture: Joi.string(),
+          location: Joi.string(),
           name: Joi.string()
         }).requiredKeys('username', 'email', 'id', 'provider', 'token'),
       },
@@ -622,6 +622,14 @@ module.exports = function (server) {
                 username: Joi.string()
               }).required()
             },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'OAuth data is wrong or expired'
+                }
+              }
+            },
             ' 422 ': {
               'description': 'Wrong user data - see error message',
               schema: Joi.object().keys({
@@ -648,10 +656,15 @@ module.exports = function (server) {
       validate: {
         payload: Joi.object().keys({
           id: Joi.string(),
-          language: Joi.string().length(5),
           provider: Joi.string(),
-          token: Joi.string()
-        })
+          token: Joi.string(),
+          scope: Joi.string(),
+          expires: Joi.number(),
+          token_creation: Joi.string(),//Date
+          extra_token: Joi.string(),
+          email: Joi.string().email(),
+          userid: Joi.number()
+        }).requiredKeys('id', 'provider', 'token', 'email', 'userid')
       },
       tags: ['api'],
       description: 'Login with OAuth data',
@@ -677,7 +690,7 @@ module.exports = function (server) {
               'description': 'The credentials are wrong',
               'headers': {
                 'WWW-Authenticate': {
-                  'description': '{"email":"", "password": ""}'
+                  'description': 'Send your JWT in the "----jwt----" and verify the provider data'
                 }
               }
             }

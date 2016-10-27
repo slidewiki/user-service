@@ -16,7 +16,7 @@ module.exports = {
       const handleReponse = (err, res, body) => {
         if (err) {
           console.log('getUserCredentials: request error: ', err);
-          reject(err);
+          reject({wrongCredentials: true, origin: err});
         }
         // console.log('getUserCredentials: body: ', body);
 
