@@ -528,21 +528,28 @@ module.exports = {
   },
 
   handleOAuth2Token: (req, res, provider) => {
-    console.log(provider, req.query);
+    console.log('Got token from provider ', provider);
 
     return socialProvider.getUserCredentials(req.query.access_token, provider)
       .then((user) => {
         let result = {
           provider: provider,
           token: req.query.access_token,
-          origin: { //TODO should be removed
-            credentials: req.query,
-            user: user.origin
-          },
+          scope: req.query['raw[scope]'],
+          expires: req.query['raw[expires_in]'],
+          extra_token: req.query['raw[id_token]'],  //atm just for google
+          // origin: { //TODO should be removed
+          //   credentials: req.query,
+          //   user: user.origin
+          // },
           username: user.nickname,
           email: user.email,
           id: user.id,
-          location: user.location
+          location: user.location,
+          organization: user.organization,
+          description: user.description,
+          picture: user.picture,
+          name: user.name
         };
 
         res(result);

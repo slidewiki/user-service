@@ -6,7 +6,7 @@ module.exports = {
   //functions which using OAuth2 token to get user information
   //try a generic one
   getUserCredentials: function(token, provider) {
-    console.log('Lets do API access with our token', token, provider);
+    // console.log('Lets do API access with our token', token, provider);
 
     let myPromise = new Promise((resolve, reject) => {
       let providerInstance = new Purest({
@@ -18,7 +18,7 @@ module.exports = {
           console.log('getUserCredentials: request error: ', err);
           reject(err);
         }
-        console.log('getUserCredentials: body: ', body);
+        // console.log('getUserCredentials: body: ', body);
 
         let user = {};
 
@@ -33,15 +33,23 @@ module.exports = {
         user.provider = provider;
         user.origin = body;
 
-        if (user.email === undefined || user.email === null) {
+        if (provider === 'github' && (user.email === undefined || user.email === null)) {
           getEmailFromGithub(token)
             .then((email) => {
               //find correct email
-              let emailaddress = email.find((element) => {return (element.primary) ? element.email : false; }).email;
+              try {
+                let emailaddress = email.find((element) => {return (element.primary) ? element.email : false; }).email;
 
-              user.email = emailaddress;
-              user.origin.email = email;
+                user.email = emailaddress;
+                user.origin.email = email;
+              } catch (e) {
+                //nothing
+              }
+
               resolve(user);
+            })
+            .catch((error) => {
+              reject(error);
             });
         }
         else
@@ -88,6 +96,9 @@ function getUserFromGithubResponse(body) {
     name: body.name,
     company: body.company,
     location: body.location,
+    organization: body.company,
+    description: body.bio,
+    picture: body.avatar_url,
     email: body.email //null at the moment ...
   };
 }
@@ -99,7 +110,7 @@ function getUserFromGoogleResponse(body) {
     url: body.link,
     id: body.id,
     email: body.email,
-
+    picture: body.picture
   };
   try {
     user.nickname = body.email.substring(0, body.email.indexOf('@'));
