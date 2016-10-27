@@ -8,22 +8,24 @@ Instance for social function - handler.js got too big
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
   co = require('../common'),
   userCtrl = require('../database/user'),
+  providerCtrl = require('../database/provider'),
   config = require('../configuration'),
   jwt = require('./jwt'),
   socialProvider = require('./social_provider'),
   util = require('./util');
 
 module.exports = {
+  //Uses provided token to get user data and stores plus response the userdata
   handleOAuth2Token: (req, res, provider) => {
     console.log('Got token from provider ', provider);
 
     return socialProvider.getUserCredentials(req.query.access_token, provider)
       .then((user) => {
-        let result = {
+        let data = {
           provider: provider,
           token: req.query.access_token,
           scope: req.query['raw[scope]'],
-          expires: req.query['raw[expires_in]'],
+          expires: util.parseStringToInteger(req.query['raw[expires_in]']),
           extra_token: req.query['raw[id_token]'],  //atm just for google
           token_creation: (new Date()).toISOString(),
           // origin: { //TODO should be removed
@@ -32,7 +34,7 @@ module.exports = {
           // },
           username: user.nickname,
           email: user.email,
-          id: user.id,
+          id: user.id.toString(),
           location: user.location,
           organization: user.organization,
           description: user.description,
@@ -40,7 +42,22 @@ module.exports = {
           name: user.name
         };
 
-        res(result);
+        return providerCtrl.create(data)
+        .then((result) => {
+          // console.log('handleOAuth2Token: provider create result: ', result);
+
+          if (result[0] !== undefined && result[0] !== null) {
+            //Error
+            return res(boom.badImplementation('Implementation error - data model error:', co.parseAjvValidationErrors(result)));
+          }
+
+          if (result.insertedCount === 1) {
+            //success
+            return res(data);
+          }
+
+          res(boom.badImplementation());
+        });
       })
       .catch((error) => {
         console.log('Error', error);
@@ -60,72 +77,82 @@ module.exports = {
   },
 
   registerWithOAuth: (req, res) => {
-    let user = {
-      username: util.parseAPIParameter(req.payload.username),
-      email:    util.parseAPIParameter(req.payload.email),
-      frontendLanguage: util.parseAPIParameter(req.payload.language),
-      country: util.parseAPIParameter(req.payload.location),
-      picture: util.parseAPIParameter(req.payload.picture),
-      description: util.parseAPIParameter(req.payload.description),
-      organization: util.parseAPIParameter(req.payload.organization),
-      registered: (new Date()).toISOString(),
-      providers: [
-        {
-          provider: util.parseAPIParameter(req.payload.provider),
-          token: util.parseAPIParameter(req.payload.token),
-          expires: req.payload.expires,
-          token_creation: util.parseAPIParameter(req.payload.token_creation),
-          scope: util.parseAPIParameter(req.payload.scope),
-          extra_token: util.parseAPIParameter(req.payload.extra_token),
-          id: util.parseAPIParameter(req.payload.id)
-        }
-      ]
-    };
-    console.log('Registration with OAuth data: ', user);
+    return providerCtrl.isValid(req.payload)
+      .then((isValid) => {
+        if (!isValid)
+          return res(boom.unauthorized('Wrong OAuth data'));
 
-    //check if username already exists
-    return util.isIdentityAssigned(user.email, user.username)
-      .then((result) => {
-        console.log('identity already taken: ', user.email, user.username, result);
-        if (result.assigned === false) {
-          return userCtrl.create(user)
-            .then((result) => {
-              // console.log('register: user create result: ', result);
+        let user = {
+          username: util.parseAPIParameter(req.payload.username),
+          email:    util.parseAPIParameter(req.payload.email),
+          frontendLanguage: util.parseAPIParameter(req.payload.language),
+          country: util.parseAPIParameter(req.payload.location),
+          picture: util.parseAPIParameter(req.payload.picture),
+          description: util.parseAPIParameter(req.payload.description),
+          organization: util.parseAPIParameter(req.payload.organization),
+          registered: (new Date()).toISOString(),
+          providers: [  //TODO use provider data from database (provider)
+            {
+              provider: util.parseAPIParameter(req.payload.provider),
+              token: util.parseAPIParameter(req.payload.token),
+              expires: req.payload.expires,
+              token_creation: util.parseAPIParameter(req.payload.token_creation),
+              scope: util.parseAPIParameter(req.payload.scope),
+              extra_token: util.parseAPIParameter(req.payload.extra_token),
+              id: util.parseAPIParameter(req.payload.id)
+            }
+          ]
+        };
+        console.log('Registration with OAuth data: ', user);
 
-              if (result[0] !== undefined && result[0] !== null) {
-                //Error
-                console.log('ajv error', result, co.parseAjvValidationErrors(result));
-                return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-              }
+        //check if username already exists
+        return util.isIdentityAssigned(user.email, user.username)
+          .then((result) => {
+            console.log('identity already taken: ', user.email, user.username, result);
+            if (result.assigned === false) {
+              return userCtrl.create(user)
+                .then((result) => {
+                  // console.log('register: user create result: ', result);
 
-              if (result.insertedCount === 1) {
-                //success
-                return res({
-                  userid: result.insertedId
+                  if (result[0] !== undefined && result[0] !== null) {
+                    //Error
+                    console.log('ajv error', result, co.parseAjvValidationErrors(result));
+                    return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+                  }
+
+                  if (result.insertedCount === 1) {
+                    //success
+                    return res({
+                      userid: result.insertedId
+                    })
+                    .header(config.JWT.HEADER, jwt.createToken({
+                      userid: result.insertedId,
+                      username: user.username
+                    }));
+                  }
+
+                  res(boom.badImplementation());
                 })
-                .header(config.JWT.HEADER, jwt.createToken({
-                  userid: result.insertedId,
-                  username: user.username
-                }));
-              }
-
-              res(boom.badImplementation());
-            })
-            .catch((error) => {
-              console.log('register: catch: ', error);
-              res(boom.badImplementation('Error', error));
-            });
-        } else {
-          let message = 'The username and email is already taken';
-          if (result.email === false)
-            message = 'The username is already taken';
-          if (result.username === false)
-            message = 'The email is already taken';
-          return res(boom.badData(message));
-        }
+                .catch((error) => {
+                  console.log('register: catch: ', error);
+                  res(boom.badImplementation('Error', error));
+                });
+            } else {
+              let message = 'The username and email is already taken';
+              if (result.email === false)
+                message = 'The username is already taken';
+              if (result.username === false)
+                message = 'The email is already taken';
+              return res(boom.badData(message));
+            }
+          })
+          .catch((error) => {
+            res(boom.badImplementation('Error', error));
+          });
       })
       .catch((error) => {
-        res(boom.badImplementation('Error', error));
+        console.log('Error', error);
+        res(boom.badImplementation(Error));
       });
   },
 

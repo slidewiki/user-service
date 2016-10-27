@@ -580,7 +580,7 @@ module.exports = function (server) {
     handler: handlers_social.registerWithOAuth,
     config: {
       validate: {
-        payload: Joi.object().keys({
+        payload: Joi.object().keys({  //TODO rethink parameters
           id: Joi.string(),
           provider: Joi.string(),
           token: Joi.string(),

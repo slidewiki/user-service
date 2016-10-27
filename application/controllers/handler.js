@@ -125,7 +125,7 @@ module.exports = {
       return res(boom.unauthorized('You cannot get detailed information about another user'));
     }
 
-    return userCtrl.read(parseStringToInteger(req.params.id))
+    return userCtrl.read(util.parseStringToInteger(req.params.id))
       .then((user) => {
         //console.log('getUser: got user:', user);
         if (user !== undefined && user !== null && user.username !== undefined) {
@@ -147,7 +147,7 @@ module.exports = {
 
   //add attribute "deactivated" to user document
   deleteUser: (req, res) => {
-    let userid = parseStringToInteger(req.params.id);
+    let userid = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be deleted have the right JWT data
     const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
@@ -183,7 +183,7 @@ module.exports = {
   updateUserPasswd: (req, res) => {
     let oldPassword = req.payload.oldPassword;
     let newPassword = req.payload.newPassword;
-    const user__id = parseStringToInteger(req.params.id);
+    const user__id = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
     const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
@@ -237,7 +237,7 @@ module.exports = {
 
   updateUserProfile: (req, res) => {
     let user = req.payload;
-    user._id = parseStringToInteger(req.params.id);
+    user._id = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
     const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
@@ -614,13 +614,4 @@ function preparePublicUserData(user) {
   }
 
   return minimizedUser;
-}
-
-function parseStringToInteger(string) {
-  const integerSchema = Joi.number().integer();
-  const validationResult = integerSchema.validate(string);
-  if (validationResult.error === null) {
-    return validationResult.value;
-  }
-  return undefined;
 }

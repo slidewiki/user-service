@@ -1,6 +1,7 @@
 'use strict';
 
-const userCtrl = require('../database/user');
+const userCtrl = require('../database/user'),
+  Joi = require('joi');
 
 module.exports = {
   isJWTValidForTheGivenUserId: (req) => {
@@ -63,5 +64,14 @@ module.exports = {
       return '';
 
     return decodeURI(parameter);
+  },
+
+  parseStringToInteger: (string) => {
+    const integerSchema = Joi.number().integer();
+    const validationResult = integerSchema.validate(string);
+    if (validationResult.error === null) {
+      return validationResult.value;
+    }
+    return undefined;
   }
 };
