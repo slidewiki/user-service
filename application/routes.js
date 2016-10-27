@@ -466,6 +466,7 @@ module.exports = function (server) {
 
   //Social logins
 
+  //two hidden routes which are called by the OAuth process
   server.route({
     method: 'GET',
     path: '/social/provider/github',
@@ -475,7 +476,6 @@ module.exports = function (server) {
       handlers.handleOAuth2Token(req, res, 'github');
     }
   });
-
   server.route({
     method: 'GET',
     path: '/social/provider/google',
