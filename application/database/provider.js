@@ -29,7 +29,8 @@ module.exports = {
       .then((collection) => collection.find(query));
   },
 
-  isValid: (provider) => {
+  //Returns false if provider is not valid, otherwise the provider is returned
+  getIfValid: (provider) => {
     const query = {
       provider: provider.provider,
       id: provider.id.toString(),
@@ -55,7 +56,7 @@ module.exports = {
                   expires = document.expires;
                 let millis = (new Date(document.token_creation)).getTime() + expires*1000;
 
-                return millis > (new Date()).getTime();
+                return (millis > (new Date()).getTime()) ? document : false;
               });
           });
       });

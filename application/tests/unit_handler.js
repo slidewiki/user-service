@@ -368,7 +368,7 @@ describe('User service', () => {
 
     //Social login stuff
 
-    it('Register user with OAuth data', () => {
+    it('Register user with OAuth data', () => { //TODO fix it
       let req = {
         payload: correct_oauth_user
       };

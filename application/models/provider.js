@@ -54,6 +54,9 @@ const provider = {
     },
     name: {
       type: 'string'
+    },
+    location: {
+      type: 'string'
     }
   },
   required: ['provider', 'token', 'token_creation', 'email', 'id']

@@ -585,17 +585,12 @@ module.exports = function (server) {
           provider: Joi.string(),
           token: Joi.string(),
           scope: Joi.string(),
-          expires: Joi.number(),
           token_creation: Joi.string(),//Date
-          extra_token: Joi.string(),
           username: Joi.string().alphanum(),
           email: Joi.string().email(),
           language: Joi.string().length(5),
-          organization: Joi.string(),
-          description: Joi.string(),
-          picture: Joi.string(),
-          location: Joi.string(),
-          name: Joi.string()
+          forename: Joi.string(),
+          surname: Joi.string()
         }).requiredKeys('username', 'email', 'id', 'provider', 'token'),
       },
       tags: ['api'],

@@ -76,30 +76,41 @@ module.exports = {
   deleteProvider: (req, res) => {
   },
 
+  //Use provider data and additionally user data to create an account - checks db if OAuth is correct
   registerWithOAuth: (req, res) => {
-    return providerCtrl.isValid(req.payload)
-      .then((isValid) => {
-        if (!isValid)
+    let provider = {
+      provider: util.parseAPIParameter(req.payload.provider),
+      token: util.parseAPIParameter(req.payload.token),
+      token_creation: util.parseAPIParameter(req.payload.token_creation),
+      id: util.parseAPIParameter(req.payload.id),
+      email:    util.parseAPIParameter(req.payload.email)
+    };
+
+    return providerCtrl.getIfValid(provider)
+      .then((document) => {
+        if (document === false)
           return res(boom.unauthorized('Wrong OAuth data'));
 
         let user = {
-          username: util.parseAPIParameter(req.payload.username),
-          email:    util.parseAPIParameter(req.payload.email),
+          username: util.parseAPIParameter(req.payload.username) || document.username,
+          email:    document.email,
           frontendLanguage: util.parseAPIParameter(req.payload.language),
-          country: util.parseAPIParameter(req.payload.location),
-          picture: util.parseAPIParameter(req.payload.picture),
-          description: util.parseAPIParameter(req.payload.description),
-          organization: util.parseAPIParameter(req.payload.organization),
+          country: document.location || '',
+          picture: document.picture || '',
+          description: document.description || '',
+          organization: document.organization || '',
           registered: (new Date()).toISOString(),
-          providers: [  //TODO use provider data from database (provider)
+          forename: util.parseAPIParameter(req.payload.forename) || '',
+          surname: util.parseAPIParameter(req.payload.surname) || '',
+          providers: [
             {
-              provider: util.parseAPIParameter(req.payload.provider),
-              token: util.parseAPIParameter(req.payload.token),
-              expires: req.payload.expires,
-              token_creation: util.parseAPIParameter(req.payload.token_creation),
-              scope: util.parseAPIParameter(req.payload.scope),
-              extra_token: util.parseAPIParameter(req.payload.extra_token),
-              id: util.parseAPIParameter(req.payload.id)
+              provider: document.provider,
+              token: document.token,
+              expires: document.expires || 0,
+              token_creation: document.token_creation,
+              scope: document.scope || '',
+              extra_token: document.extra_token || '',
+              id: document.id
             }
           ]
         };
