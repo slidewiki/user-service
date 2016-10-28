@@ -5,7 +5,7 @@
 
 describe('User service', () => {
 
-  let handler, handler_social, expect;
+  let handler, handler_social, providerCtrl, expect;
 
   beforeEach((done) => {
     //Clean everything up before doing new tests
@@ -17,6 +17,7 @@ describe('User service', () => {
     expect = require('chai').expect;
     handler = require('../controllers/handler.js');
     handler_social = require('../controllers/handler_social.js');
+    providerCtrl = require('../database/provider.js');
     done();
   });
 
@@ -32,21 +33,30 @@ describe('User service', () => {
     }]
   };
   const correct_oauth_user = {
-    id: '123',
+    id: '2839748234',
     provider: 'github',
-    location: 'Deutschland',
-    token: 'sdifn7as89pf79s7fb7sdfbasf',
-    scope: null,
-    expires: 3600,
-    token_creation: (new Date()).toISOString(),//Date
-    extra_token: undefined,
+    token: '47a629160532535502fff76f5b6e3513a2a2da9e',
+    scope: 'user',
+    token_creation: '2016-10-27T12:42:11.548Z',//Date
     username: 'TBoonX',
-    email: 'test@notindb.true',
-    language: 'de_DE',
-    organization: 'InfAI',
-    description: 'Me - so awesome - much wow',
-    picture: 'https://lh3.googleusercontent.com/-XdUIqdMkCWA/AAAAAAAAAAI/AAAAAAAAAAA/4252rscbv5M/photo.jpg',
-    name: 'Kurt Junghanns'
+    email: 'tboonx@googlemail.com'
+  };
+  const correct_provider = {
+    '_id' : '5811f623679e6d357a076207',
+  	'provider' : 'github',
+  	'token' : '47a629160532535502fff76f5b6e3513a2a2da9e',
+  	'scope' : 'user',
+  	'expires' : undefined,
+  	'extra_token' : undefined,
+  	'token_creation' : '2016-10-27T12:42:11.548Z',
+  	'username' : 'TBoonX',
+  	'email' : 'tboonx@googlemail.com',
+  	'id' : '2839748234',
+  	'location' : 'Deutschland',
+  	'organization' : 'Institut für Angewandte Informatik e. V.',
+  	'description' : null,
+  	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
+  	'name' : 'Kurt Junghanns'
   };
   let userid = '',
     jwt = '';
@@ -369,28 +379,36 @@ describe('User service', () => {
     //Social login stuff
 
     it('Register user with OAuth data', () => { //TODO fix it
-      let req = {
-        payload: correct_oauth_user
-      };
-      return handler_social.registerWithOAuth(req, (result) => {
-        console.log(result);
+      //first create provider in db
+      return providerCtrl.create(correct_provider)
+        .then((insert_result) => {
+          console.log('insert_result', insert_result);
 
-        expect(result.userid).to.not.equal(undefined);
+          expect(insert_result.insertedCount).to.equal(1);
 
-        userid = result.userid;
+          let req = {
+            payload: correct_oauth_user
+          };
+          return handler_social.registerWithOAuth(req, (result) => {
+            console.log(result);
 
-        return {
-          header: (name, data) => {
-            console.log('got header:', name, data);
-            jwt = data;
-          }
-        };
-      })
-      .catch((Error) => {
-        console.log(Error);
-        throw Error;
-        expect(1).to.equals(2);
-      });
+            expect(result.userid).to.not.equal(undefined);
+
+            userid = result.userid;
+
+            return {
+              header: (name, data) => {
+                console.log('got header:', name, data);
+                jwt = data;
+              }
+            };
+          })
+          .catch((Error) => {
+            console.log(Error);
+            throw Error;
+            expect(1).to.equals(2);
+          });
+        });
     });
   });
 });
