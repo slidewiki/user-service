@@ -324,6 +324,29 @@ module.exports = {
         console.log('Error', error);
         res(boom.badImplementation(error));
       });
+  },
+
+  getProvidersOfUser: (req, res) => {
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
+    if (!isUseridMatching) {
+      return res(boom.unauthorized('You cannot get the used providers of another user'));
+    }
+
+    return userCtrl.read(req.auth.credentials.userid)
+      .then((user) => {
+        if (user === undefined || user === null || user._id === undefined)
+          return res(boom.notFound());
+
+        let providers = user.providers.reduce((prev, cur) => {
+          if (prev.indexOf(cur.provider) === -1) {
+            prev.push(cur.provider);
+            return prev;
+          }
+          return prev;
+        }, []);
+
+        return res(providers);
+      });
   }
 };
 

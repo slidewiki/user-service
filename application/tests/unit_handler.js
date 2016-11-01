@@ -525,6 +525,25 @@ describe('User service', () => {
           });
         });
     });
+    it('list all providers of a user', () => {
+      let req = {
+        params: {
+          id: userid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler_social.getProvidersOfUser(req, (result) => {
+        // console.log('result', result);
+
+        expect(result.length).to.equal(2);
+
+        return;
+      });
+    });
     it('Delete provider', () => {
       let req = {
         params: {

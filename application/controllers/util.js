@@ -60,7 +60,7 @@ module.exports = {
   },
 
   parseAPIParameter: (parameter) => {
-    if (parameter === undefined || parameter === null || parameter.replace(' ', '') === '')
+    if (parameter === undefined || parameter === null || parameter.toString().replace(' ', '') === '')
       return '';
 
     return decodeURI(parameter);
