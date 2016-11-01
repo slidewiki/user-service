@@ -50,7 +50,7 @@ module.exports = {
 
             return cursor.next()
               .then((document) => {
-                console.log('provider.js isValid() got document', document);
+                // console.log('provider.js isValid() got document', document);
                 let expires = 86400;
                 if (document.expires)
                   expires = document.expires;

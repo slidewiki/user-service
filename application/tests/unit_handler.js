@@ -32,12 +32,13 @@ describe('User service', () => {
       language: 'de'
     }]
   };
+  const now = (new Date()).toISOString();
   const correct_oauth_user = {
     id: '2839748234',
     provider: 'github',
     token: '47a629160532535502fff76f5b6e3513a2a2da9e',
     scope: 'user',
-    token_creation: '2016-10-27T12:42:11.548Z',//Date
+    token_creation: now,//Date
     username: 'TBoonX',
     email: 'tboonx@googlemail.com'
   };
@@ -48,7 +49,7 @@ describe('User service', () => {
   	'scope' : 'user',
   	'expires' : undefined,
   	'extra_token' : undefined,
-  	'token_creation' : '2016-10-27T12:42:11.548Z',
+  	'token_creation' : now,
   	'username' : 'TBoonX',
   	'email' : 'tboonx@googlemail.com',
   	'id' : '2839748234',
@@ -382,7 +383,7 @@ describe('User service', () => {
       //first create provider in db
       return providerCtrl.create(correct_provider)
         .then((insert_result) => {
-          console.log('insert_result', insert_result);
+          // console.log('insert_result', insert_result);
 
           expect(insert_result.insertedCount).to.equal(1);
 
