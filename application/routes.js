@@ -711,47 +711,47 @@ module.exports = function (server) {
       }
     }
   });
-};
 
-server.route({
-  method: 'GET',
-  path: '/social/providers/{id}',
-  handler: handlers_social.getProvidersOfUser,
-  config: {
-    validate: {
-      params: {
-        id: Joi.number().integer().options({convert: true})
+  server.route({
+    method: 'GET',
+    path: '/social/providers/{id}',
+    handler: handlers_social.getProvidersOfUser,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true})
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
       },
-      headers: Joi.object({
-        '----jwt----': Joi.string().required().description('JWT header provided by /login')
-      }).unknown()
-    },
-    tags: ['api'],
-    description: 'Returns array of already used providers of the user - JWT needed',
-    auth: 'jwt',
-    plugins: {
-      'hapi-swagger': {
-        responses: {
-          ' 200 ': {
-            'description': 'Successful',
-          },
-          ' 401 ': {
-            'description': 'Not authorized',
-            'headers': {
-              'WWW-Authenticate': {
-                'description': 'Use your JWT token and the right userid.'
+      tags: ['api'],
+      description: 'Returns array of already used providers of the user - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
               }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
             }
           },
-          ' 404 ': {
-            'description': 'User not found. Check the id.'
-          }
+          payloadType: 'form'
         },
-        payloadType: 'form'
-      },
-      yar: {
-        skip: true
+        yar: {
+          skip: true
+        }
       }
     }
-  }
-});
+  });
+};
