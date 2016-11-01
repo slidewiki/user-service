@@ -580,7 +580,7 @@ module.exports = function (server) {
     handler: handlers_social.registerWithOAuth,
     config: {
       validate: {
-        payload: Joi.object().keys({  //TODO rethink parameters
+        payload: Joi.object().keys({
           id: Joi.string(),
           provider: Joi.string(),
           token: Joi.string(),
@@ -591,7 +591,7 @@ module.exports = function (server) {
           language: Joi.string().length(5),
           forename: Joi.string(),
           surname: Joi.string()
-        }).requiredKeys('username', 'email', 'id', 'provider', 'token'),
+        }).requiredKeys('username', 'email', 'id', 'provider', 'token', 'token_creation'),
       },
       tags: ['api'],
       description: 'Register a new user with the data from OAuth',
@@ -655,12 +655,10 @@ module.exports = function (server) {
           provider: Joi.string(),
           token: Joi.string(),
           scope: Joi.string(),
-          expires: Joi.number(),
           token_creation: Joi.string(),//Date
-          extra_token: Joi.string(),
           email: Joi.string().email(),
-          userid: Joi.number()
-        }).requiredKeys('id', 'provider', 'token', 'email', 'userid')
+          language: Joi.string().length(5)
+        }).requiredKeys('id', 'provider', 'token', 'token_creation', 'email')
       },
       tags: ['api'],
       description: 'Login with OAuth data',

@@ -163,53 +163,69 @@ module.exports = {
       })
       .catch((error) => {
         console.log('Error', error);
-        res(boom.badImplementation(Error));
+        res(boom.badImplementation(error));
       });
   },
 
-  loginWithOAuth: (req, res) => {
-    const query = { //TODO wrong query have to be more accurate
-      _id: req.payload.userid,
-      email: decodeURI(req.payload.email),
-      'providers.provider': decodeURI(req.payload.provider),
-      'providers.id': decodeURI(req.payload.id)
+  loginWithOAuth: (req, res) => { //change it to: checks provider collection for provider and then similar provider in user collection
+    let provider = {
+      provider: util.parseAPIParameter(req.payload.provider),
+      token: util.parseAPIParameter(req.payload.token),
+      token_creation: util.parseAPIParameter(req.payload.token_creation),
+      id: util.parseAPIParameter(req.payload.id),
+      email:    util.parseAPIParameter(req.payload.email)
     };
 
-    return userCtrl.find(query)
-      .then((cursor) => cursor.toArray())
-      .then((result) => {
-        //console.log('login: result: ', result);
+    return providerCtrl.getIfValid(provider)
+      .then((document) => {
+        if (document === false)
+          return res(boom.unauthorized('Wrong OAuth data'));
 
-        switch (result.length) {
-          case 0:
-            res(boom.unauthorized('The credentials are wrong', 'OAuth', { reason: 'No such userdata' }));
-            break;
-          case 1:
-            //TODO: call authorization service for OAuth2 token
+        //get user with similar provider data
+        const query = {
+          email: decodeURI(req.payload.email),
+          'providers.provider': decodeURI(req.payload.provider),
+          'providers.id': decodeURI(req.payload.id)
+        };
 
-            if (result[0].deactivated === true) {
-              res(boom.unauthorized('This user is deactivated.'));
-              break;
+        return userCtrl.find(query)
+          .then((cursor) => cursor.toArray())
+          .then((result) => {
+            //console.log('login: result: ', result);
+
+            switch (result.length) {
+              case 0:
+                res(boom.unauthorized('The credentials are wrong', 'OAuth', { reason: 'No such userdata' }));
+                break;
+              case 1:
+                //TODO: call authorization service for OAuth2 token
+
+
+                if (result[0].deactivated === true) {
+                  res(boom.unauthorized('This user is deactivated.'));
+                  break;
+                }
+
+                return res({
+                  userid: result[0]._id,
+                  username: result[0].username,
+                  access_token: 'dummy',
+                  expires_in: 0
+                })
+                  .header(config.JWT.HEADER, jwt.createToken({
+                    userid: result[0]._id,
+                    username: result[0].username
+                  }));
+
+                break;
+              default:
+                res(boom.badImplementation('Found multiple users'));
+                break;
             }
-
-            res({
-              userid: result[0]._id,
-              username: result[0].username,
-              access_token: 'dummy',
-              expires_in: 0
-            })
-              .header(config.JWT.HEADER, jwt.createToken({
-                userid: result[0]._id,
-                username: result[0].username
-              }));
-            break;
-          default:
-            res(boom.badImplementation('Found multiple users'));
-            break;
-        }
-      })
-      .catch((error) => {
-        res(boom.badImplementation(error));
+          })
+          .catch((error) => {
+            res(boom.badImplementation(error));
+          });
       });
   }
 };

@@ -379,7 +379,7 @@ describe('User service', () => {
 
     //Social login stuff
 
-    it('Register user with OAuth data', () => { //TODO fix it
+    it('Register user with OAuth data', () => {
       //first create provider in db
       return providerCtrl.create(correct_provider)
         .then((insert_result) => {
@@ -391,7 +391,7 @@ describe('User service', () => {
             payload: correct_oauth_user
           };
           return handler_social.registerWithOAuth(req, (result) => {
-            console.log(result);
+            // console.log(result);
 
             expect(result.userid).to.not.equal(undefined);
 
@@ -410,6 +410,29 @@ describe('User service', () => {
             expect(1).to.equals(2);
           });
         });
+    });
+    it('Login with oauth', () => {
+      let req = {
+        payload: correct_oauth_user
+      };
+      return handler_social.loginWithOAuth(req, (result) => {
+        console.log('result', result);
+
+        expect(result.userid).to.equal(userid);
+        expect(result.username).to.not.equal(undefined);
+
+        return {
+          header: (name, data) => {
+            console.log('got header:', name, data);
+            jwt = data;
+          }
+        };
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
     });
   });
 });

@@ -52,7 +52,7 @@ module.exports = {
               .then((document) => {
                 // console.log('provider.js isValid() got document', document);
                 let expires = 86400;
-                if (document.expires)
+                if (document.expires !== undefined && document.expires !== null && document.expires > 0)
                   expires = document.expires;
                 let millis = (new Date(document.token_creation)).getTime() + expires*1000;
 
