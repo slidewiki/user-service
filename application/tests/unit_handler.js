@@ -525,5 +525,23 @@ describe('User service', () => {
           });
         });
     });
+    it('Delete provider', () => {
+      let req = {
+        params: {
+          provider: 'google'
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler_social.deleteProvider(req, (result) => {
+        // console.log('result', result);
+
+        expect(result).to.equal(undefined);
+        return;
+      });
+    });
   });
 });

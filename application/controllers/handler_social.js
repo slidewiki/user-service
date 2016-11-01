@@ -124,6 +124,42 @@ module.exports = {
   },
 
   deleteProvider: (req, res) => {
+    if (!isProviderSupported(util.parseAPIParameter(req.params.provider)))
+      return res(boom.notAcceptable('Provider is not supported'));
+
+    const findQuery = {
+      _id: req.auth.credentials.userid
+    };
+    const updateQuery = {
+      $pull: {
+        providers: {
+          provider: util.parseAPIParameter(req.params.provider)
+        }
+      }
+    };
+    const params = {
+      multi: true
+    };
+
+    return userCtrl.partlyUpdate(findQuery, updateQuery, params)
+      .then((result) => {
+        console.log('handler: deleteProvider:',  result.result);
+
+        if (result.result.ok !== 1)
+          return res(boom.badImplementation());
+
+        if (result.result.n === 1) {
+          //success
+          return res();
+        }
+        else {
+          //not found
+          return res(boom.notFound('Provider data not found'));
+        }
+      })
+      .catch((error) => {
+        res(boom.notFound('Deleting provider failed', error));
+      });
   },
 
   //Use provider data and additionally user data to create an account - checks db if OAuth is correct

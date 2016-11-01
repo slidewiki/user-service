@@ -499,6 +499,9 @@ module.exports = function (server) {
           email: Joi.string().email(),
           language: Joi.string().length(5)
         }).requiredKeys('email', 'id', 'provider', 'token', 'token_creation'),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
       },
       tags: ['api'],
       description: 'Add a new OAuth provider for the user - JWT needed',
@@ -565,6 +568,9 @@ module.exports = function (server) {
             },
             ' 404 ': {
               'description': 'Provider for the user not found.'
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
             }
           },
           payloadType: 'form'
