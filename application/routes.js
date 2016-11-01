@@ -492,14 +492,13 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-          username: Joi.string().alphanum(),
-          email: Joi.string().email(),
           id: Joi.string(),
-          language: Joi.string().length(5),
           provider: Joi.string(),
-          location: Joi.string(),
-          token: Joi.string()
-        }).requiredKeys('username', 'id', 'provider', 'token'),
+          token: Joi.string(),
+          token_creation: Joi.string(),//Date
+          email: Joi.string().email(),
+          language: Joi.string().length(5)
+        }).requiredKeys('email', 'id', 'provider', 'token', 'token_creation'),
       },
       tags: ['api'],
       description: 'Add a new OAuth provider for the user - JWT needed',
@@ -514,12 +513,15 @@ module.exports = function (server) {
               'description': 'Not authorized to add the provider.',
               'headers': {
                 'WWW-Authenticate': {
-                  'description': 'Use your JWT token.'
+                  'description': 'Use your JWT token and send the right OAuth data.'
                 }
               }
             },
             ' 404 ': {
-              'description': 'Provider not available.'
+              'description': 'User of JWT was not found'
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
             }
           },
           payloadType: 'form'
@@ -626,6 +628,9 @@ module.exports = function (server) {
                 }
               }
             },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            },
             ' 422 ': {
               'description': 'Wrong user data - see error message',
               schema: Joi.object().keys({
@@ -687,6 +692,9 @@ module.exports = function (server) {
                   'description': 'Send your JWT in the "----jwt----" and verify the provider data'
                 }
               }
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
             }
           },
           payloadType: 'form'

@@ -14,6 +14,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   socialProvider = require('./social_provider'),
   util = require('./util');
 
+const PROVIDERS = ['github', 'google'];
+
 module.exports = {
   //Uses provided token to get user data and stores plus response the userdata
   handleOAuth2Token: (req, res, provider) => {
@@ -71,6 +73,54 @@ module.exports = {
   },
 
   addProvider: (req, res) => {
+    if (!isProviderSupported(util.parseAPIParameter(req.payload.provider)))
+      return res(boom.notAcceptable('Provider is not supported'));
+
+    let provider = {
+      provider: util.parseAPIParameter(req.payload.provider),
+      token: util.parseAPIParameter(req.payload.token),
+      token_creation: util.parseAPIParameter(req.payload.token_creation),
+      id: util.parseAPIParameter(req.payload.id),
+      email:    util.parseAPIParameter(req.payload.email)
+    };
+
+    return providerCtrl.getIfValid(provider)
+      .then((document) => {
+        if (document === false)
+          return res(boom.unauthorized('Wrong OAuth data'));
+
+        const findQuery = {
+          _id: req.auth.credentials.userid
+        };
+        const updateQuery = {
+          $push: {
+            providers: provider
+          }
+        };
+        return userCtrl.partlyUpdate(findQuery, updateQuery)
+          .then((result) => {
+            console.log('handler: addProvider:',  result.result);
+
+            if (result.result.ok !== 1)
+              return res(boom.badImplementation());
+
+            if (result.result.n === 1) {
+              //success
+              return res();
+            }
+            else {
+              //not found
+              return res(boom.notFound('User not found - check JWT'));
+            }
+          })
+          .catch((error) => {
+            res(boom.notFound('Adding provider failed', error));
+          });
+      })
+      .catch((error) => {
+        console.log('Error', error);
+        res(boom.badImplementation(error));
+      });
   },
 
   deleteProvider: (req, res) => {
@@ -78,6 +128,9 @@ module.exports = {
 
   //Use provider data and additionally user data to create an account - checks db if OAuth is correct
   registerWithOAuth: (req, res) => {
+    if (!isProviderSupported(util.parseAPIParameter(req.payload.provider)))
+      return res(boom.notAcceptable('Provider is not supported'));
+
     let provider = {
       provider: util.parseAPIParameter(req.payload.provider),
       token: util.parseAPIParameter(req.payload.token),
@@ -167,7 +220,10 @@ module.exports = {
       });
   },
 
-  loginWithOAuth: (req, res) => { //change it to: checks provider collection for provider and then similar provider in user collection
+  loginWithOAuth: (req, res) => {
+    if (!isProviderSupported(util.parseAPIParameter(req.payload.provider)))
+      return res(boom.notAcceptable('Provider is not supported'));
+
     let provider = {
       provider: util.parseAPIParameter(req.payload.provider),
       token: util.parseAPIParameter(req.payload.token),
@@ -224,8 +280,17 @@ module.exports = {
             }
           })
           .catch((error) => {
+            console.log('Error', error);
             res(boom.badImplementation(error));
           });
+      })
+      .catch((error) => {
+        console.log('Error', error);
+        res(boom.badImplementation(error));
       });
   }
 };
+
+function isProviderSupported(provider) {
+  return PROVIDERS.indexOf(provider) !== -1;
+}

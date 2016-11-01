@@ -59,6 +59,38 @@ describe('User service', () => {
   	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
   	'name' : 'Kurt Junghanns'
   };
+  const correct_provider2 = {
+    'provider' : 'google',
+  	'token' : 'wercvrwe78nzc87 ncbr4btc67c7h7c',
+  	'scope' : 'user',
+  	'expires' : 3600,
+  	'extra_token' : undefined,
+  	'token_creation' : now,
+  	'username' : 'TBoonX',
+  	'email' : 'tboonx@googlemail.com',
+  	'id' : '453453534534534',
+  	'location' : 'Deutschland',
+  	'organization' : 'Institut für Angewandte Informatik e. V.',
+  	'description' : null,
+  	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
+  	'name' : 'Kurt Junghanns'
+  };
+  const wrong_provider = {
+    'provider' : 'facebook',
+  	'token' : 'wercvrwe78nzc87 ncbr4btc67c7h7c',
+  	'scope' : 'user',
+  	'expires' : 1,
+  	'extra_token' : undefined,
+  	'token_creation' : now,
+  	'username' : 'TBoonX',
+  	'email' : 'tboonx@googlemail.com',
+  	'id' : '453453534534534',
+  	'location' : 'Deutschland',
+  	'organization' : 'Institut für Angewandte Informatik e. V.',
+  	'description' : null,
+  	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
+  	'name' : 'Kurt Junghanns'
+  };
   let userid = '',
     jwt = '';
 
@@ -416,10 +448,12 @@ describe('User service', () => {
         payload: correct_oauth_user
       };
       return handler_social.loginWithOAuth(req, (result) => {
-        console.log('result', result);
+        // console.log('result', result);
 
         expect(result.userid).to.equal(userid);
         expect(result.username).to.not.equal(undefined);
+
+        userid = result.userid;
 
         return {
           header: (name, data) => {
@@ -433,6 +467,63 @@ describe('User service', () => {
         throw Error;
         expect(1).to.equals(2);
       });
+    });
+    it('Add provider', () => {
+      //first create provider in db
+      return providerCtrl.create(correct_provider2)
+        .then((insert_result) => {
+          // console.log('insert_result', insert_result);
+
+          expect(insert_result.insertedCount).to.equal(1);
+
+          let req = {
+            payload: correct_provider2,
+            auth: { //headers which will be set with JWT
+              credentials: {
+                userid: userid
+              }
+            }
+          };
+          return handler_social.addProvider(req, (result) => {
+            // console.log('result', result);
+
+            expect(result).to.equal(undefined);
+
+            return;
+          })
+          .catch((Error) => {
+            console.log('Error', Error);
+            throw Error;
+            expect(1).to.equals(2);
+          });
+        });
+    });
+    it('Try add wrong provider', () => {
+      //first create provider in db
+      return providerCtrl.create(wrong_provider)
+        .then((insert_result) => {
+          // console.log('insert_result', insert_result);
+
+          expect(insert_result.insertedCount).to.equal(1);
+
+          let req = {
+            payload: wrong_provider,
+            auth: { //headers which will be set with JWT
+              credentials: {
+                userid: userid
+              }
+            }
+          };
+          return handler_social.addProvider(req, (result) => {
+            // console.log('result', result);
+
+            expect(result).to.not.equal(undefined);
+            expect(result.isBoom).to.equal(true);
+            expect(result.output.statusCode).to.equal(406);
+
+            return;
+          });
+        });
     });
   });
 });
