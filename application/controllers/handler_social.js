@@ -55,7 +55,9 @@ module.exports = {
 
           if (result.insertedCount === 1) {
             //success
-            return res(data);
+            return res()
+              .redirect('http://platform.manfredfris.ch:3000/awesome?data=' + encodeURI(JSON.stringify(data)))
+              .temporary(true);
           }
 
           res(boom.badImplementation());

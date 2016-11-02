@@ -17,5 +17,11 @@
     "custom_params": {
       "access_type": "offline"
     }
+  },
+  "facebook": {
+    "key": "",
+    "secret": "",
+    "callback": "/social/provider/facebook",
+    "scope": ["user"]
   }
 }

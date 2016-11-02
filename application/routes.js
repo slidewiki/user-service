@@ -484,6 +484,13 @@ module.exports = function (server) {
       handlers_social.handleOAuth2Token(req, res, 'google');
     }
   });
+  server.route({
+    method: 'GET',
+    path: '/social/provider/facebook',
+    handler: function(req, res) {
+      handlers_social.handleOAuth2Token(req, res, 'facebook');
+    }
+  });
 
   server.route({
     method: 'PUT',
