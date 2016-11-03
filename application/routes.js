@@ -610,11 +610,6 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Register a new user with the data from OAuth',
-      response: {
-        schema: Joi.object().keys({
-          userid: Joi.number().integer()
-        })
-      },
       auth: false,
       plugins: {
         'hapi-swagger': {
@@ -702,7 +697,7 @@ module.exports = function (server) {
               'description': 'The credentials are wrong',
               'headers': {
                 'WWW-Authenticate': {
-                  'description': 'Send your JWT in the "----jwt----" and verify the provider data'
+                  'description': 'Wrong userdata or oauth data. Either you have to register or you check the request parameters.'
                 }
               }
             },

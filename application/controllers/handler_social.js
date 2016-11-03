@@ -225,7 +225,10 @@ module.exports = {
                   if (result.insertedCount === 1) {
                     //success
                     return res({
-                      userid: result.insertedId
+                      userid: result.insertedId,
+                      username: user.username,
+                      access_token: 'dummy',
+                      expires_in: 0
                     })
                     .header(config.JWT.HEADER, jwt.createToken({
                       userid: result.insertedId,
