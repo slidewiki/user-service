@@ -98,32 +98,58 @@ module.exports = {
         if (document === false)
           return res(boom.unauthorized('Wrong OAuth data'));
 
-        const findQuery = {
+        //delete old provider data
+        let findQuery = {
           _id: req.auth.credentials.userid
         };
-        const updateQuery = {
-          $push: {
-            providers: provider
+        let updateQuery = {
+          $pull: {
+            providers: {
+              provider: provider.provider
+            }
           }
         };
-        return userCtrl.partlyUpdate(findQuery, updateQuery)
+        const params = {
+          multi: true
+        };
+
+        return userCtrl.partlyUpdate(findQuery, updateQuery, params)
           .then((result) => {
-            console.log('handler: addProvider:',  result.result);
+            console.log('handler: addProvider: cleared',  result.result);
 
             if (result.result.ok !== 1)
               return res(boom.badImplementation());
 
-            if (result.result.n === 1) {
-              //success
-              return res();
-            }
-            else {
-              //not found
-              return res(boom.notFound('User not found - check JWT'));
-            }
+            findQuery = {
+              _id: req.auth.credentials.userid
+            };
+            updateQuery = {
+              $push: {
+                providers: provider
+              }
+            };
+            return userCtrl.partlyUpdate(findQuery, updateQuery)
+              .then((result) => {
+                console.log('handler: addProvider:',  result.result);
+
+                if (result.result.ok !== 1)
+                  return res(boom.badImplementation());
+
+                if (result.result.n === 1) {
+                  //success
+                  return res();
+                }
+                else {
+                  //not found
+                  return res(boom.notFound('User not found - check JWT'));
+                }
+              })
+              .catch((error) => {
+                res(boom.notFound('Adding provider failed', error));
+              });
           })
           .catch((error) => {
-            res(boom.notFound('Adding provider failed', error));
+            res(boom.notFound('Precondition clearing providers failed', error));
           });
       })
       .catch((error) => {
