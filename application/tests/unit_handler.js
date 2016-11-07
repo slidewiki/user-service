@@ -76,7 +76,7 @@ describe('User service', () => {
   	'name' : 'Kurt Junghanns'
   };
   const wrong_provider = {
-    'provider' : 'facebook',
+    'provider' : 'socialface',
   	'token' : 'wercvrwe78nzc87 ncbr4btc67c7h7c',
   	'scope' : 'user',
   	'expires' : 1,
