@@ -22,6 +22,6 @@
     "key": "",
     "secret": "",
     "callback": "/social/provider/facebook",
-    "scope": ["user"]
+    "scope": ["email,public_profile,user_about_me"]
   }
 }

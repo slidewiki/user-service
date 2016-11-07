@@ -14,20 +14,25 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   socialProvider = require('./social_provider'),
   util = require('./util');
 
-const PROVIDERS = ['github', 'google'];
+const PROVIDERS = ['github', 'google', 'facebook'];
 
 module.exports = {
   //Uses provided token to get user data and stores plus response the userdata
   handleOAuth2Token: (req, res, provider) => {
     console.log('Got token from provider ', provider);
+    // console.log(req.query);
 
     return socialProvider.getUserCredentials(req.query.access_token, provider)
       .then((user) => {
+        if (user === {} || user.email === user.nickname) {
+          return res(boom.badImplementation());
+        }
+
         let data = {
           provider: provider,
           token: req.query.access_token,
-          scope: req.query['raw[scope]'],
-          expires: util.parseStringToInteger(req.query['raw[expires_in]']),
+          scope: req.query['raw[scope]'] || user.scope,
+          expires: util.parseStringToInteger(req.query['raw[expires_in]'] || req.query['raw[expires]']),
           extra_token: req.query['raw[id_token]'],  //atm just for google
           token_creation: (new Date()).toISOString(),
           // origin: { //TODO should be removed
@@ -41,12 +46,14 @@ module.exports = {
           organization: user.organization,
           description: user.description,
           picture: user.picture,
-          name: user.name
+          name: user.name,
+          forename: user.forename,
+          surname:  user.surname
         };
 
         return providerCtrl.create(data)
         .then((result) => {
-          // console.log('handleOAuth2Token: provider create result: ', result);
+          console.log('handleOAuth2Token: provider create result: ', result.result, result.insertedCount);
 
           if (result[0] !== undefined && result[0] !== null) {
             //Error

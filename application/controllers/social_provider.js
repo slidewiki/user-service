@@ -1,6 +1,7 @@
 'use strict';
 
 const Purest = require('purest');
+const SCOPE_FACEBOOK = 'fields=id,email,about,first_name,location,name,middle_name,last_name,picture,link';
 
 module.exports = {
   //functions which using OAuth2 token to get user information
@@ -28,6 +29,9 @@ module.exports = {
             break;
           case 'google':
             user = getUserFromGoogleResponse(body);
+            break;
+          case 'facebook':
+            user = getUserFromFacebookResponse(body);
             break;
         }
         user.provider = provider;
@@ -68,6 +72,16 @@ module.exports = {
               }
             }, handleReponse);
             break;
+          case 'facebook':
+            providerInstance.get('https://graph.facebook.com/me?' + SCOPE_FACEBOOK, {
+              auth: {
+                bearer: token
+              },
+              headers: {
+                'User-Agent': 'SlideWiki'
+              }
+            }, handleReponse);
+            break;
           default:
             providerInstance.query()
               .select('user')
@@ -100,6 +114,22 @@ function getUserFromGithubResponse(body) {
     description: body.bio,
     picture: body.avatar_url,
     email: body.email //null at the moment ...
+  };
+}
+
+function getUserFromFacebookResponse(body) {
+  return {
+    nickname: undefined,
+    id: body.id,
+    url: body.link,
+    name: body.name,
+    location: body.location,
+    description: body.about,
+    picture: body.picture.data.url,
+    email: body.email,
+    forename: body.first_name,
+    surname: body.last_name,
+    scope: SCOPE_FACEBOOK
   };
 }
 
