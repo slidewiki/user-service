@@ -545,7 +545,7 @@ module.exports = function (server) {
 
   server.route({
     method: 'DELETE',
-    path: '/social/provider',
+    path: '/social/provider/{provider}',
     handler: handlers_social.deleteProvider,
     config: {
       validate: {
