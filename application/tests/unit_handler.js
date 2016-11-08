@@ -243,7 +243,7 @@ describe('User service', () => {
         }
       };
       return handler.getUser(req, (result) => {
-        //console.log('testresult: ', result);
+        console.log('testresult: detailed user', result);
 
         expect(result._id).to.equal(userid);
         expect(result.password).to.equal(undefined);

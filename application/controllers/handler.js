@@ -592,6 +592,18 @@ function prepareDetailedUserData(user) {
   minimizedUser.language = minimizedUser.frontendLanguage;
   minimizedUser.frontendLanguage = undefined;
 
+  //add data for social provider stuff
+  minimizedUser.hasPassword = true;
+  if (user.password === undefined || user.password === null || user.password === '')
+    minimizedUser.hasPassword = false;
+  minimizedUser.providers = (user.providers || []).reduce((prev, cur) => {
+    if (prev.indexOf(cur.provider) === -1) {
+      prev.push(cur.provider);
+      return prev;
+    }
+    return prev;
+  }, []);
+
   return minimizedUser;
 }
 
