@@ -120,6 +120,10 @@ module.exports = {
             if (result.result.ok !== 1)
               return res(boom.badImplementation());
 
+            provider.expires = document.expires;
+            provider.extra_token = document.extra_token;
+            provider.scope = document.scope;
+
             findQuery = {
               _id: req.auth.credentials.userid
             };

@@ -494,10 +494,13 @@ module.exports = function (server) {
 
   server.route({
     method: 'PUT',
-    path: '/social/provider',
+    path: '/social/provider/{provider}',
     handler: handlers_social.addProvider,
     config: {
       validate: {
+        params: {
+          provider: Joi.string()
+        },
         payload: Joi.object().keys({
           id: Joi.string(),
           provider: Joi.string(),
