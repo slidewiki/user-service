@@ -113,7 +113,8 @@ function getUserFromGithubResponse(body) {
     organization: body.company,
     description: body.bio,
     picture: body.avatar_url,
-    email: body.email //null at the moment ...
+    email: body.email, //null at the moment ...
+    identifier: body.created_at
   };
 }
 
@@ -129,7 +130,8 @@ function getUserFromFacebookResponse(body) {
     email: body.email,
     forename: body.first_name,
     surname: body.last_name,
-    scope: SCOPE_FACEBOOK
+    scope: SCOPE_FACEBOOK,
+    identifier: body.id.toString()
   };
 }
 
@@ -140,7 +142,8 @@ function getUserFromGoogleResponse(body) {
     url: body.link,
     id: body.id,
     email: body.email,
-    picture: body.picture
+    picture: body.picture,
+    identifier: body.id.toString()
   };
   try {
     user.nickname = body.email.substring(0, body.email.indexOf('@'));

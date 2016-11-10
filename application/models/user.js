@@ -38,6 +38,12 @@ const provider = {
     },
     id: {
       type: 'string'
+    },
+    identifier: {
+      type: 'string'
+    },
+    email: {
+      type: 'string'
     }
   },
   required: ['provider', 'token', 'token_creation']

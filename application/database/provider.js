@@ -33,11 +33,13 @@ module.exports = {
   getIfValid: (provider) => {
     const query = {
       provider: provider.provider,
-      id: provider.id.toString(),
-      email: provider.email,
+      identifier: provider.identifier,
       token: provider.token,
       token_creation: provider.token_creation
     };
+    if (provider.email)
+      query.email = provider.email;
+    console.log('getIfValid: search for', query);
 
     return helper.connectToDatabase()
       .then((dbconn) => dbconn.collection(collectionName))
@@ -50,7 +52,7 @@ module.exports = {
 
             return cursor.next()
               .then((document) => {
-                // console.log('provider.js isValid() got document', document);
+                console.log('provider.js isValid() got document', document);
                 let expires = 86400;
                 if (document.expires !== undefined && document.expires !== null )
                   expires = document.expires;

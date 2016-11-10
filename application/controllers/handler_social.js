@@ -14,7 +14,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   socialProvider = require('./social_provider'),
   util = require('./util');
 
-const PROVIDERS = ['github', 'google', 'facebook'];
+const PROVIDERS = ['github', 'google', 'facebook'],
+  PLATFORM_SOCIAL_URL = 'http://platform.manfredfris.ch:4000/socialLogin';
 
 module.exports = {
   //Uses provided token to get user data and stores plus response the userdata
@@ -48,8 +49,11 @@ module.exports = {
           picture: user.picture,
           name: user.name,
           forename: user.forename,
-          surname:  user.surname
+          surname:  user.surname,
+          identifier: user.identifier
         };
+
+        // console.log('handleOAuth2Token: created data', data);
 
         return providerCtrl.create(data)
         .then((result) => {
@@ -63,7 +67,7 @@ module.exports = {
           if (result.insertedCount === 1) {
             //success
             return res()
-              .redirect('http://platform.manfredfris.ch:4000/socialLogin?data=' + encodeURIComponent(JSON.stringify(data)))
+              .redirect(PLATFORM_SOCIAL_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
               .temporary(true);
           }
 
@@ -89,7 +93,7 @@ module.exports = {
       provider: util.parseAPIParameter(req.payload.provider),
       token: util.parseAPIParameter(req.payload.token),
       token_creation: util.parseAPIParameter(req.payload.token_creation),
-      id: util.parseAPIParameter(req.payload.id),
+      identifier: util.parseAPIParameter(req.payload.identifier),
       email:    util.parseAPIParameter(req.payload.email)
     };
 
@@ -98,64 +102,70 @@ module.exports = {
         if (document === false)
           return res(boom.unauthorized('Wrong OAuth data'));
 
-        //TODO check if provider already used by someone (use attributes: provider, email)
-
-        //delete old provider data
-        let findQuery = {
-          _id: req.auth.credentials.userid
-        };
-        let updateQuery = {
-          $pull: {
-            providers: {
-              provider: provider.provider
+        //check if provider already used by someone (use attributes: provider, email)
+        return isProviderAlreadyUsedBySomeone(document)
+          .then((isUsed) => {
+            if (isUsed) {
+              return res(boom.conflict());
             }
-          }
-        };
-        const params = {
-          multi: true
-        };
 
-        return userCtrl.partlyUpdate(findQuery, updateQuery, params)
-          .then((result) => {
-            console.log('handler: addProvider: cleared',  result.result);
-
-            if (result.result.ok !== 1)
-              return res(boom.badImplementation());
-
-            provider.expires = document.expires;
-            provider.extra_token = document.extra_token;
-            provider.scope = document.scope;
-
-            findQuery = {
+            //delete old provider data
+            let findQuery = {
               _id: req.auth.credentials.userid
             };
-            updateQuery = {
-              $push: {
-                providers: provider
+            let updateQuery = {
+              $pull: {
+                providers: {
+                  provider: provider.provider
+                }
               }
             };
-            return userCtrl.partlyUpdate(findQuery, updateQuery)
+            const params = {
+              multi: true
+            };
+
+            return userCtrl.partlyUpdate(findQuery, updateQuery, params)
               .then((result) => {
-                console.log('handler: addProvider:',  result.result);
+                console.log('handler: addProvider: cleared',  result.result);
 
                 if (result.result.ok !== 1)
                   return res(boom.badImplementation());
 
-                if (result.result.n === 1) {
-                  //success
-                  return res();
-                }
-                else {
-                  //not found
-                  return res(boom.notFound('User not found - check JWT'));
-                }
+                provider.expires = document.expires;
+                provider.extra_token = document.extra_token;
+                provider.scope = document.scope;
+
+                findQuery = {
+                  _id: req.auth.credentials.userid
+                };
+                updateQuery = {
+                  $push: {
+                    providers: provider
+                  }
+                };
+                return userCtrl.partlyUpdate(findQuery, updateQuery)
+                  .then((result) => {
+                    console.log('handler: addProvider:',  result.result);
+
+                    if (result.result.ok !== 1)
+                      return res(boom.badImplementation());
+
+                    if (result.result.n === 1) {
+                      //success
+                      return res();
+                    }
+                    else {
+                      //not found
+                      return res(boom.notFound('User not found - check JWT'));
+                    }
+                  })
+                  .catch((error) => {
+                    res(boom.notFound('Adding provider failed', error));
+                  });
               })
               .catch((error) => {
-                res(boom.notFound('Adding provider failed', error));
+                res(boom.notFound('Precondition clearing providers failed', error));
               });
-          })
-          .catch((error) => {
-            res(boom.notFound('Precondition clearing providers failed', error));
           });
       })
       .catch((error) => {
@@ -212,8 +222,8 @@ module.exports = {
       provider: util.parseAPIParameter(req.payload.provider),
       token: util.parseAPIParameter(req.payload.token),
       token_creation: util.parseAPIParameter(req.payload.token_creation),
-      id: util.parseAPIParameter(req.payload.id),
-      email:    util.parseAPIParameter(req.payload.email)
+      identifier: util.parseAPIParameter(req.payload.identifier)
+      // email:    util.parseAPIParameter(req.payload.email)  //email could be changed by the user
     };
 
     return providerCtrl.getIfValid(provider)
@@ -221,79 +231,87 @@ module.exports = {
         if (document === false)
           return res(boom.unauthorized('Wrong OAuth data'));
 
-        //TODO check if provider already used by someone (use attributes: provider, email)
-
-        let user = {
-          username: util.parseAPIParameter(req.payload.username) || document.username,
-          email:    document.email,
-          frontendLanguage: util.parseAPIParameter(req.payload.language),
-          country: document.location || '',
-          picture: document.picture || '',
-          description: document.description || '',
-          organization: document.organization || '',
-          registered: (new Date()).toISOString(),
-          forename: util.parseAPIParameter(req.payload.forename) || '',
-          surname: util.parseAPIParameter(req.payload.surname) || '',
-          providers: [
-            {
-              provider: document.provider,
-              token: document.token,
-              expires: document.expires || 0,
-              token_creation: document.token_creation,
-              scope: document.scope || '',
-              extra_token: document.extra_token || '',
-              id: document.id
+        //check if provider already used by someone (use attributes: provider, email)
+        return isProviderAlreadyUsedBySomeone(document)
+          .then((isUsed) => {
+            if (isUsed) {
+              return res(boom.conflict());
             }
-          ]
-        };
-        console.log('Registration with OAuth data: ', user);
 
-        //check if username already exists
-        return util.isIdentityAssigned(user.email, user.username)
-          .then((result) => {
-            console.log('identity already taken: ', user.email, user.username, result);
-            if (result.assigned === false) {
-              return userCtrl.create(user)
-                .then((result) => {
-                  // console.log('register: user create result: ', result);
+            let user = {
+              username:         util.parseAPIParameter(req.payload.username) || document.username,
+              email:            util.parseAPIParameter(req.payload.email),
+              frontendLanguage: util.parseAPIParameter(req.payload.language),
+              country:          document.location || '',
+              picture:          document.picture || '',
+              description:      document.description || '',
+              organization:     document.organization || '',
+              registered:       (new Date()).toISOString(),
+              forename:         util.parseAPIParameter(req.payload.forename) || '',
+              surname:          util.parseAPIParameter(req.payload.surname) || '',
+              providers: [
+                {
+                  provider:       document.provider,
+                  token:          document.token,
+                  expires:        document.expires || 0,
+                  token_creation: document.token_creation,
+                  scope:          document.scope || '',
+                  extra_token:    document.extra_token || '',
+                  id:             document.id,
+                  email:          document.email,
+                  identifier:     document.identifier
+                }
+              ]
+            };
+            console.log('Registration with OAuth data: ', user);
 
-                  if (result[0] !== undefined && result[0] !== null) {
-                    //Error
-                    console.log('ajv error', result, co.parseAjvValidationErrors(result));
-                    return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-                  }
+            //check if username already exists
+            return util.isIdentityAssigned(user.email, user.username)
+              .then((result) => {
+                console.log('identity already taken: ', user.email, user.username, result);
+                if (result.assigned === false) {
+                  return userCtrl.create(user)
+                    .then((result) => {
+                      // console.log('register: user create result: ', result);
 
-                  if (result.insertedCount === 1) {
-                    //success
-                    return res({
-                      userid: result.insertedId,
-                      username: user.username,
-                      access_token: 'dummy',
-                      expires_in: 0
+                      if (result[0] !== undefined && result[0] !== null) {
+                        //Error
+                        console.log('ajv error', result, co.parseAjvValidationErrors(result));
+                        return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+                      }
+
+                      if (result.insertedCount === 1) {
+                        //success
+                        return res({
+                          userid: result.insertedId,
+                          username: user.username,
+                          access_token: 'dummy',
+                          expires_in: 0
+                        })
+                        .header(config.JWT.HEADER, jwt.createToken({
+                          userid: result.insertedId,
+                          username: user.username
+                        }));
+                      }
+
+                      res(boom.badImplementation());
                     })
-                    .header(config.JWT.HEADER, jwt.createToken({
-                      userid: result.insertedId,
-                      username: user.username
-                    }));
-                  }
-
-                  res(boom.badImplementation());
-                })
-                .catch((error) => {
-                  console.log('register: catch: ', error);
-                  res(boom.badImplementation('Error', error));
-                });
-            } else {
-              let message = 'The username and email is already taken';
-              if (result.email === false)
-                message = 'The username is already taken';
-              if (result.username === false)
-                message = 'The email is already taken';
-              return res(boom.badData(message));
-            }
-          })
-          .catch((error) => {
-            res(boom.badImplementation('Error', error));
+                    .catch((error) => {
+                      console.log('register: catch: ', error);
+                      res(boom.badImplementation('Error', error));
+                    });
+                } else {
+                  let message = 'The username and email is already taken';
+                  if (result.email === false)
+                    message = 'The username is already taken';
+                  if (result.username === false)
+                    message = 'The email is already taken';
+                  return res(boom.badData(message));
+                }
+              })
+              .catch((error) => {
+                res(boom.badImplementation('Error', error));
+              });
           });
       })
       .catch((error) => {
@@ -310,7 +328,7 @@ module.exports = {
       provider: util.parseAPIParameter(req.payload.provider),
       token: util.parseAPIParameter(req.payload.token),
       token_creation: util.parseAPIParameter(req.payload.token_creation),
-      // id: util.parseAPIParameter(req.payload.id),//usign github the id could be changed
+      identifier: util.parseAPIParameter(req.payload.identifier),
       email:    util.parseAPIParameter(req.payload.email)
     };
 
@@ -321,9 +339,9 @@ module.exports = {
 
         //get user with similar provider data
         const query = {
-          email: decodeURI(req.payload.email),
-          'providers.provider': decodeURI(req.payload.provider),
-          'providers.id': decodeURI(req.payload.id)
+          'providers.identifier': document.identifier,
+          'providers.provider': document.provider,
+          // 'providers.id': decodeURI(req.payload.id) //using github the id could be changed
         };
 
         return userCtrl.find(query)
@@ -398,4 +416,20 @@ module.exports = {
 
 function isProviderSupported(provider) {
   return PROVIDERS.indexOf(provider) !== -1;
+}
+
+function isProviderAlreadyUsedBySomeone(provider) {
+  let promise = new Promise((resolve, reject) => {
+    return userCtrl.find({
+      'providers.provider': provider.provider,
+      'providers.identifier': provider.identifier
+    })
+      .then((cursor) => cursor.count())
+      .then((count) => {
+        return resolve(count > 0);
+      })
+      .catch((error) => {reject(error);});
+  });
+
+  return promise;
 }

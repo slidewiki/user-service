@@ -35,6 +35,7 @@ describe('User service', () => {
   const now = (new Date()).toISOString();
   const correct_oauth_user = {
     id: '2839748234',
+    identifier: '2839748234',
     provider: 'github',
     token: '47a629160532535502fff76f5b6e3513a2a2da9e',
     scope: 'user',
@@ -44,6 +45,7 @@ describe('User service', () => {
   };
   const correct_provider = {
     '_id' : '5811f623679e6d357a076207',
+    identifier: '2839748234',
   	'provider' : 'github',
   	'token' : '47a629160532535502fff76f5b6e3513a2a2da9e',
   	'scope' : 'user',
@@ -69,6 +71,7 @@ describe('User service', () => {
   	'username' : 'TBoonX',
   	'email' : 'tboonx@googlemail.com',
   	'id' : '453453534534534',
+    identifier: '453453534534534',
   	'location' : 'Deutschland',
   	'organization' : 'Institut für Angewandte Informatik e. V.',
   	'description' : null,
@@ -85,6 +88,7 @@ describe('User service', () => {
   	'username' : 'TBoonX',
   	'email' : 'tboonx@googlemail.com',
   	'id' : '453453534534534',
+    identifier: '453453534534534',
   	'location' : 'Deutschland',
   	'organization' : 'Institut für Angewandte Informatik e. V.',
   	'description' : null,
@@ -423,7 +427,7 @@ describe('User service', () => {
             payload: correct_oauth_user
           };
           return handler_social.registerWithOAuth(req, (result) => {
-            // console.log(result);
+            console.log(result);
 
             expect(result.userid).to.not.equal(undefined);
 

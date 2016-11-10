@@ -27,7 +27,8 @@ module.exports = {
       picture: '',
       description: '',
       organization: util.parseAPIParameter(req.payload.organization),
-      registered: (new Date()).toISOString()
+      registered: (new Date()).toISOString(),
+      providers: []
     };
     console.log('Registration: ', user);
 
