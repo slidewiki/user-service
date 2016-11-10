@@ -16,11 +16,10 @@ const hapi = require('hapi'),
 const server = new hapi.Server({ connections: {routes: {validate: { options: {convert : false}}}}});
 
 let port = (!co.isEmpty(process.env.APPLICATION_PORT)) ? process.env.APPLICATION_PORT : 3000;
-let host = 'http://authorizationservice.manfredfris.ch/';//(!co.isEmpty(process.env.VIRTUAL_HOST)) ? process.env.VIRTUAL_HOST : server.info.host;
 server.connection({
-  port: port,
-  host: 'authorizationservice.manfredfris.ch'
+  port: port
 });
+let host = (!co.isEmpty(process.env.VIRTUAL_HOST)) ? process.env.VIRTUAL_HOST : server.info.host;
 
 //Export the webserver to be able to use server.log()
 module.exports = server;

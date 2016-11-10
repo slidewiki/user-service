@@ -502,13 +502,13 @@ module.exports = function (server) {
           provider: Joi.string()
         },
         payload: Joi.object().keys({
-          id: Joi.string(),
+          identifier: Joi.string(),
           provider: Joi.string(),
           token: Joi.string(),
           token_creation: Joi.string(),//Date
           email: Joi.string().email(),
           language: Joi.string().length(5)
-        }).requiredKeys('email', 'id', 'provider', 'token', 'token_creation'),
+        }).requiredKeys('email', 'identifier', 'provider', 'token', 'token_creation'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
         }).unknown()
@@ -599,7 +599,7 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-          id: Joi.string(),
+          identifier: Joi.string(),
           provider: Joi.string(),
           token: Joi.string(),
           scope: Joi.string(),
@@ -609,7 +609,7 @@ module.exports = function (server) {
           language: Joi.string().length(5),
           forename: Joi.string(),
           surname: Joi.string()
-        }).requiredKeys('username', 'email', 'id', 'provider', 'token', 'token_creation'),
+        }).requiredKeys('username', 'email', 'identifier', 'provider', 'token', 'token_creation'),
       },
       tags: ['api'],
       description: 'Register a new user with the data from OAuth',
@@ -642,6 +642,9 @@ module.exports = function (server) {
             ' 406 ': {
               'description': 'Provider is not available.'
             },
+            ' 409 ': {
+              'description': 'Provider data is already in use by another user.'
+            },
             ' 422 ': {
               'description': 'Wrong user data - see error message',
               schema: Joi.object().keys({
@@ -667,14 +670,14 @@ module.exports = function (server) {
     config: {
       validate: {
         payload: Joi.object().keys({
-          id: Joi.string(),
+          identifier: Joi.string(),
           provider: Joi.string(),
           token: Joi.string(),
           scope: Joi.string(),
-          token_creation: Joi.string(),//Date
-          email: Joi.string().email(),
+          token_creation: Joi.string(), //Date
+          email: Joi.string().email(),  //email of provider
           language: Joi.string().length(5)
-        }).requiredKeys('id', 'provider', 'token', 'token_creation', 'email')
+        }).requiredKeys('identifier', 'provider', 'token', 'token_creation', 'email')
       },
       tags: ['api'],
       description: 'Login with OAuth data',
@@ -724,7 +727,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.number().integer().options({convert: true})
+          id: Joi.number().integer().options({convert: true}).description('Id of the user')
         },
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')

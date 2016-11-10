@@ -1,4 +1,4 @@
-FROM node:6.7-slim
+FROM node:6.8-slim
 MAINTAINER Roy Meissner <meissner@informatik.uni-leipzig.de>
 
 RUN mkdir /nodeApp
@@ -17,7 +17,7 @@ ADD ./application/ ./
 #   Configuration   #
 # ----------------- #
 
-EXPOSE 80
+EXPOSE 3000
 
 # ----------- #
 #   Cleanup   #
