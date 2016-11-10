@@ -98,6 +98,8 @@ module.exports = {
         if (document === false)
           return res(boom.unauthorized('Wrong OAuth data'));
 
+        //TODO check if provider already used by someone (use attributes: provider, email)
+
         //delete old provider data
         let findQuery = {
           _id: req.auth.credentials.userid
@@ -219,6 +221,8 @@ module.exports = {
         if (document === false)
           return res(boom.unauthorized('Wrong OAuth data'));
 
+        //TODO check if provider already used by someone (use attributes: provider, email)
+
         let user = {
           username: util.parseAPIParameter(req.payload.username) || document.username,
           email:    document.email,
@@ -306,7 +310,7 @@ module.exports = {
       provider: util.parseAPIParameter(req.payload.provider),
       token: util.parseAPIParameter(req.payload.token),
       token_creation: util.parseAPIParameter(req.payload.token_creation),
-      id: util.parseAPIParameter(req.payload.id),
+      // id: util.parseAPIParameter(req.payload.id),//usign github the id could be changed
       email:    util.parseAPIParameter(req.payload.email)
     };
 
