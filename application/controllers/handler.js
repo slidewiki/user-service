@@ -7,6 +7,7 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
   co = require('../common'),
   userCtrl = require('../database/user'),
+  usergroupCtrl = require('../database/usergroup'),
   config = require('../configuration'),
   jwt = require('./jwt'),
   Joi = require('joi'),
@@ -524,6 +525,100 @@ module.exports = {
       })
       .catch((error) => res(error));
     });
+  },
+
+  deleteUsergroup: (req, res) => {
+
+  },
+
+  createOrUpdateUsergroup: (req, res) => {
+    const userid = req.auth.credentials.userid;
+
+    let group = req.payload;
+
+    group.creator = userid;
+    group.description = parseAPIParameter(group.description);
+    group.name = parseAPIParameter(group.name);
+    group.timestamp = parseAPIParameter(group.timestamp) || (new Date()).toISOString();
+
+    if (group.isActive !== false)
+      group.isActive = true;
+
+    if (group.id === undefined || group.id === null) {
+      //create
+      // console.log('createOrUpdateUsergroup: create group', group);
+
+      return usergroupCtrl.create(group)
+        .then((result) => {
+          // console.log('createOrUpdateUsergroup: created group', result.result || result);
+
+          if (result[0] !== undefined && result[0] !== null) {
+            //Error
+            return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+          }
+
+          if (result.insertedCount === 1) {
+            //success
+            group.id = result.insertedId;
+            return res(group);
+          }
+
+          res(boom.badImplementation());
+        })
+        .catch((error) => {
+          console.log('Error', error);
+          res(boom.badImplementation(error));
+        });
+    }
+    else if (group.id < 1) {
+      //error
+      return res(boom.badData());
+    }
+    else {
+      //update
+      // console.log('createOrUpdateUsergroup: update group', group);
+
+      //first check if user is creator
+      return usergroupCtrl.read(group.id)
+        .then((document) => {
+          if (document === undefined || document === null) {
+            return res(boom.notFound());
+          }
+
+          if (document.creator !== group.creator) {
+            return res(boom.unauthorized());
+          }
+
+          //some attribute should be unchangeable
+          group.timestamp = document.timestamp;
+          group._id = document._id;
+
+          return usergroupCtrl.update(group)
+            .then((result) => {
+              // console.log('createOrUpdateUsergroup: updated group', result.result || result);
+
+              if (result[0] !== undefined && result[0] !== null) {
+                //Error
+                return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+              }
+
+              if (result.result.ok === 1) {
+                //success
+                return res(group);
+              }
+
+              res(boom.badImplementation());
+            });
+        })
+        .catch((error) => {
+          console.log('Error', error);
+          res(boom.badImplementation(error));
+        });
+    }
+  },
+
+  getUsergroups: (req, res) => {
+
   }
 };
 

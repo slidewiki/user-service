@@ -30,8 +30,31 @@ describe('User service', () => {
       language: 'de'
     }]
   };
+  let correct_usergroup = {
+    name: 'Testgroup',
+    description: 'Used for Unit tests',
+    isActive: true,
+    members: [
+      {
+        userid: 1,
+        joined: (new Date()).toISOString()
+      }
+    ]
+  };
+  let correct_usergroup2 = {
+    name: 'Blub blabla blub',
+    description: 'Used for Unit tests',
+    isActive: true,
+    members: [
+      {
+        userid: 1,
+        joined: (new Date()).toISOString()
+      }
+    ]
+  };
   let userid = '',
-    jwt = '';
+    jwt = '',
+    groupid = 0;
 
   context('Using all exported functions - ', () => {
     it('Register user', () => {
@@ -52,7 +75,8 @@ describe('User service', () => {
         throw Error;
         expect(1).to.equals(2);
       });
-    });it('Register a second user with same username - should not be possible', () => {
+    });
+    it('Register a second user with same username - should not be possible', () => {
       let req = {
         payload: correct_user1
       };
@@ -337,6 +361,56 @@ describe('User service', () => {
 
         expect(result.isBoom).to.equal(true);
         expect(result.output.statusCode).to.equal(401);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+
+    //usergroups
+    it('Create usergroup', () => {
+      let req = {
+        payload: correct_usergroup,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        console.log(result);
+
+        expect(result.name).to.equal(correct_usergroup.name);
+
+        groupid = result.id;
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Update usergroup', () => {
+      let group = correct_usergroup2;
+      group.id = groupid;
+      let req = {
+        payload: group,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        console.log(result);
+
+        expect(result.name).to.equal('Blub blabla blub');
 
         return;
       })
