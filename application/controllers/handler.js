@@ -644,7 +644,25 @@ module.exports = {
   },
 
   getUsergroups: (req, res) => {
+    let selectors = req.payload.reduce((q, element) => {
+      q.push({_id: element});
+      return q;
+    }, []);
+    let query = {
+      $or: selectors
+    };
 
+    // console.log('getUsergroups:', query);
+
+    return usergroupCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        if (array === undefined || array === null || array.length < 1) {
+          return res([]);
+        }
+
+        return res(array);
+      });
   }
 };
 

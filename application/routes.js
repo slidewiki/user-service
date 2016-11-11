@@ -516,7 +516,7 @@ module.exports = function (server) {
             },
             ' 404 ': {
               'description': 'Group for update not found. Check the id.'
-            }
+            },
             ' 422 ': {
               'description': 'Wrong usergroup data - see error message'
             }
@@ -528,14 +528,12 @@ module.exports = function (server) {
   });
 
   server.route({
-    method: 'GET',
+    method: 'POST',
     path: '/usergroups',
     handler: handlers.getUsergroups,
     config: {
       validate: {
-        params: {
-          usergroups: Joi.array().items(Joi.number())
-        }
+        payload: Joi.array().items(Joi.number())
       },
       tags: ['api'],
       description: 'Gets groups by ids',
