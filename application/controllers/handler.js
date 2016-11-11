@@ -133,7 +133,13 @@ module.exports = {
             return res(boom.unauthorized('This user is deactivated.'));
           }
 
-          return res(prepareDetailedUserData(user));
+          //get groups of a user
+          return usergroupCtrl.readGroupsOfUser(req.params.id)
+            .then((array) => {
+              user.groups = array;
+
+              return res(prepareDetailedUserData(user));
+            });
         }
         else {
           return res(boom.notFound());

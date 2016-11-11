@@ -303,6 +303,112 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     });
+
+
+    //usergroups
+
+    it('Create usergroup', () => {
+      let req = {
+        payload: correct_usergroup,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        // console.log(result);
+
+        expect(result.name).to.equal(correct_usergroup.name);
+
+        groupid = result.id;
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Update usergroup', () => {
+      let group = correct_usergroup2;
+      group.id = groupid;
+      let req = {
+        payload: group,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        // console.log(result);
+
+        expect(result.name).to.equal('Blub blabla blub');
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Get user detailed and check groups', () => {
+      let req = {
+        params: {
+          id: userid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.getUser(req, (result) => {
+        // console.log('testresult: ', result);
+
+        expect(result._id).to.equal(userid);
+        expect(result.groups).to.not.equal(undefined);
+        expect(result.groups.length).to.equal(1);
+        expect(result.groups[0].id).to.equal(groupid);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Delete usergroup', () => {
+      let req = {
+        params: {
+          groupid: groupid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.deleteUsergroup(req, (result) => {
+        console.log(result);
+
+        expect(result).to.equal(undefined);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+
+    //delete the user
+
     it('Delete user', () => {
       let req = {
         params: {
@@ -361,80 +467,6 @@ describe('User service', () => {
 
         expect(result.isBoom).to.equal(true);
         expect(result.output.statusCode).to.equal(401);
-
-        return;
-      })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-        expect(1).to.equals(2);
-      });
-    });
-
-    //usergroups
-    it('Create usergroup', () => {
-      let req = {
-        payload: correct_usergroup,
-        auth: { //headers which will be set with JWT
-          credentials: {
-            userid: userid
-          }
-        }
-      };
-      return handler.createOrUpdateUsergroup(req, (result) => {
-        // console.log(result);
-
-        expect(result.name).to.equal(correct_usergroup.name);
-
-        groupid = result.id;
-
-        return;
-      })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-        expect(1).to.equals(2);
-      });
-    });
-    it('Update usergroup', () => {
-      let group = correct_usergroup2;
-      group.id = groupid;
-      let req = {
-        payload: group,
-        auth: { //headers which will be set with JWT
-          credentials: {
-            userid: userid
-          }
-        }
-      };
-      return handler.createOrUpdateUsergroup(req, (result) => {
-        // console.log(result);
-
-        expect(result.name).to.equal('Blub blabla blub');
-
-        return;
-      })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-        expect(1).to.equals(2);
-      });
-    });
-    it('Delete usergroup', () => {
-      let req = {
-        params: {
-          groupid: groupid
-        },
-        auth: { //headers which will be set with JWT
-          credentials: {
-            userid: userid
-          }
-        }
-      };
-      return handler.deleteUsergroup(req, (result) => {
-        console.log(result);
-
-        expect(result).to.equal(undefined);
 
         return;
       })
