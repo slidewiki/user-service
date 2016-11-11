@@ -382,7 +382,7 @@ describe('User service', () => {
         }
       };
       return handler.createOrUpdateUsergroup(req, (result) => {
-        console.log(result);
+        // console.log(result);
 
         expect(result.name).to.equal(correct_usergroup.name);
 
@@ -408,9 +408,33 @@ describe('User service', () => {
         }
       };
       return handler.createOrUpdateUsergroup(req, (result) => {
-        console.log(result);
+        // console.log(result);
 
         expect(result.name).to.equal('Blub blabla blub');
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Delete usergroup', () => {
+      let req = {
+        params: {
+          groupid: groupid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.deleteUsergroup(req, (result) => {
+        console.log(result);
+
+        expect(result).to.equal(undefined);
 
         return;
       })

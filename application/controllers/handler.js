@@ -528,7 +528,33 @@ module.exports = {
   },
 
   deleteUsergroup: (req, res) => {
+    //first check if user is creator
+    return usergroupCtrl.read(req.params.groupid)
+      .then((document) => {
+        if (document === undefined || document === null) {
+          return res(boom.notFound());
+        }
 
+        if (document.creator !== req.auth.credentials.userid) {
+          return res(boom.unauthorized());
+        }
+
+        //now delete
+        return usergroupCtrl.delete(req.params.groupid)
+          .then((result) => {
+            // console.log('deleteUsergroup: deleted', result.result);
+
+            if (result.result.ok !== 1) {
+              return res(boom.badImplementation());
+            }
+
+            if (result.result.n !== 1) {
+              return res(boom.notFound());
+            }
+
+            return res();
+          });
+      });
   },
 
   createOrUpdateUsergroup: (req, res) => {
