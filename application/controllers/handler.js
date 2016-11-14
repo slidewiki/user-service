@@ -12,7 +12,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   jwt = require('./jwt'),
   Joi = require('joi'),
   JSSHA = require('js-sha512'),
-  SMTPConnection = require('smtp-connection');;
+  SMTPConnection = require('smtp-connection'),
+  request = require('request');
 
 module.exports = {
   register: (req, res) => {
@@ -558,7 +559,22 @@ module.exports = {
               return res(boom.notFound());
             }
 
-            return res();
+            if (document.members.length < 1)
+              return res();
+
+            //notify users
+            let promises = [];
+            document.members.forEach((member) => {
+              promises.push(notifiyUser(member.userid, 'left', document));
+            });
+            return Promise.all(promises).then(() => {
+              return res();
+            }).catch((error) => {
+              request.log('error', error);
+              //reply(boom.badImplementation());
+              //for now always succeed
+              return res();
+            });
           });
       });
   },
@@ -575,6 +591,8 @@ module.exports = {
 
     if (group.isActive !== false)
       group.isActive = true;
+    if (group.members === undefined || group.members === null || group.members.length < 0)
+      group.members = [];
 
     if (group.id === undefined || group.id === null) {
       //create
@@ -592,7 +610,23 @@ module.exports = {
           if (result.insertedCount === 1) {
             //success
             group.id = result.insertedId;
-            return res(group);
+
+            if (group.members.length < 1)
+              return res(group);
+
+            //notify users
+            let promises = [];
+            group.members.forEach((member) => {
+              promises.push(notifiyUser(member.userid, 'joined', group));
+            });
+            return Promise.all(promises).then(() => {
+              return res(group);
+            }).catch((error) => {
+              request.log('error', error);
+              //reply(boom.badImplementation());
+              //for now always succeed
+              return res(group);
+            });
           }
 
           res(boom.badImplementation());
@@ -635,8 +669,43 @@ module.exports = {
               }
 
               if (result.result.ok === 1) {
-                //success
-                return res(group);
+                if (group.members.length < 1 && document.members.length < 1)
+                  return res(group);
+
+                //notify users
+                let wasUserAMember = (userid) => {
+                  let result = false;
+                  document.members.forEach((member) => {
+                    if (member.userid === userid)
+                      result = true;
+                  });
+                  return result;
+                };
+                let wasUserDeleted = (userid) => {
+                  let result = true;
+                  group.members.forEach((member) => {
+                    if (member.userid === userid)
+                      result = false;
+                  });
+                  return result;
+                };
+                let promises = [];
+                group.members.forEach((member) => {
+                  if (!wasUserAMember(member.userid))
+                    promises.push(notifiyUser(member.userid, 'joined', group));
+                });
+                document.members.forEach((member) => {
+                  if (wasUserDeleted(member.userid))
+                    promises.push(notifiyUser(member.userid, 'left', document));
+                });
+                return Promise.all(promises).then(() => {
+                  return res(group);
+                }).catch((error) => {
+                  request.log('error', error);
+                  //reply(boom.badImplementation());
+                  //for now always succeed
+                  return res(group);
+                });
               }
 
               res(boom.badImplementation());
@@ -830,4 +899,37 @@ function parseStringToInteger(string) {
     return validationResult.value;
   }
   return undefined;
+}
+
+function notifiyUser(userid, type, group) {
+  let promise = new Promise((resolve, reject) => {
+    const options = {
+      url: config.URLS.notificationservice + '/notification/new',
+      method: 'POST',
+      json: true,
+      body: {
+        activity_id: require('crypto').randomBytes(9).toString('hex'),
+        activity_type: type,
+        user_id: userid.toString(),
+        content_id: group._id.toString(),
+        content_kind: 'group',
+        content_name: 'You ' + type + ' the group ' + group.name,
+        content_owner_id: userid.toString(),
+        subscribed_user_id: userid.toString()
+      }
+    };
+
+    function callback(error, response, body) {
+      console.log('notifiyUser: ', error, response.statusCode, body);
+
+      if (!error && (response.statusCode === 200)) {
+        return resolve(body);
+      } else {
+        return reject(error);
+      }
+    }
+
+    request(options, callback);
+  });
+  return promise;
 }

@@ -491,7 +491,7 @@ module.exports = function (server) {
           members: Joi.array().items(Joi.object().keys({
             userid: Joi.number(),
             joined: Joi.string()
-          }))
+          }).requiredKeys('userid', 'joined'))
         }).requiredKeys('name'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')

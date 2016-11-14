@@ -49,6 +49,10 @@ describe('User service', () => {
       {
         userid: 1,
         joined: (new Date()).toISOString()
+      },
+      {
+        userid: 2,
+        joined: (new Date()).toISOString()
       }
     ]
   };

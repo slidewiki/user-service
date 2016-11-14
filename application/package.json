@@ -37,8 +37,9 @@
     "inert": "^4.0.2",
     "joi": "^9.0.4",
     "js-sha512": "^0.2.2",
-    "smtp-connection": "^2.12.0",
     "mongodb": "^2.2.8",
+    "request": "^2.78.0",
+    "smtp-connection": "^2.12.0",
     "vision": "^4.1.0"
   },
   "engines": {
