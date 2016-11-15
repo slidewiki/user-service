@@ -356,6 +356,36 @@ module.exports = function (server) {
     }
   });
 
+  //gets dropdown data for frontend for users
+  server.route({
+    method: 'GET',
+    path: '/information/username/search/{username}',
+    handler: handlers.searchUser,
+    config: {
+      validate: {
+        params: {
+          username: Joi.string()
+        }
+      },
+      tags: ['api'],
+      description: 'Searches for user and returns JSON for semantic-ui dropdown',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          }
+        }
+      },
+      cors: {
+        origin: ['*'],
+        additionalHeaders: ['cache-control', 'x-requested-with']
+      }
+    }
+  });
+
   //Check if email is already in use
   server.route({
     method: 'GET',

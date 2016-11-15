@@ -403,6 +403,36 @@ module.exports = {
       });
   },
 
+  searchUser: (req, res) => {
+    const username = decodeURI(req.params.username);
+
+    const query = {
+      username: {
+        $regex: username
+      }
+    };
+
+    return userCtrl.find(query)
+      .then((cursor1) => cursor1.project({username: 1, _id: 1}))
+      .then((cursor2) => cursor2.maxScan(10))
+      .then((cursor3) => cursor3.toArray())
+      .then((array) => {
+        //console.log('handler: checkUsername: similar usernames', array);
+        let data = array.reduce((prev, curr) => {
+          prev.push({
+            name: curr.username,
+            value: curr._id
+          });
+          return prev;
+        }, []);
+        return res({success: true, results: data});
+      })
+      .catch((error) => {
+        console.log('handler: searchUser: error', error);
+        res({success: false, results: []});
+      });
+  },
+
   checkEmail: (req, res) => {
     const email = decodeURI(req.params.email);
 
