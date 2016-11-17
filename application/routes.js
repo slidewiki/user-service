@@ -520,7 +520,8 @@ module.exports = function (server) {
           timestamp: Joi.string(),
           members: Joi.array().items(Joi.object().keys({
             userid: Joi.number(),
-            joined: Joi.string()
+            joined: Joi.string(),
+            username: Joi.string()
           }).requiredKeys('userid', 'joined'))
         }).requiredKeys('name'),
         headers: Joi.object({
