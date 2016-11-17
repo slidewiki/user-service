@@ -600,7 +600,7 @@ module.exports = {
             return Promise.all(promises).then(() => {
               return res();
             }).catch((error) => {
-              req.log('error', error);
+              console.log('error', error);
               //reply(boom.badImplementation());
               //for now always succeed
               return res();
@@ -652,7 +652,7 @@ module.exports = {
             return Promise.all(promises).then(() => {
               return res(group);
             }).catch((error) => {
-              req.log('error', error);
+              console.log('error', error);
               //reply(boom.badImplementation());
               //for now always succeed
               return res(group);
@@ -731,7 +731,7 @@ module.exports = {
                 return Promise.all(promises).then(() => {
                   return res(group);
                 }).catch((error) => {
-                  req.log('error', error);
+                  console.log('error', error);
                   //reply(boom.badImplementation());
                   //for now always succeed
                   return res(group);

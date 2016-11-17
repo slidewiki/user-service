@@ -37,7 +37,8 @@ describe('User service', () => {
     members: [
       {
         userid: 1,
-        joined: (new Date()).toISOString()
+        joined: (new Date()).toISOString(),
+        username: 'Rob'
       }
     ]
   };
@@ -48,11 +49,13 @@ describe('User service', () => {
     members: [
       {
         userid: 1,
-        joined: (new Date()).toISOString()
+        joined: (new Date()).toISOString(),
+        username: 'ASW2'
       },
       {
         userid: 2,
-        joined: (new Date()).toISOString()
+        joined: (new Date()).toISOString(),
+        username: 'Rob'
       }
     ]
   };
@@ -334,7 +337,7 @@ describe('User service', () => {
         throw Error;
         expect(1).to.equals(2);
       });
-    });
+    }).timeout(60000);
     it('Update usergroup', () => {
       let group = correct_usergroup2;
       group.id = groupid;
@@ -358,7 +361,7 @@ describe('User service', () => {
         throw Error;
         expect(1).to.equals(2);
       });
-    });
+    }).timeout(60000);
     it('Get user detailed and check groups', () => {
       let req = {
         params: {
@@ -385,7 +388,7 @@ describe('User service', () => {
         throw Error;
         expect(1).to.equals(2);
       });
-    });
+    }).timeout(60000);
     it('Delete usergroup', () => {
       let req = {
         params: {
@@ -409,7 +412,7 @@ describe('User service', () => {
         throw Error;
         expect(1).to.equals(2);
       });
-    });
+    }).timeout(60000);
 
     //delete the user
 
