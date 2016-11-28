@@ -508,6 +508,46 @@ module.exports = function (server) {
 
   server.route({
     method: 'PUT',
+    path: '/usergroup/{groupid}/leave',
+    handler: handlers.leaveUsergroup,
+    config: {
+      validate: {
+        params: {
+          groupid: Joi.number().integer().options({convert: true})
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Leave a usergroup - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right groupid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Group not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'PUT',
     path: '/usergroup/createorupdate',
     handler: handlers.createOrUpdateUsergroup,
     config: {

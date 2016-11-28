@@ -768,6 +768,28 @@ module.exports = {
 
         return res(array);
       });
+  },
+
+  leaveUsergroup: (req, res) => {
+    return usergroupCtrl.partlyUpdate({
+      _id: req.params.groupid
+    }, {
+      $pull: {
+        members: {
+          userid: req.auth.credentials.userid
+        }
+      }
+    }).
+    then((result) => {
+      console.log('leaveUsergroup: ', result.result);
+      if (result.result.ok !== 1)
+        return res(boom.notFound());
+
+      if (result.result.nModified !== 1)
+        return res(boom.unauthorized());
+
+      return res();
+    });
   }
 };
 
