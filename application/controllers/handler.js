@@ -7,12 +7,14 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
   co = require('../common'),
   userCtrl = require('../database/user'),
+  usergroupCtrl = require('../database/usergroup'),
   config = require('../configuration'),
   jwt = require('./jwt'),
   Joi = require('joi'),
   JSSHA = require('js-sha512'),
   SMTPConnection = require('smtp-connection'),
-  util = require('./util');
+  util = require('./util'),
+  request = require('request');
 
 module.exports = {
   register: (req, res) => {
@@ -134,7 +136,13 @@ module.exports = {
             return res(boom.unauthorized('This user is deactivated.'));
           }
 
-          return res(prepareDetailedUserData(user));
+          //get groups of a user
+          return usergroupCtrl.readGroupsOfUser(req.params.id)
+            .then((array) => {
+              user.groups = array;
+
+              return res(prepareDetailedUserData(user));
+            });
         }
         else {
           return res(boom.notFound());
@@ -397,6 +405,36 @@ module.exports = {
       });
   },
 
+  searchUser: (req, res) => {
+    const username = decodeURI(req.params.username);
+
+    const query = {
+      username: {
+        $regex: username
+      }
+    };
+
+    return userCtrl.find(query)
+      .then((cursor1) => cursor1.project({username: 1, _id: 1}))
+      .then((cursor2) => cursor2.maxScan(10))
+      .then((cursor3) => cursor3.toArray())
+      .then((array) => {
+        //console.log('handler: checkUsername: similar usernames', array);
+        let data = array.reduce((prev, curr) => {
+          prev.push({
+            name: curr.username,
+            value: curr._id
+          });
+          return prev;
+        }, []);
+        return res({success: true, results: data});
+      })
+      .catch((error) => {
+        console.log('handler: searchUser: error', error);
+        res({success: false, results: []});
+      });
+  },
+
   checkEmail: (req, res) => {
     const email = decodeURI(req.params.email);
 
@@ -526,6 +564,234 @@ module.exports = {
       })
       .catch((error) => res(error));
     });
+  },
+
+  deleteUsergroup: (req, res) => {
+    //first check if user is creator
+    return usergroupCtrl.read(req.params.groupid)
+      .then((document) => {
+        if (document === undefined || document === null) {
+          return res(boom.notFound());
+        }
+
+        if (document.creator !== req.auth.credentials.userid) {
+          return res(boom.unauthorized());
+        }
+
+        //now delete
+        return usergroupCtrl.delete(req.params.groupid)
+          .then((result) => {
+            // console.log('deleteUsergroup: deleted', result.result);
+
+            if (result.result.ok !== 1) {
+              return res(boom.badImplementation());
+            }
+
+            if (result.result.n !== 1) {
+              return res(boom.notFound());
+            }
+
+            if (document.members.length < 1)
+              return res();
+
+            //notify users
+            let promises = [];
+            document.members.forEach((member) => {
+              promises.push(notifiyUser(member.userid, 'left', document));
+            });
+            return Promise.all(promises).then(() => {
+              return res();
+            }).catch((error) => {
+              console.log('error', error);
+              //reply(boom.badImplementation());
+              //for now always succeed
+              return res();
+            });
+          });
+      });
+  },
+
+  createOrUpdateUsergroup: (req, res) => {
+    const userid = req.auth.credentials.userid;
+
+    let group = req.payload;
+
+    group.creator = userid;
+    group.description = util.parseAPIParameter(group.description);
+    group.name = util.parseAPIParameter(group.name);
+    group.timestamp = util.parseAPIParameter(group.timestamp) || (new Date()).toISOString();
+
+    if (group.isActive !== false)
+      group.isActive = true;
+    if (group.members === undefined || group.members === null || group.members.length < 0)
+      group.members = [];
+
+    if (group.id === undefined || group.id === null) {
+      //create
+      // console.log('createOrUpdateUsergroup: create group', group);
+
+      return usergroupCtrl.create(group)
+        .then((result) => {
+          // console.log('createOrUpdateUsergroup: created group', result.result || result);
+
+          if (result[0] !== undefined && result[0] !== null) {
+            //Error
+            return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+          }
+
+          if (result.insertedCount === 1) {
+            //success
+            group.id = result.insertedId;
+
+            if (group.members.length < 1)
+              return res(group);
+
+            //notify users
+            let promises = [];
+            group.members.forEach((member) => {
+              promises.push(notifiyUser(member.userid, 'joined', group));
+            });
+            return Promise.all(promises).then(() => {
+              return res(group);
+            }).catch((error) => {
+              console.log('error', error);
+              //reply(boom.badImplementation());
+              //for now always succeed
+              return res(group);
+            });
+          }
+
+          res(boom.badImplementation());
+        })
+        .catch((error) => {
+          console.log('Error', error);
+          res(boom.badImplementation(error));
+        });
+    }
+    else if (group.id < 1) {
+      //error
+      return res(boom.badData());
+    }
+    else {
+      //update
+      // console.log('createOrUpdateUsergroup: update group', group);
+
+      //first check if user is creator
+      return usergroupCtrl.read(group.id)
+        .then((document) => {
+          if (document === undefined || document === null) {
+            return res(boom.notFound());
+          }
+
+          if (document.creator !== group.creator) {
+            return res(boom.unauthorized());
+          }
+
+          //some attribute should be unchangeable
+          group.timestamp = document.timestamp;
+          group._id = document._id;
+
+          return usergroupCtrl.update(group)
+            .then((result) => {
+              // console.log('createOrUpdateUsergroup: updated group', result.result || result);
+
+              if (result[0] !== undefined && result[0] !== null) {
+                //Error
+                return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+              }
+
+              if (result.result.ok === 1) {
+                if (group.members.length < 1 && document.members.length < 1)
+                  return res(group);
+
+                //notify users
+                let wasUserAMember = (userid) => {
+                  let result = false;
+                  document.members.forEach((member) => {
+                    if (member.userid === userid)
+                      result = true;
+                  });
+                  return result;
+                };
+                let wasUserDeleted = (userid) => {
+                  let result = true;
+                  group.members.forEach((member) => {
+                    if (member.userid === userid)
+                      result = false;
+                  });
+                  return result;
+                };
+                let promises = [];
+                group.members.forEach((member) => {
+                  if (!wasUserAMember(member.userid))
+                    promises.push(notifiyUser(member.userid, 'joined', group));
+                });
+                document.members.forEach((member) => {
+                  if (wasUserDeleted(member.userid))
+                    promises.push(notifiyUser(member.userid, 'left', document));
+                });
+                return Promise.all(promises).then(() => {
+                  return res(group);
+                }).catch((error) => {
+                  console.log('error', error);
+                  //reply(boom.badImplementation());
+                  //for now always succeed
+                  return res(group);
+                });
+              }
+
+              res(boom.badImplementation());
+            });
+        })
+        .catch((error) => {
+          console.log('Error', error);
+          res(boom.badImplementation(error));
+        });
+    }
+  },
+
+  getUsergroups: (req, res) => {
+    let selectors = req.payload.reduce((q, element) => {
+      q.push({_id: element});
+      return q;
+    }, []);
+    let query = {
+      $or: selectors
+    };
+
+    // console.log('getUsergroups:', query);
+
+    return usergroupCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        if (array === undefined || array === null || array.length < 1) {
+          return res([]);
+        }
+
+        return res(array);
+      });
+  },
+
+  leaveUsergroup: (req, res) => {
+    return usergroupCtrl.partlyUpdate({
+      _id: req.params.groupid
+    }, {
+      $pull: {
+        members: {
+          userid: req.auth.credentials.userid
+        }
+      }
+    }).
+    then((result) => {
+      console.log('leaveUsergroup: ', result.result);
+      if (result.result.ok !== 1)
+        return res(boom.notFound());
+
+      if (result.result.nModified !== 1)
+        return res(boom.unauthorized());
+
+      return res();
+    });
   }
 };
 
@@ -627,4 +893,37 @@ function preparePublicUserData(user) {
   }
 
   return minimizedUser;
+}
+
+function notifiyUser(userid, type, group) {
+  let promise = new Promise((resolve, reject) => {
+    const options = {
+      url: config.URLS.notificationservice + '/notification/new',
+      method: 'POST',
+      json: true,
+      body: {
+        activity_id: require('crypto').randomBytes(9).toString('hex'),
+        activity_type: type,
+        user_id: userid.toString(),
+        content_id: group._id.toString(),
+        content_kind: 'group',
+        content_name: 'You ' + type + ' the group ' + group.name,
+        content_owner_id: userid.toString(),
+        subscribed_user_id: userid.toString()
+      }
+    };
+
+    function callback(error, response, body) {
+      console.log('notifiyUser: ', error, response.statusCode, body);
+
+      if (!error && (response.statusCode === 200)) {
+        return resolve(body);
+      } else {
+        return reject(error);
+      }
+    }
+
+    request(options, callback);
+  });
+  return promise;
 }

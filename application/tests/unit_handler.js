@@ -95,8 +95,38 @@ describe('User service', () => {
   	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
   	'name' : 'Kurt Junghanns'
   };
+  let correct_usergroup = {
+    name: 'Testgroup',
+    description: 'Used for Unit tests',
+    isActive: true,
+    members: [
+      {
+        userid: 1,
+        joined: (new Date()).toISOString(),
+        username: 'Rob'
+      }
+    ]
+  };
+  let correct_usergroup2 = {
+    name: 'Blub blabla blub',
+    description: 'Used for Unit tests',
+    isActive: true,
+    members: [
+      {
+        userid: 1,
+        joined: (new Date()).toISOString(),
+        username: 'ASW2'
+      },
+      {
+        userid: 2,
+        joined: (new Date()).toISOString(),
+        username: 'Rob'
+      }
+    ]
+  };
   let userid = '',
-    jwt = '';
+    jwt = '',
+    groupid = 0;
 
   context('Using all exported functions - ', () => {
     it('Register user', () => {
@@ -345,6 +375,112 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     });
+
+
+    //usergroups
+
+    it('Create usergroup', () => {
+      let req = {
+        payload: correct_usergroup,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        // console.log(result);
+
+        expect(result.name).to.equal(correct_usergroup.name);
+
+        groupid = result.id;
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+    it('Update usergroup', () => {
+      let group = correct_usergroup2;
+      group.id = groupid;
+      let req = {
+        payload: group,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        // console.log(result);
+
+        expect(result.name).to.equal('Blub blabla blub');
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+    it('Get user detailed and check groups', () => {
+      let req = {
+        params: {
+          id: userid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.getUser(req, (result) => {
+        // console.log('testresult: ', result);
+
+        expect(result._id).to.equal(userid);
+        expect(result.groups).to.not.equal(undefined);
+        expect(result.groups.length).to.equal(1);
+        expect(result.groups[0].id).to.equal(groupid);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+    it('Delete usergroup', () => {
+      let req = {
+        params: {
+          groupid: groupid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.deleteUsergroup(req, (result) => {
+        console.log(result);
+
+        expect(result).to.equal(undefined);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+
+    //delete the user
+
     it('Delete user', () => {
       let req = {
         params: {
