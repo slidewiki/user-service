@@ -241,7 +241,8 @@ module.exports = {
             let user = {
               username:         util.parseAPIParameter(req.payload.username) || document.username,
               email:            util.parseAPIParameter(req.payload.email),
-              frontendLanguage: util.parseAPIParameter(req.payload.language),
+              frontendLanguage: 'en_EN',
+              spokenLanguages: [util.parseAPIParameter(req.payload.language)],
               country:          document.location || '',
               picture:          document.picture || '',
               description:      document.description || '',
