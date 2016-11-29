@@ -13,3 +13,4 @@ template:
     - SMTP_HOST=localhost
     - SMTP_FROM=me@hostername.org
 #    - SMTP_CLIENTNAME=
+    - URL_NOTIFICATIONSERVICE=http://notificationservice.experimental.slidewiki.org
