@@ -53,6 +53,11 @@ if (!co.isEmpty(process.env.APIKEY)){
   APIKey = process.env.APIKEY;
 }
 
+let url_notificationservice = 'http://notificationservice.experimental.slidewiki.org';
+if (!co.isEmpty(process.env.URL_NOTIFICATIONSERVICE)){
+  url_notificationservice = process.env.URL_NOTIFICATIONSERVICE;
+}
+
 module.exports = {
   MongoDB: {
     PORT: port,
@@ -73,4 +78,7 @@ module.exports = {
     clientName: SMTP_clientName,
     from: SMTP_from
   },
+  URLS: {
+    notificationservice: url_notificationservice
+  }
 };

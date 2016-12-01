@@ -356,6 +356,36 @@ module.exports = function (server) {
     }
   });
 
+  //gets dropdown data for frontend for users
+  server.route({
+    method: 'GET',
+    path: '/information/username/search/{username}',
+    handler: handlers.searchUser,
+    config: {
+      validate: {
+        params: {
+          username: Joi.string()
+        }
+      },
+      tags: ['api'],
+      description: 'Searches for user and returns JSON for semantic-ui dropdown',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          }
+        }
+      },
+      cors: {
+        origin: ['*'],
+        additionalHeaders: ['cache-control', 'x-requested-with']
+      }
+    }
+  });
+
   //Check if email is already in use
   server.route({
     method: 'GET',
@@ -426,6 +456,164 @@ module.exports = function (server) {
                   'description': 'Contact the server admin in order to re-activate your account.'
                 }
               }
+            }
+          },
+          payloadType: 'json'
+        }
+      }
+    }
+  });
+
+  //groups
+
+  server.route({
+    method: 'DELETE',
+    path: '/usergroup/{groupid}',
+    handler: handlers.deleteUsergroup,
+    config: {
+      validate: {
+        params: {
+          groupid: Joi.number().integer().options({convert: true})
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Delete a usergroup - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to delete this group.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right groupid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Group not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'PUT',
+    path: '/usergroup/{groupid}/leave',
+    handler: handlers.leaveUsergroup,
+    config: {
+      validate: {
+        params: {
+          groupid: Joi.number().integer().options({convert: true})
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Leave a usergroup - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right groupid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Group not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'PUT',
+    path: '/usergroup/createorupdate',
+    handler: handlers.createOrUpdateUsergroup,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          id: Joi.number().optional().description('have to be empty for create'),
+          name: Joi.string(),
+          description: Joi.string().allow('').optional(),
+          isActive: Joi.boolean().optional(),
+          timestamp: Joi.string(),
+          members: Joi.array().items(Joi.object().keys({
+            userid: Joi.number(),
+            joined: Joi.string(),
+            username: Joi.string()
+          }).requiredKeys('userid', 'joined'))
+        }).requiredKeys('name'),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Update or create a usergroup - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to update or create this usergroup.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Group for update not found. Check the id.'
+            },
+            ' 422 ': {
+              'description': 'Wrong usergroup data - see error message'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/usergroups',
+    handler: handlers.getUsergroups,
+    config: {
+      validate: {
+        payload: Joi.array().items(Joi.number())
+      },
+      tags: ['api'],
+      description: 'Gets groups by ids',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
             }
           },
           payloadType: 'json'
