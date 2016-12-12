@@ -631,7 +631,8 @@ function sendMail(adr_from, adr_to, message) {
         host: config.SMTP.host,
         port: config.SMTP.port,
         name: config.SMTP.clientName,
-        connectionTimeout: 4000
+        connectionTimeout: 4000,
+        opportunisticTLS: true
       });
     }
     catch (e) {
