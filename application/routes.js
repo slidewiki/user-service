@@ -645,14 +645,6 @@ module.exports = function (server) {
             ' 200 ': {
               'description': 'Successful',
             },
-            ' 401 ': {
-              'description': 'Not authorized. Either the user is deleted or not activated.',
-              'headers': {
-                'WWW-Authenticate': {
-                  'description': 'Use your JWT token.'
-                }
-              }
-            },
             ' 404 ': {
               'description': 'User not found. Check the id.'
             }

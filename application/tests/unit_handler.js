@@ -398,7 +398,7 @@ describe('User service', () => {
         }
       };
       return handler.getUserdata(req, (result) => {
-        console.log('testresult: ', result);
+        // console.log('testresult: ', result);
 
         expect(result.id).to.equal(userid);
         expect(result.email).to.not.equal('');
