@@ -389,6 +389,31 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     }).timeout(60000);
+    it('Get user as service', () => {
+      let req = {
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.getUserdata(req, (result) => {
+        console.log('testresult: ', result);
+
+        expect(result.id).to.equal(userid);
+        expect(result.email).to.not.equal('');
+        expect(result.groups).to.not.equal(undefined);
+        expect(result.groups.length).to.equal(1);
+        expect(result.groups[0].id).to.equal(groupid);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
     it('Delete usergroup', () => {
       let req = {
         params: {

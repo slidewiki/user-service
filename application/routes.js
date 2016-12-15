@@ -621,4 +621,45 @@ module.exports = function (server) {
       }
     }
   });
+
+
+
+  // Routes for other services
+
+  server.route({
+    method: 'GET',
+    path: '/userdata',
+    handler: handlers.getUserdata,
+    config: {
+      validate: {
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Get information about the logged in user - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized. Either the user is deleted or not activated.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
 };

@@ -790,6 +790,38 @@ module.exports = {
 
       return res();
     });
+  },
+
+  //
+
+  getUserdata: (req, res) => {
+    return userCtrl.read(parseStringToInteger(req.auth.credentials.userid))
+      .then((user) => {
+        //console.log('getUser: got user:', user);
+        if (user !== undefined && user !== null && user.username !== undefined) {
+          if (user.deactivated === true) {
+            return res(boom.unauthorized('This user is deactivated.'));
+          }
+
+          //get groups of a user
+          return usergroupCtrl.readGroupsOfUser(req.auth.credentials.userid)
+            .then((array) => {
+              return res({
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                groups: array
+              });
+            });
+        }
+        else {
+          return res(boom.notFound());
+        }
+      })
+      .catch((error) => {
+        console.log('getUser: error', error);
+        res(boom.notFound('Wrong user id', error));
+      });
   }
 };
 
