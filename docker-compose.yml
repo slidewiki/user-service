@@ -15,3 +15,4 @@ template:
 #    - SMTP_CLIENTNAME=
 #    - APIKey=
     - URL_NOTIFICATIONSERVICE=http://notificationservice.experimental.slidewiki.org
+    - JWT_SERIAL=69aac7f95a9152cd4ae7667c80557c284e413d748cca4c5715b3f02020a5ae1b
