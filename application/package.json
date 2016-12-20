@@ -48,6 +48,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
+    "chai-datetime": "^1.4.1",
     "coveralls": "^2.11.12",
     "eslint": "^3.4.0",
     "eslint-plugin-promise": "^2.0.1",
