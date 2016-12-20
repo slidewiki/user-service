@@ -75,8 +75,7 @@ describe('REST API', () => {
 
   context('when trying to log in', () => {
     it('it should reply with at least userid, username and a JWT token for an existing user', () => {
-      let opt = {};
-      Object.assign(opt, options);
+      let opt = Object.assign({}, options);
       opt.payload = validLoginData;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
@@ -92,8 +91,7 @@ describe('REST API', () => {
     });
 
     it('it should reply with 400 for missing data', () => {
-      let opt = {};
-      Object.assign(opt, options);
+      let opt = Object.assign({}, options);
       opt.payload = {email: 'jdoe'};
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -106,8 +104,7 @@ describe('REST API', () => {
     });
 
     it('it should reply with 404 for non existing users', () => {
-      let opt = {};
-      Object.assign(opt, options);
+      let opt = Object.assign({}, options);
       opt.payload = invalidLoginData;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');

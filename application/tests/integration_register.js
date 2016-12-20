@@ -62,8 +62,7 @@ describe('REST API', () => {
 
   context('when registering a new user', () => {
     it('it should reply a userid for the minimal set of information', () => {
-      let opt = {};
-      Object.assign(opt, options);
+      let opt = Object.assign({}, options);
       opt.payload = minimalData;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -76,8 +75,7 @@ describe('REST API', () => {
     });
 
     it('it should reply a userid for the whole set of information', () => {
-      let opt = {};
-      Object.assign(opt, options);
+      let opt = Object.assign({}, options);
       opt.payload = fullData;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode','payload');
@@ -90,8 +88,7 @@ describe('REST API', () => {
     });
 
     it('it should return 400 about missing parameters for an incomplete set of information', () => {
-      let opt = {};
-      Object.assign(opt, options);
+      let opt = Object.assign({}, options);
       opt.payload = {username: 'abc'};
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode','payload');
@@ -104,8 +101,7 @@ describe('REST API', () => {
     });
 
     it('it should return 422 about an already existing user', () => {
-      let opt = {};
-      Object.assign(opt, options);
+      let opt = Object.assign({}, options);
       opt.payload = minimalData;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode','payload');
