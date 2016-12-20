@@ -79,13 +79,21 @@ describe('REST API', () => {
     },
   };
 
+  let options4 = {
+    method: 'GET',
+    url: '/user/',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+  };
+
   context('when trying to test the information block', () => {
     it('it should reply that an email is already used in case it is in use', () => {
       let opt = {};
       Object.assign(opt, options);
       opt.url += fullData.email;
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
@@ -99,7 +107,7 @@ describe('REST API', () => {
       Object.assign(opt, options);
       opt.url += 'heros@slidewiki.org';
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
@@ -112,7 +120,7 @@ describe('REST API', () => {
       let opt = {};
       Object.assign(opt, options);
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(400);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
@@ -126,7 +134,7 @@ describe('REST API', () => {
       Object.assign(opt, options2);
       opt.url += fullData.username;
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
@@ -142,7 +150,7 @@ describe('REST API', () => {
       Object.assign(opt, options2);
       opt.url += 'hero';
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
@@ -156,7 +164,7 @@ describe('REST API', () => {
       let opt = {};
       Object.assign(opt, options2);
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(400);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
@@ -170,11 +178,10 @@ describe('REST API', () => {
       Object.assign(opt, options3);
       opt.url += fullData.username;
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
-        console.log(payload);
         payload.should.be.an('object').and.contain.keys('success', 'results');
         payload.success.should.be.a('boolean').and.equal(true);
         payload.results.should.be.an('array').and.be.not.empty;
@@ -191,11 +198,10 @@ describe('REST API', () => {
       Object.assign(opt, options3);
       opt.url += 'hero';
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
-        console.log(payload);
         payload.should.be.an('object').and.contain.keys('success', 'results');
         payload.success.should.be.a('boolean').and.equal(true);
         payload.results.should.be.an('array').and.be.empty;
@@ -206,7 +212,51 @@ describe('REST API', () => {
       let opt = {};
       Object.assign(opt, options3);
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
+        response.statusCode.should.equal(400);
+        response.payload.should.be.a('string');
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('statusCode', 'error', 'message', 'validation');
+        payload.error.should.be.a('string').and.equal('Bad Request');
+      });
+    });
+
+    it('it should reply the public user information for a registered user', () => {
+      let opt = {};
+      Object.assign(opt, options4);
+      opt.url += fullData.username;
+      return server.inject(opt).then((response) => {
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
+        response.statusCode.should.equal(200);
+        response.payload.should.be.a('string');
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('_id', 'username', 'country', 'picture', 'description', 'organization');
+        payload._id.should.be.a('number').and.equal(1);
+        payload.username.should.be.an('string').and.equal(fullData.username);
+        payload.organization.should.be.an('string').and.equal(fullData.organization);
+      });
+    });
+
+    it('it should reply 404 for a not existing user', () => {
+      let opt = {};
+      Object.assign(opt, options4);
+      opt.url += 'hero';
+      return server.inject(opt).then((response) => {
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
+        response.statusCode.should.equal(404);
+        response.payload.should.be.a('string');
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('statusCode', 'error');
+        payload.statusCode.should.be.a('number').and.equal(404);
+        payload.error.should.be.a('string').and.equal('Not Found');
+      });
+    });
+
+    it('it should return 400 in case the username parameter is missing', () => {
+      let opt = {};
+      Object.assign(opt, options4);
+      return server.inject(opt).then((response) => {
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(400);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
