@@ -638,6 +638,21 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Get information about the logged in user - JWT needed',
+      response: {
+        schema: Joi.object().keys({
+          id: Joi.number().required(),
+          username: Joi.string().required(),
+          groups: Joi.array().items(Joi.object().keys({
+            _id: Joi.number(),
+            name: Joi.string(),
+            creator: Joi.number(),
+            members: Joi.array().items(Joi.object().keys({
+              userid: Joi.number(),
+              joined: Joi.string()
+            }).requiredKeys('userid', 'joined'))
+          }).requiredKeys('_id', 'name', 'creator'))
+        }).required('id', 'username')
+      },
       auth: 'jwt',
       plugins: {
         'hapi-swagger': {
