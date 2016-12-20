@@ -1,4 +1,3 @@
-/* eslint dot-notation: 0, "promise/always-catch": 0*/
 'use strict';
 
 describe('REST API', () => {

@@ -1,4 +1,3 @@
-/* eslint dot-notation: 0, "promise/always-catch": 0*/
 'use strict';
 
 describe('REST API', () => {
@@ -46,13 +45,6 @@ describe('REST API', () => {
 
   });
 
-  const minimalData = {
-    username: 'jdoe',
-    email: 'jdoe@test.test',
-    password: '12345678',
-    language: 'en_EN',
-  };
-
   const fullData = {
     username: 'jdoe',
     email: 'jdoe@test.test',
@@ -95,7 +87,7 @@ describe('REST API', () => {
         let payload = JSON.parse(response.payload);
         payload.should.be.an('object').and.contain.keys('userid', 'username');
         payload.userid.should.be.a('number').and.equal(1);
-        payload.username.should.be.a('string').and.equal(minimalData.username);
+        payload.username.should.be.a('string').and.equal(fullData.username);
       });
     });
 
