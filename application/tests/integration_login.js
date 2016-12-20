@@ -31,7 +31,17 @@ describe('REST API', () => {
 
       server.auth.default('jwt');
       require('../routes.js')(server);
-      return db.cleanDatabase('slidewiki');
+      return db.cleanDatabase('slidewiki').then(() => {
+        let options = {
+          method: 'POST',
+          url: '/register',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          payload: fullData
+        };
+        return server.inject(options);
+      });
     });
 
   });
@@ -44,8 +54,8 @@ describe('REST API', () => {
   };
 
   const fullData = {
-    username: 'jdoe2',
-    email: 'jdoe2@test.test',
+    username: 'jdoe',
+    email: 'jdoe@test.test',
     password: '12345678',
     language: 'en_EN',
     forename: 'John',
@@ -53,49 +63,48 @@ describe('REST API', () => {
     organization: 'Test',
   };
 
-  const options = {
-    method: 'POST',
-    url: '/register',
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  const validLoginData = {
+    email: 'jdoe@test.test',
+    password: '12345678'
   };
 
-  context('when registering a new user', () => {
-    it('it should reply a userid for the minimal set of information', () => {
+  const invalidLoginData = {
+    email: 'jdoe2@test.test',
+    password: 'abcdefgh'
+  };
+
+  const options = {
+    method: 'POST',
+    url: '/login',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+  };
+
+  context('when trying to log in', () => {
+    it('it should reply with at least userid, username and a JWT token for an existing user', () => {
       let opt = {};
       Object.assign(opt, options);
-      opt.payload = minimalData;
+      opt.payload = validLoginData;
+      return server.inject(opt).then((response) => {
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload', 'headers');
+        response.statusCode.should.equal(200);
+        response.payload.should.be.a('string');
+        response.headers.should.be.an('object').and.contain.keys('----jwt----');
+        //TODO test jwt validity
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('userid', 'username');
+        payload.userid.should.be.a('number').and.equal(1);
+        payload.username.should.be.a('string').and.equal(minimalData.username);
+      });
+    });
+
+    it('it should reply with 400 for missing data', () => {
+      let opt = {};
+      Object.assign(opt, options);
+      opt.payload = {email: 'jdoe'};
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
-        response.statusCode.should.equal(200);
-        response.payload.should.be.a('string');
-        let payload = JSON.parse(response.payload);
-        payload.should.be.an('object').and.contain.keys('userid');
-        payload.userid.should.be.a('number');
-      });
-    });
-
-    it('it should reply a userid for the whole set of information', () => {
-      let opt = {};
-      Object.assign(opt, options);
-      opt.payload = fullData;
-      return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode','payload');
-        response.statusCode.should.equal(200);
-        response.payload.should.be.a('string');
-        let payload = JSON.parse(response.payload);
-        payload.should.be.an('object').and.contain.keys('userid');
-        payload.userid.should.be.a('number');
-      });
-    });
-
-    it('it should return 400 about missing parameters for an incomplete set of information', () => {
-      let opt = {};
-      Object.assign(opt, options);
-      opt.payload = {username: 'abc'};
-      return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode','payload');
         response.statusCode.should.equal(400);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
@@ -104,17 +113,17 @@ describe('REST API', () => {
       });
     });
 
-    it('it should return 422 about an already existing user', () => {
+    it('it should reply with 404 for non existing users', () => {
       let opt = {};
       Object.assign(opt, options);
-      opt.payload = minimalData;
+      opt.payload = invalidLoginData;
       return server.inject(opt).then((response) => {
-        response.should.be.an('object').and.contain.keys('statusCode','payload');
-        response.statusCode.should.equal(422);
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
+        response.statusCode.should.equal(401);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
-        payload.should.be.an('object').and.contain.keys('statusCode', 'error', 'message');
-        payload.error.should.be.a('string').and.equal('Unprocessable Entity');
+        payload.should.be.an('object').and.contain.keys('statusCode', 'error', 'message', 'attributes');
+        payload.error.should.be.a('string').and.equal('Unauthorized');
       });
     });
 
