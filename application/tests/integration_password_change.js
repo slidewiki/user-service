@@ -80,24 +80,6 @@ describe('REST API', () => {
     },
   };
 
-  let options3 = {
-    method: 'PUT',
-    url: '/user/', //+profile at the end
-    headers: {
-      'Content-Type': 'application/json',
-      '----jwt----': ''
-    },
-  };
-
-  let options4 = {
-    method: 'DELETE',
-    url: '/user/',
-    headers: {
-      'Content-Type': 'application/json',
-      '----jwt----': ''
-    },
-  };
-
   context('when trying to change the password of a user', () => {
 
     it('it should reply with 200 if the password has been changed', () => {
