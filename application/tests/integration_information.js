@@ -89,7 +89,7 @@ describe('REST API', () => {
 
   context('when trying to test the information block', () => {
     it('it should reply that an email is already used in case it is in use', () => {
-      let opt = Object.assign({}, options);
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += fullData.email;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -102,7 +102,7 @@ describe('REST API', () => {
     });
 
     it('it should reply that an email is not used in case it is not in use', () => {
-      let opt = Object.assign({}, options);
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += 'heros@slidewiki.org';
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -115,7 +115,7 @@ describe('REST API', () => {
     });
 
     it('it should return 400 in case the email parameter is missing', () => {
-      let opt = Object.assign({}, options);
+      let opt = JSON.parse(JSON.stringify(options));
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(400);
@@ -127,7 +127,7 @@ describe('REST API', () => {
     });
 
     it('it should reply that a username is already used in case it is in use and tell similar used usernames', () => {
-      let opt = Object.assign({}, options2);
+      let opt = JSON.parse(JSON.stringify(options2));
       opt.url += fullData.username;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -142,7 +142,7 @@ describe('REST API', () => {
     });
 
     it('it should reply that a username is not used in case it is not in use', () => {
-      let opt = Object.assign({}, options2);
+      let opt = JSON.parse(JSON.stringify(options2));
       opt.url += 'hero';
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -156,7 +156,7 @@ describe('REST API', () => {
     });
 
     it('it should return 400 in case the username parameter is missing', () => {
-      let opt = Object.assign({}, options2);
+      let opt = JSON.parse(JSON.stringify(options2));
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(400);
@@ -168,7 +168,7 @@ describe('REST API', () => {
     });
 
     it('it should reply that a username is already used in case it is in use and tell similar used usernames', () => {
-      let opt = Object.assign({}, options3);
+      let opt = JSON.parse(JSON.stringify(options3));
       opt.url += fullData.username;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -187,7 +187,7 @@ describe('REST API', () => {
     });
 
     it('it should reply that a username is not used in case it is not in use', () => {
-      let opt = Object.assign({}, options3);
+      let opt = JSON.parse(JSON.stringify(options3));
       opt.url += 'hero';
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -201,7 +201,7 @@ describe('REST API', () => {
     });
 
     it('it should return 400 in case the username parameter is missing', () => {
-      let opt = Object.assign({}, options3);
+      let opt = JSON.parse(JSON.stringify(options3));
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(400);
@@ -213,7 +213,7 @@ describe('REST API', () => {
     });
 
     it('it should reply the public user information for a registered user', () => {
-      let opt = Object.assign({}, options4);
+      let opt = JSON.parse(JSON.stringify(options4));
       opt.url += fullData.username;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -228,7 +228,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 404 for a not existing user', () => {
-      let opt = Object.assign({}, options4);
+      let opt = JSON.parse(JSON.stringify(options4));
       opt.url += 'hero';
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -242,7 +242,7 @@ describe('REST API', () => {
     });
 
     it('it should return 400 in case the username parameter is missing', () => {
-      let opt = Object.assign({}, options4);
+      let opt = JSON.parse(JSON.stringify(options4));
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(400);

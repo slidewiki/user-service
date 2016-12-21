@@ -62,7 +62,7 @@ describe('REST API', () => {
 
   context('when registering a new user', () => {
     it('it should reply a userid for the minimal set of information', () => {
-      let opt = Object.assign({}, options);
+      let opt = JSON.parse(JSON.stringify(options));
       opt.payload = minimalData;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
@@ -75,7 +75,7 @@ describe('REST API', () => {
     });
 
     it('it should reply a userid for the whole set of information', () => {
-      let opt = Object.assign({}, options);
+      let opt = JSON.parse(JSON.stringify(options));
       opt.payload = fullData;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode','payload');
@@ -88,7 +88,7 @@ describe('REST API', () => {
     });
 
     it('it should return 400 about missing parameters for an incomplete set of information', () => {
-      let opt = Object.assign({}, options);
+      let opt = JSON.parse(JSON.stringify(options));
       opt.payload = {username: 'abc'};
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode','payload');
@@ -100,16 +100,16 @@ describe('REST API', () => {
       });
     });
 
-    it('it should return 422 about an already existing user', () => {
-      let opt = Object.assign({}, options);
+    it('it should return 409 about an already existing user', () => {
+      let opt = JSON.parse(JSON.stringify(options));
       opt.payload = minimalData;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode','payload');
-        response.statusCode.should.equal(422);
+        response.statusCode.should.equal(409);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
         payload.should.be.an('object').and.contain.keys('statusCode', 'error', 'message');
-        payload.error.should.be.a('string').and.equal('Unprocessable Entity');
+        payload.error.should.be.a('string').and.equal('Conflict');
       });
     });
 
