@@ -80,7 +80,7 @@ describe('REST API', () => {
     organization: 'Test'
   };
 
-  let options3 = {
+  let options = {
     method: 'PUT',
     url: '/user/', //+profile at the end
     headers: {
@@ -89,9 +89,9 @@ describe('REST API', () => {
     },
   };
 
-  let options4 = {
-    method: 'DELETE',
-    url: '/user/',
+  let options2 = {
+    method: 'GET',
+    url: '/user/', //+profile at the end
     headers: {
       'Content-Type': 'application/json',
       '----jwt----': ''
@@ -101,7 +101,7 @@ describe('REST API', () => {
   context('when trying to update a users data', () => {
 
     it('it should reply with 200 in case data is valid', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
@@ -109,11 +109,21 @@ describe('REST API', () => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string').and.be.empty;
+      }).then(() => {
+        options2.url += userid + '/profile';
+        options2.headers['----jwt----'] = jwtHeader;
+        return server.inject(options2);
+      }).then((response) => {
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
+        response.statusCode.should.equal(200);
+        response.payload.should.be.a('string').and.not.be.empty;
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.include(fullData);
       });
     });
 
     it('it should reply 403 for a not existing user', () => { //QUESTION Or better Not Found?
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += 11 + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
@@ -128,7 +138,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 401 in case the JWT is missing', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid + '/profile';
       opt.payload = JSON.parse(JSON.stringify(fullData));
       return server.inject(opt).then((response) => {
@@ -142,7 +152,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 400 in case all parameters are missing', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = {};
@@ -157,7 +167,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 400 in case the language parameter is missing', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
@@ -173,7 +183,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 400 in case the email parameter is missing', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
@@ -189,7 +199,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 400 in case the username parameter is missing', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
@@ -205,7 +215,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 400 in case the id parameter is missing', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
@@ -220,7 +230,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 400 in case the id parameter is of wrong type', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += 'abc' + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
@@ -235,7 +245,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 400 in case the email parameter is not an email', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
@@ -251,7 +261,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 400 in case the language parameter is not a language', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
@@ -267,7 +277,7 @@ describe('REST API', () => {
     });
 
     it('it should reply 403 in case the username shall be exchanged', () => {
-      let opt = JSON.parse(JSON.stringify(options3));
+      let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
