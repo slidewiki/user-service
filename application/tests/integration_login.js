@@ -103,7 +103,7 @@ describe('REST API', () => {
       });
     });
 
-    it('it should reply with 403 for non existing users', () => {
+    it('it should reply with 403 for non existing users', () => {//TODO using 404?
       let opt = JSON.parse(JSON.stringify(options));
       opt.payload = invalidLoginData;
       return server.inject(opt).then((response) => {

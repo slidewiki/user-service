@@ -142,7 +142,7 @@ describe('REST API', () => {
       });
     });
 
-    it('it should reply with 200 in case the user is deleted', () => {
+    it('it should reply with 200 in case the user is deactivated and after the same call should return 404', () => {
       let opt = JSON.parse(JSON.stringify(options));
       opt.url += userid;
       opt.headers['----jwt----'] = jwtHeader;

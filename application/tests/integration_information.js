@@ -200,7 +200,7 @@ describe('REST API', () => {
       });
     });
 
-    it('it should return 400 in case the username parameter is missing', () => {
+    it('it should return 400 in case the username parameter is missing', () => {  //TODO 200 with emtpy array should be returned
       let opt = JSON.parse(JSON.stringify(options3));
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');

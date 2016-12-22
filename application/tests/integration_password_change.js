@@ -176,7 +176,7 @@ describe('REST API', () => {
       });
     });
 
-    it('it should reply 403 in case the password is wrong', () => {
+    it('it should reply 403 in case the old password is wrong', () => {
       let opt = JSON.parse(JSON.stringify(options2));
       opt.url += userid + '/passwd';
       opt.headers['----jwt----'] = jwtHeader;

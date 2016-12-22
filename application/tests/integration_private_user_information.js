@@ -102,7 +102,7 @@ describe('REST API', () => {
       });
     });
 
-    it('it should reply 403 for a not existing user', () => { //QUESTION Or better Not Found?
+    it('it should reply 403 for a not existing user', () => { //TODO Correct test - also ad not found if jwt was ok and user not in database
       let opt = JSON.parse(JSON.stringify(options));
       opt.url += '10' + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
