@@ -565,6 +565,9 @@ module.exports = function (server) {
             },
             ' 406 ': {
               'description': 'Provider is not available.'
+            },
+            ' 409 ': {
+              'description': 'The account of the social provider is already used. Normally by another account. Check if you have multiple accounts.'
             }
           },
           payloadType: 'form'

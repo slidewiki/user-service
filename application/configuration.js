@@ -58,6 +58,11 @@ if (!co.isEmpty(process.env.URL_NOTIFICATIONSERVICE)){
   url_notificationservice = process.env.URL_NOTIFICATIONSERVICE;
 }
 
+let url_platform = 'http://platform.manfredfris.ch:4000';
+if (!co.isEmpty(process.env.URL_PLATFORM)){
+  url_platform = process.env.URL_PLATFORM;
+}
+
 module.exports = {
   MongoDB: {
     PORT: port,
@@ -79,6 +84,7 @@ module.exports = {
     from: SMTP_from
   },
   URLS: {
-    notificationservice: url_notificationservice
+    notificationservice: url_notificationservice,
+    platform: url_platform
   }
 };

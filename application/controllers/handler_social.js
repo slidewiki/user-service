@@ -15,7 +15,7 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   util = require('./util');
 
 const PROVIDERS = ['github', 'google', 'facebook'],
-  PLATFORM_SOCIAL_URL = 'http://platform.manfredfris.ch:4000/socialLogin';
+  PLATFORM_SOCIAL_URL = config.URLS.platform + '/socialLogin';
 
 module.exports = {
   //Uses provided token to get user data and stores plus response the userdata
@@ -106,7 +106,7 @@ module.exports = {
         return isProviderAlreadyUsedBySomeone(document)
           .then((isUsed) => {
             if (isUsed) {
-              return res(boom.conflict());
+              return res(boom.conflict('The social provider is already used by someone else.'));
             }
 
             //delete old provider data
@@ -235,7 +235,7 @@ module.exports = {
         return isProviderAlreadyUsedBySomeone(document)
           .then((isUsed) => {
             if (isUsed) {
-              return res(boom.conflict());
+              return res(boom.conflict('The social provider is already used by someone else.'));
             }
 
             let user = {
