@@ -561,7 +561,8 @@ module.exports = function (server) {
           members: Joi.array().items(Joi.object().keys({
             userid: Joi.number(),
             joined: Joi.string(),
-            username: Joi.string()
+            username: Joi.string(),
+            picture: Joi.string()
           }).requiredKeys('userid', 'joined'))
         }).requiredKeys('name'),
         headers: Joi.object({

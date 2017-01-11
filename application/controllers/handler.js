@@ -413,7 +413,7 @@ module.exports = {
     };
 
     return userCtrl.find(query)
-      .then((cursor1) => cursor1.project({username: 1, _id: 1}))
+      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1}))
       .then((cursor2) => cursor2.maxScan(10))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
@@ -421,7 +421,10 @@ module.exports = {
         let data = array.reduce((prev, curr) => {
           prev.push({
             name: curr.username,
-            value: curr._id
+            value: en JSON.stringify({
+              userid: curr._id,
+              picture: curr.picture
+            })
           });
           return prev;
         }, []);
