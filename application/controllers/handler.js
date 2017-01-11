@@ -421,10 +421,10 @@ module.exports = {
         let data = array.reduce((prev, curr) => {
           prev.push({
             name: curr.username,
-            value: en JSON.stringify({
+            value: encodeURIComponent(JSON.stringify({
               userid: curr._id,
               picture: curr.picture
-            })
+            }))
           });
           return prev;
         }, []);
