@@ -40,6 +40,12 @@ const usergroup = {
           joined: {
             type: 'string',
             format: 'date-time'
+          },
+          username: {
+            type: 'string'
+          },
+          picture: {
+            type: 'string'
           }
         }
       }
