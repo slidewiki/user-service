@@ -101,6 +101,7 @@ module.exports = {
             res({
               userid: result[0]._id,
               username: result[0].username,
+              picture: result[0].picture,
               access_token: 'dummy',
               expires_in: 0
             })
@@ -575,7 +576,7 @@ module.exports = {
           return res(boom.notFound());
         }
 
-        if (document.creator !== req.auth.credentials.userid) {
+        if (document.creator.userid !== req.auth.credentials.userid) {
           return res(boom.unauthorized());
         }
 
@@ -617,7 +618,10 @@ module.exports = {
 
     let group = req.payload;
 
-    group.creator = userid;
+    group.creator = {
+      userid: userid
+    };
+
     group.description = parseAPIParameter(group.description);
     group.name = parseAPIParameter(group.name);
     group.timestamp = parseAPIParameter(group.timestamp) || (new Date()).toISOString();
@@ -684,7 +688,7 @@ module.exports = {
             return res(boom.notFound());
           }
 
-          if (document.creator !== group.creator) {
+          if (document.creator.userid !== group.creator.userid) {
             return res(boom.unauthorized());
           }
 
@@ -752,6 +756,9 @@ module.exports = {
   },
 
   getUsergroups: (req, res) => {
+    if (req.payload === undefined || req.payload.length < 1)
+      return res(boom.badData());
+
     let selectors = req.payload.reduce((q, element) => {
       q.push({_id: element});
       return q;
@@ -769,7 +776,14 @@ module.exports = {
           return res([]);
         }
 
-        return res(array);
+        let enrichedGroups_promises = array.reduce((prev, curr) => {
+          prev.push(enrichGroupMembers(curr));
+          return prev;
+        }, []);
+        return Promise.all(enrichedGroups_promises)
+          .then((enrichedGroups) => {
+            return res(enrichedGroups);
+          });
       });
   },
 
@@ -1007,4 +1021,65 @@ function notifiyUser(userid, type, group) {
     request(options, callback);
   });
   return promise;
+}
+
+//Uses userids of creator and members in order to add username and picture
+function enrichGroupMembers(group) {
+  let userids = group.members.reduce((prev, curr) => {
+    prev.push(curr.userid);
+    return prev;
+  }, []);
+  userids.push(group.creator.userid);
+
+  console.log('enrichGroupMembers: group, userids', group, userids);
+
+  let query = {
+    _id: {
+      $in: userids
+    }
+  };
+  return userCtrl.find(query)
+    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1}))
+    .then((cursor2) => cursor2.toArray())
+    .then((array) => {
+      array = array.reduce((prev, curr) => {
+        if (curr._id) {
+          curr.userid = curr._id;
+          delete curr._id;
+        }
+        prev.push(curr);
+        return prev;
+      }, []);
+      let creator = array.filter((user) => {
+        return user.userid === group.creator.userid;
+      });
+      let members = array.filter((user) => {
+        return user.userid !== group.creator.userid;
+      });
+
+      console.log('enrichGroupMembers: got users', creator, members.concat(group.members));
+
+      //add joined attribute to members
+      members = (members.concat(group.members)).reduce((prev, curr) => {
+        if (prev[curr.userid] === undefined)
+          prev[curr.userid] = {};
+
+        if (curr.joined === undefined) {
+          prev[curr.userid].userid = curr.userid;
+          prev[curr.userid].username = curr.username;
+          prev[curr.userid].picture = curr.picture;
+        }
+        else
+          prev[curr.userid].joined = curr.joined;
+        return prev;
+      }, {});
+      members = Object.keys(members).map((key) => { return members[key]; }).filter((member) => {return member.joined && member.userid && member.username;});
+
+      group.creator = creator[0];
+      group.members = members;
+
+      console.log('enrichGroupMembers: got new members', members);
+
+      return group;
+    });
 }

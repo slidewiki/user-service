@@ -560,9 +560,7 @@ module.exports = function (server) {
           timestamp: Joi.string(),
           members: Joi.array().items(Joi.object().keys({
             userid: Joi.number(),
-            joined: Joi.string(),
-            username: Joi.string(),
-            picture: Joi.string()
+            joined: Joi.string()
           }).requiredKeys('userid', 'joined'))
         }).requiredKeys('name'),
         headers: Joi.object({
@@ -609,6 +607,26 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Gets groups by ids',
+      response: {
+        schema: Joi.object().keys({
+          _id: Joi.number(),
+          name: Joi.string(),
+          description: Joi.string(),
+          isActive: Joi.boolean(),
+          timestamp: Joi.string(),
+          members: Joi.array().items(Joi.object().keys({
+            userid: Joi.number(),
+            username: Joi.string(),
+            joined: Joi.string(),
+            picture: Joi.string()
+          })),
+          creator: Joi.object().keys({
+            userid: Joi.number(),
+            username: Joi.string(),
+            picture: Joi.string()
+          })
+        }).required('id', 'username')
+      },
       auth: false,
       plugins: {
         'hapi-swagger': {
