@@ -274,7 +274,7 @@ module.exports = {
 
       return userCtrl.partlyUpdate(findQuery, updateQuery)
         .then((result) => {
-          console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
+          // console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
           if (result.result.ok === 1 && result.result.n === 1) {
             //success
             return res();
@@ -292,7 +292,7 @@ module.exports = {
       .then((cursor) => cursor.project({username: 1, email: 1}))
       .then((cursor2) => cursor2.next())
       .then((document) => {
-        console.log('handler: updateUserProfile: got user as document', document);
+        // console.log('handler: updateUserProfile: got user as document', document);
 
         if (document === null)
           return res(boom.notFound('No user with the given id'));
@@ -595,7 +595,10 @@ module.exports = {
             //notify users
             let promises = [];
             document.members.forEach((member) => {
-              promises.push(notifiyUser(member.userid, 'left', document));
+              promises.push(notifiyUser({
+                id: document.creator,
+                name: document.creator.username || 'Group leader'
+              }, member.userid, 'left', document, true));
             });
             return Promise.all(promises).then(() => {
               return res();
@@ -647,7 +650,10 @@ module.exports = {
             //notify users
             let promises = [];
             group.members.forEach((member) => {
-              promises.push(notifiyUser(member.userid, 'joined', group));
+              promises.push(notifiyUser({
+                id: group.creator,
+                name: group.creator.username || 'Group leader'
+              }, member.userid, 'joined', group, true));
             });
             return Promise.all(promises).then(() => {
               return res(group);
@@ -722,11 +728,17 @@ module.exports = {
                 let promises = [];
                 group.members.forEach((member) => {
                   if (!wasUserAMember(member.userid))
-                    promises.push(notifiyUser(member.userid, 'joined', group));
+                    promises.push(notifiyUser({
+                      id: group.creator,
+                      name: group.creator.username || 'Group leader'
+                    }, member.userid, 'joined', group, true));
                 });
                 document.members.forEach((member) => {
                   if (wasUserDeleted(member.userid))
-                    promises.push(notifiyUser(member.userid, 'left', document));
+                    promises.push(notifiyUser({
+                      id: document.creator,
+                      name: document.creator.username || 'Group leader'
+                    }, member.userid, 'left', document, true));
                 });
                 return Promise.all(promises).then(() => {
                   return res(group);
@@ -953,26 +965,27 @@ function parseStringToInteger(string) {
   return undefined;
 }
 
-function notifiyUser(userid, type, group) {
+function notifiyUser(actor, receiver, type, group, isActiveAction = false) {
   let promise = new Promise((resolve, reject) => {
+    let message = actor.name + ': Has ' + type + ' the group ' + group.name;
+    if (isActiveAction)
+      message = 'You ' + type + ' the group ' + group.name;
     const options = {
-      url: config.URLS.notificationservice + '/notification/new',
+      url: config.URLS.activitiesservice + '/activity/new',
       method: 'POST',
       json: true,
       body: {
-        activity_id: require('crypto').randomBytes(9).toString('hex'),
         activity_type: type,
-        user_id: userid.toString(),
+        user_id: actor.id.toString(),
         content_id: group._id.toString(),
         content_kind: 'group',
-        content_name: 'You ' + type + ' the group ' + group.name,
-        content_owner_id: userid.toString(),
-        subscribed_user_id: userid.toString()
+        content_name: message,
+        content_owner_id: receiver.toString()
       }
     };
 
     function callback(error, response, body) {
-      console.log('notifiyUser: ', error, response.statusCode, body);
+      // console.log('notifiyUser: ', error, response.statusCode, body);
 
       if (!error && (response.statusCode === 200)) {
         return resolve(body);
