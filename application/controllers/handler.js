@@ -907,35 +907,6 @@ function preparePublicUserData(user) {
   return minimizedUser;
 }
 
-//JWT validation inserts userid in header which should be the same as the one in the parameters
-function isJWTValidForTheGivenUserId(req) {
-  let jwt_userid = '';
-  try {
-    jwt_userid = req.auth.credentials.userid;
-  } catch (e) {}
-  //console.log(decodeURI(req.params.id), 'vs', jwt_data);
-  if (decodeURI(req.params.id).toString() !== jwt_userid.toString()) {
-    return false;
-  }
-  return true;
-}
-
-function parseAPIParameter(parameter) {
-  if (parameter === undefined || parameter === null || parameter.replace(' ', '') === '')
-    return '';
-
-  return decodeURI(parameter);
-}
-
-function parseStringToInteger(string) {
-  const integerSchema = Joi.number().integer();
-  const validationResult = integerSchema.validate(string);
-  if (validationResult.error === null) {
-    return validationResult.value;
-  }
-  return undefined;
-}
-
 function notifiyUser(actor, receiver, type, group, isActiveAction = false) {
   let promise = new Promise((resolve, reject) => {
     let message = actor.name + ': Has ' + type + ' the group ' + group.name;
