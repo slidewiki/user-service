@@ -14,5 +14,5 @@ template:
     - SMTP_FROM=me@hostername.org
 #    - SMTP_CLIENTNAME=
 #    - APIKey=
-    - URL_NOTIFICATIONSERVICE=http://notificationservice.experimental.slidewiki.org
     - URL_PLATFORM=http://platform.manfredfris.ch:4000
+    - URL_ACTIVITIESSERVICE=http://activitiesservice.experimental.slidewiki.org
