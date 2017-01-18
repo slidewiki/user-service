@@ -67,7 +67,7 @@ module.exports = {
             message = 'The username is already taken';
           if (result.username === false)
             message = 'The email is already taken';
-          return res(boom.badData(message));
+          return res(boom.conflict(message));
         }
       })
       .catch((error) => {
@@ -88,13 +88,13 @@ module.exports = {
 
         switch (result.length) {
           case 0:
-            res(boom.unauthorized('The credentials are wrong', '{"email":"", "password": ""}'));
+            res(boom.notFound('The credentials are wrong', '{"email":"", "password": ""}'));
             break;
           case 1:
             //TODO: call authorization service for OAuth2 token
 
             if (result[0].deactivated === true) {
-              res(boom.unauthorized('This user is deactivated.'));
+              res(boom.locked('This user is deactivated.'));
               break;
             }
 
@@ -123,7 +123,7 @@ module.exports = {
     //check if the request comes from the right user (have the right JWT data)
     const isUseridMatching = isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
-      return res(boom.unauthorized('You cannot get detailed information about another user'));
+      return res(boom.forbidden('You cannot get detailed information about another user'));
     }
 
     return userCtrl.read(parseStringToInteger(req.params.id))
@@ -131,7 +131,7 @@ module.exports = {
         //console.log('getUser: got user:', user);
         if (user !== undefined && user !== null && user.username !== undefined) {
           if (user.deactivated === true) {
-            return res(boom.unauthorized('This user is deactivated.'));
+            return res(boom.locked('This user is deactivated.'));
           }
 
           //get groups of a user
@@ -195,7 +195,7 @@ module.exports = {
     //check if the user which should be updated have the right JWT data
     const isUseridMatching = isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
-      return res(boom.unauthorized('You cannot change the password of another user'));
+      return res(boom.forbidden('You cannot change the password of another user'));
     }
 
     //check if old password is correct
@@ -231,7 +231,7 @@ module.exports = {
                 res(boom.badImplementation());
               })
               .catch((error) => {
-                res(boom.notFound('Update failed', error));
+                res(boom.badImplementation('Update failed', error));
               });
             break;
           default:

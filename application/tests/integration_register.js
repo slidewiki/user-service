@@ -104,6 +104,7 @@ describe('REST API', () => {
       let opt = JSON.parse(JSON.stringify(options));
       opt.payload = minimalData;
       return server.inject(opt).then((response) => {
+        // console.log('testresult:', response.statusCode, response.payload);
         response.should.be.an('object').and.contain.keys('statusCode','payload');
         response.statusCode.should.equal(409);
         response.payload.should.be.a('string');

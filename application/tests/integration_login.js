@@ -103,16 +103,16 @@ describe('REST API', () => {
       });
     });
 
-    it('it should reply with 403 for non existing users', () => {//TODO using 404?
+    it('it should reply with 404 for non existing users', () => {//TODO using 404?
       let opt = JSON.parse(JSON.stringify(options));
       opt.payload = invalidLoginData;
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
-        response.statusCode.should.equal(403);
+        response.statusCode.should.equal(404);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
-        payload.should.be.an('object').and.contain.keys('statusCode', 'error', 'message', 'attributes');
-        payload.error.should.be.a('string').and.equal('Forbidden');
+        payload.should.be.an('object').and.contain.keys('statusCode', 'error', 'message');
+        payload.error.should.be.a('string').and.equal('Not Found');
       });
     });
 
