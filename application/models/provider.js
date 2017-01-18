@@ -62,7 +62,7 @@ const provider = {
       type: 'string'
     }
   },
-  required: ['provider', 'token', 'token_creation', 'email', 'id']
+  required: ['provider', 'token', 'token_creation', 'id']
 };
 
 //export

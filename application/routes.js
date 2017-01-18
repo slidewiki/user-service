@@ -685,6 +685,9 @@ module.exports = function (server) {
                 error: Joi.string(),
                 message: Joi.string()
               }).required()
+            },
+            ' 423 ': {
+              'description': 'The user with this provider assigned is deactivated.'
             }
           },
           payloadType: 'form'

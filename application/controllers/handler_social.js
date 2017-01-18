@@ -104,8 +104,8 @@ module.exports = {
 
         //check if provider already used by someone (use attributes: provider, email)
         return isProviderAlreadyUsedBySomeone(document)
-          .then((isUsed) => {
-            if (isUsed) {
+          .then((data) => {
+            if (data.inUse) {
               return res(boom.conflict('The social provider is already used by someone else.'));
             }
 
@@ -233,8 +233,10 @@ module.exports = {
 
         //check if provider already used by someone (use attributes: provider, email)
         return isProviderAlreadyUsedBySomeone(document)
-          .then((isUsed) => {
-            if (isUsed) {
+          .then((data) => {
+            if (data.inUse) {
+              if (data.deactivated)
+                return res(boom.locked('The user with this provider assigned is deactivated.'));
               return res(boom.conflict('The social provider is already used by someone else.'));
             }
 
@@ -425,9 +427,12 @@ function isProviderAlreadyUsedBySomeone(provider) {
       'providers.provider': provider.provider,
       'providers.identifier': provider.identifier
     })
-      .then((cursor) => cursor.count())
-      .then((count) => {
-        return resolve(count > 0);
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        return resolve({
+          inUse: array.length > 0,
+          deactivated: (array[0]) ? array[0].deactivated : false
+        });
       })
       .catch((error) => {reject(error);});
   });
