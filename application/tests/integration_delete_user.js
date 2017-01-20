@@ -156,12 +156,12 @@ describe('REST API', () => {
         return server.inject(options2);
       }).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
-        response.statusCode.should.equal(404);
+        response.statusCode.should.equal(423);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
         payload.should.be.an('object').and.contain.keys('statusCode', 'error');
-        payload.statusCode.should.be.a('number').and.equal(404);
-        payload.error.should.be.a('string').and.equal('Not Found');
+        payload.statusCode.should.be.a('number').and.equal(423);
+        payload.error.should.be.a('string').and.equal('Locked');
       });
     });
 

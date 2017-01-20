@@ -159,7 +159,7 @@ module.exports = {
     //check if the user which should be deleted have the right JWT data
     const isUseridMatching = isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
-      return res(boom.unauthorized('You cannot delete another user'));
+      return res(boom.forbidden('You cannot delete another user'));
     }
 
     const findQuery = {
@@ -249,7 +249,7 @@ module.exports = {
     //check if the user which should be updated have the right JWT data
     const isUseridMatching = isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
-      return res(boom.unauthorized('You cannot change the user profile of another user'));
+      return res(boom.forbidden('You cannot change the user profile of another user'));
     }
 
     console.log('updateUserProfile: use user', user);
@@ -354,7 +354,7 @@ module.exports = {
           return res(boom.badImplementation());
 
         if (array[0].deactivated === true) {
-          return res(boom.unauthorized('This user is deactivated.'));
+          return res(boom.locked('This user is deactivated.'));
         }
 
         res(preparePublicUserData(array[0]));

@@ -122,7 +122,7 @@ describe('REST API', () => {
       });
     });
 
-    it('it should reply 403 for a not existing user', () => { //QUESTION Or better Not Found?
+    it('it should reply 403 for a not existing user', () => {
       let opt = JSON.parse(JSON.stringify(options));
       opt.url += 11 + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
@@ -249,7 +249,7 @@ describe('REST API', () => {
       opt.url += userid + '/profile';
       opt.headers['----jwt----'] = jwtHeader;
       opt.payload = JSON.parse(JSON.stringify(fullData));
-      opt.payload.email = 'abc@abc';
+      opt.payload.email = 'abc.abc';
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
         response.statusCode.should.equal(400);
@@ -284,11 +284,11 @@ describe('REST API', () => {
       opt.payload.username = '12abc';
       return server.inject(opt).then((response) => {
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
-        response.statusCode.should.equal(403);
+        response.statusCode.should.equal(406);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
         payload.should.contain.keys('statusCode', 'error', 'message');
-        payload.error.should.equal('Forbidden');
+        payload.error.should.equal('Not Acceptable');
       });
     });
 
