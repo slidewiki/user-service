@@ -109,11 +109,11 @@ describe('REST API', () => {
       return server.inject(opt).then((response) => {
         // console.log('testresult:', response.statusCode, response.payload);
         response.should.be.an('object').and.contain.keys('statusCode', 'payload');
-        response.statusCode.should.equal(401);
+        response.statusCode.should.equal(403);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
         payload.should.contain.keys('statusCode', 'error', 'message');
-        payload.error.should.equal('Unauthorized');
+        payload.error.should.equal('Forbidden');
       });
     });
 
