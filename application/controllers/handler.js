@@ -80,11 +80,12 @@ module.exports = {
       email: decodeURI(req.payload.email),
       password: decodeURI(req.payload.password)
     };
+    console.log('query: ', query);
 
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((result) => {
-        //console.log('login: result: ', result);
+        console.log('login: result: ', result);
 
         switch (result.length) {
           case 0:
