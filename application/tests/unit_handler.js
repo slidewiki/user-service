@@ -124,6 +124,7 @@ describe('User service', () => {
       }
     ]
   };
+  const newPassword = 'ua89nd7s8df7zsb78f';
   let userid = '',
     jwt = '',
     groupid = 0;
@@ -153,11 +154,11 @@ describe('User service', () => {
         payload: correct_user1
       };
       return handler.register(req, (result) => {
-        //console.log(result);
+        console.log(result);
 
         expect(result.output).to.not.equal(undefined);
         expect(result.output).to.not.equal(null);
-        expect(result.output.statusCode).to.equal(422);
+        expect(result.output.statusCode).to.equal(409);
 
         return;
       })
@@ -294,7 +295,7 @@ describe('User service', () => {
       let req = {
         payload: {
           oldPassword: 'wrong',
-          newPassword: 'ua89nd7s8df7zsb78f'
+          newPassword: newPassword
         },
         params: {
           id: userid
@@ -509,15 +510,15 @@ describe('User service', () => {
     it('Login with deleted user', () => {
       let req = {
         payload: {
-          email: correct_user1.email,
-          password: correct_user1.password
+          email: 'Bazingaish' + correct_user1.email,
+          password: newPassword
         }
       };
       return handler.login(req, (result) => {
-        // console.log('result', result);
+        console.log('result', result);
 
         expect(result.isBoom).to.equal(true);
-        expect(result.output.statusCode).to.equal(401);
+        expect(result.output.statusCode).to.equal(423);
 
         return;
       })
@@ -535,10 +536,10 @@ describe('User service', () => {
         }
       };
       return handler.getPublicUser(req, (result) => {
-        // console.log(result);
+        console.log(result);
 
         expect(result.isBoom).to.equal(true);
-        expect(result.output.statusCode).to.equal(401);
+        expect(result.output.statusCode).to.equal(423);
 
         return;
       })

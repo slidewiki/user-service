@@ -94,13 +94,11 @@ module.exports = function (server) {
                 username: Joi.string()
               }).required()
             },
-            ' 401 ': {
-              'description': 'The credentials are wrong',
-              'headers': {
-                'WWW-Authenticate': {
-                  'description': '{"email":"", "password": ""}'
-                }
-              }
+            ' 404 ': {
+              'description': 'No user for this credentials available.',
+            },
+            ' 423 ': {
+              'description': 'The user is deactivated.',
             }
           },
           payloadType: 'form'
@@ -135,16 +133,14 @@ module.exports = function (server) {
             ' 200 ': {
               'description': 'Successful',
             },
-            ' 401 ': {
-              'description': 'Not authorized to access another users profile',
-              'headers': {
-                'WWW-Authenticate': {
-                  'description': 'Use your JWT token and the right userid.'
-                }
-              }
+            ' 403 ': {
+              'description': 'You are not allowed to get the private profile of another user.'
             },
             ' 404 ': {
               'description': 'User not found. Check the id.'
+            },
+            ' 423 ': {
+              'description': 'The user is deactivated.'
             }
           },
           payloadType: 'form'
@@ -164,7 +160,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.number().integer().options({convert: true})
+          id: Joi.number().integer().options({convert: true}).min(1)
         },
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -186,6 +182,9 @@ module.exports = function (server) {
                   'description': 'Use your JWT token and the right userid.'
                 }
               }
+            },
+            ' 403 ': {
+              'description': 'You cannot delete another user.'
             },
             ' 404 ': {
               'description': 'User not found. Check the id.'
@@ -215,7 +214,7 @@ module.exports = function (server) {
         payload: Joi.object().keys({
           oldPassword: Joi.string().min(8),
           newPassword: Joi.string().min(8)
-        }),
+        }).requiredKeys('oldPassword', 'newPassword'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
         }).unknown()
@@ -229,8 +228,8 @@ module.exports = function (server) {
             ' 200 ': {
               'description': 'Successful',
             },
-            ' 401 ': {
-              'description': 'Not authorized to change the password of another user.',
+            ' 403 ': {
+              'description': 'Not possible to change the password of another user.',
               'headers': {
                 'WWW-Authenticate': {
                   'description': 'Use your JWT token and the right userid.'
@@ -261,7 +260,7 @@ module.exports = function (server) {
           id: Joi.number().integer().options({convert: true})
         },
         payload: Joi.object().keys({
-          email: Joi.string().email(),
+          email: Joi.string().email().trim().required(),
           username: Joi.string().alphanum(),
           surname: Joi.string().allow('').optional(),
           forename: Joi.string().allow('').optional(),
@@ -292,6 +291,9 @@ module.exports = function (server) {
                   'description': 'Use your JWT token and the right userid.'
                 }
               }
+            },
+            ' 403 ': {
+              'description': 'You are not allowed to do this.'
             },
             ' 404 ': {
               'description': 'User not found. Check the id.'
@@ -334,6 +336,9 @@ module.exports = function (server) {
             },
             ' 404 ': {
               'description': 'User not found. Check the id.'
+            },
+            ' 423 ': {
+              'description': 'This user is deactivated.'
             }
           },
           payloadType: 'form'
@@ -419,7 +424,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          email: Joi.string().email()
+          email: Joi.string().email().trim().required()
         }
       },
       tags: ['api'],
