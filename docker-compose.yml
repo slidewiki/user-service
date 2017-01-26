@@ -16,3 +16,5 @@ template:
 #    - APIKey=
     - URL_PLATFORM=http://platform.manfredfris.ch:4000
     - URL_ACTIVITIESSERVICE=http://activitiesservice.experimental.slidewiki.org
+  volumes:
+    - ./providerConfig.json:/nodeApp/config.json:ro
