@@ -17,4 +17,4 @@ template:
     - URL_PLATFORM=http://platform.manfredfris.ch:4000
     - URL_ACTIVITIESSERVICE=http://activitiesservice.experimental.slidewiki.org
   volumes:
-    - ./providerConfig.json:/nodeApp/config.json:ro
+    - /data/slidewiki-deployment/docker-compose/providerConfig.json:/nodeApp/config.json:ro
