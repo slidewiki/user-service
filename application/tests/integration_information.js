@@ -184,7 +184,8 @@ describe('REST API', () => {
         let tmp = payload.results[0];
         tmp.should.be.an('object').and.contain.keys('name', 'value');
         tmp.name.should.equal(fullData.username);
-        tmp.value.should.equal(1);
+        let value = JSON.parse(decodeURIComponent(tmp.value));
+        value.userid.should.equal(1);
       });
     });
 
