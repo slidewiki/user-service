@@ -13,27 +13,29 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   Joi = require('joi'),
   JSSHA = require('js-sha512'),
   SMTPConnection = require('smtp-connection'),
+  util = require('./util'),
   request = require('request');
 
 module.exports = {
   register: (req, res) => {
     let user = {
-      surname:  parseAPIParameter(req.payload.surname),
-      forename: parseAPIParameter(req.payload.forename),
-      username: parseAPIParameter(req.payload.username),
-      email:    parseAPIParameter(req.payload.email),
-      password: parseAPIParameter(req.payload.password),
-      frontendLanguage: parseAPIParameter(req.payload.language),
+      surname:  util.parseAPIParameter(req.payload.surname),
+      forename: util.parseAPIParameter(req.payload.forename),
+      username: util.parseAPIParameter(req.payload.username),
+      email:    util.parseAPIParameter(req.payload.email),
+      password: util.parseAPIParameter(req.payload.password),
+      frontendLanguage: util.parseAPIParameter(req.payload.language),
       country: '',
       picture: '',
       description: '',
-      organization: parseAPIParameter(req.payload.organization),
-      registered: (new Date()).toISOString()
+      organization: util.parseAPIParameter(req.payload.organization),
+      registered: (new Date()).toISOString(),
+      providers: []
     };
     console.log('Registration: ', user);
 
     //check if username already exists
-    return isIdentityAssigned(user.email, user.username)
+    return util.isIdentityAssigned(user.email, user.username)
       .then((result) => {
         console.log('identity already taken: ', user.email, user.username, result);
         if (result.assigned === false) {
@@ -122,12 +124,12 @@ module.exports = {
 
   getUser: (req, res) => {
     //check if the request comes from the right user (have the right JWT data)
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
       return res(boom.forbidden('You cannot get detailed information about another user'));
     }
 
-    return userCtrl.read(parseStringToInteger(req.params.id))
+    return userCtrl.read(util.parseStringToInteger(req.params.id))
       .then((user) => {
         //console.log('getUser: got user:', user);
         if (user !== undefined && user !== null && user.username !== undefined) {
@@ -155,10 +157,10 @@ module.exports = {
 
   //add attribute "deactivated" to user document
   deleteUser: (req, res) => {
-    let userid = parseStringToInteger(req.params.id);
+    let userid = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be deleted have the right JWT data
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
       return res(boom.forbidden('You cannot delete another user'));
     }
@@ -191,10 +193,10 @@ module.exports = {
   updateUserPasswd: (req, res) => {
     let oldPassword = req.payload.oldPassword;
     let newPassword = req.payload.newPassword;
-    const user__id = parseStringToInteger(req.params.id);
+    const user__id = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
       return res(boom.forbidden('You cannot change the password of another user'));
     }
@@ -245,10 +247,10 @@ module.exports = {
 
   updateUserProfile: (req, res) => {
     let user = req.payload;
-    user._id = parseStringToInteger(req.params.id);
+    user._id = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
       return res(boom.forbidden('You cannot change the user profile of another user'));
     }
@@ -261,15 +263,15 @@ module.exports = {
         },
         updateQuery = {
           $set: {
-            email:       parseAPIParameter(req.payload.email),
-            username:    parseAPIParameter(req.payload.username),
-            surname:     parseAPIParameter(req.payload.surname),
-            forename:    parseAPIParameter(req.payload.forename),
-            frontendLanguage:    parseAPIParameter(req.payload.language),
-            country:     parseAPIParameter(req.payload.country),
-            picture:     parseAPIParameter(req.payload.picture),
-            description: parseAPIParameter(req.payload.description),
-            organization: parseAPIParameter(req.payload.organization)
+            email:       util.parseAPIParameter(req.payload.email),
+            username:    util.parseAPIParameter(req.payload.username),
+            surname:     util.parseAPIParameter(req.payload.surname),
+            forename:    util.parseAPIParameter(req.payload.forename),
+            frontendLanguage:    util.parseAPIParameter(req.payload.language),
+            country:     util.parseAPIParameter(req.payload.country),
+            picture:     util.parseAPIParameter(req.payload.picture),
+            description: util.parseAPIParameter(req.payload.description),
+            organization: util.parseAPIParameter(req.payload.organization)
           }
         };
 
@@ -619,9 +621,9 @@ module.exports = {
     let group = req.payload;
 
     group.creator = userid;
-    group.description = parseAPIParameter(group.description);
-    group.name = parseAPIParameter(group.name);
-    group.timestamp = parseAPIParameter(group.timestamp) || (new Date()).toISOString();
+    group.description = util.parseAPIParameter(group.description);
+    group.name = util.parseAPIParameter(group.name);
+    group.timestamp = util.parseAPIParameter(group.timestamp) || (new Date()).toISOString();
 
     if (group.isActive !== false)
       group.isActive = true;
@@ -848,49 +850,6 @@ function isEMailAlreadyTaken(email) {
   return myPromise;
 }
 
-function isIdentityAssigned(email, username) {
-  let myPromise = new Promise((resolve, reject) => {
-    return userCtrl.find({
-      $or: [
-        {
-          username: username
-        },
-        {
-          email: email
-        }
-      ]
-    })
-      .then((cursor) => cursor.project({email: 1, username: 1}))
-      .then((cursor2) => cursor2.toArray())
-      .then((array) => {
-        console.log('isIdentityAssigned: cursor.array.length:', array.length);
-
-        if (array.length > 0) {
-          const isEMailAssigned = !(array.reduce((prev, curr) => {
-            const sameEMail = curr.email === email;
-            return prev && !sameEMail;
-          }, true));
-          const isUsernameAssigned = !(array.reduce((prev, curr) => {
-            const sameUsername = curr.username === username;
-            return prev && !sameUsername;
-          }, true));
-
-          resolve({
-            assigned: isEMailAssigned || isUsernameAssigned,
-            username: isUsernameAssigned,
-            email: isEMailAssigned
-          });
-        } else {
-          resolve({assigned: false});
-        }
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
-  return myPromise;
-}
-
 //Remove attributes of the user data object which should not be transmitted
 function prepareDetailedUserData(user) {
   const hiddenKeys = ['password'];
@@ -912,6 +871,18 @@ function prepareDetailedUserData(user) {
   //map attributes for better API
   minimizedUser.language = minimizedUser.frontendLanguage;
   minimizedUser.frontendLanguage = undefined;
+
+  //add data for social provider stuff
+  minimizedUser.hasPassword = true;
+  if (user.password === undefined || user.password === null || user.password === '')
+    minimizedUser.hasPassword = false;
+  minimizedUser.providers = (user.providers || []).reduce((prev, cur) => {
+    if (prev.indexOf(cur.provider) === -1) {
+      prev.push(cur.provider);
+      return prev;
+    }
+    return prev;
+  }, []);
 
   return minimizedUser;
 }
@@ -935,35 +906,6 @@ function preparePublicUserData(user) {
   }
 
   return minimizedUser;
-}
-
-//JWT validation inserts userid in header which should be the same as the one in the parameters
-function isJWTValidForTheGivenUserId(req) {
-  let jwt_userid = '';
-  try {
-    jwt_userid = req.auth.credentials.userid;
-  } catch (e) {}
-  //console.log(decodeURI(req.params.id), 'vs', jwt_data);
-  if (decodeURI(req.params.id).toString() !== jwt_userid.toString()) {
-    return false;
-  }
-  return true;
-}
-
-function parseAPIParameter(parameter) {
-  if (parameter === undefined || parameter === null || parameter.replace(' ', '') === '')
-    return '';
-
-  return decodeURI(parameter);
-}
-
-function parseStringToInteger(string) {
-  const integerSchema = Joi.number().integer();
-  const validationResult = integerSchema.validate(string);
-  if (validationResult.error === null) {
-    return validationResult.value;
-  }
-  return undefined;
 }
 
 function notifiyUser(actor, receiver, type, group, isActiveAction = false) {

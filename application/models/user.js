@@ -14,6 +14,40 @@ const objectid = {
   maxLength: 24,
   minLength: 24
 };
+const provider = {
+  type: 'object',
+  properties: {
+    provider: {
+      type: 'string'
+    },
+    token: {
+      type: 'string'
+    },
+    expires: {
+      type: 'number'
+    },
+    extra_token: {
+      type: 'string'
+    },
+    scope: {
+      type: 'string'
+    },
+    token_creation: {
+      type: 'string',
+      format: 'date-time'
+    },
+    id: {
+      type: 'string'
+    },
+    identifier: {
+      type: 'string'
+    },
+    email: {
+      type: 'string'
+    }
+  },
+  required: ['provider', 'token', 'token_creation']
+};
 const user = {
   type: 'object',
   properties: {
@@ -38,7 +72,7 @@ const user = {
     },
     registered: {
       type: 'string',
-      format: 'datetime'
+      format: 'date-time'
     },
     surname: {
       type: 'string'
@@ -85,6 +119,10 @@ const user = {
     },
     deactivated: {
       type: 'boolean'
+    },
+    providers: {
+      type: 'array',
+      items: provider
     }
   },
   required: ['email', 'username', 'frontendLanguage']

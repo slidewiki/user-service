@@ -4,7 +4,8 @@ Each route implementes a basic parameter/payload validation and a swagger API do
 'use strict';
 
 const Joi = require('joi'),
-  handlers = require('./controllers/handler');
+  handlers = require('./controllers/handler'),
+  handlers_social = require('./controllers/handler_social');
 
 module.exports = function (server) {
   //Register new user with credentials
@@ -53,6 +54,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -98,6 +102,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -137,6 +144,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -181,6 +191,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -228,6 +241,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -290,6 +306,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -323,6 +342,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -356,6 +378,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -418,6 +443,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'json'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -464,6 +492,313 @@ module.exports = function (server) {
             }
           },
           payloadType: 'json'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  //Social logins
+
+  //two hidden routes which are called by the OAuth process
+  server.route({
+    method: 'GET',
+    path: '/social/provider/github',
+    handler: function(req, res) {
+      //Continue with the token
+      //Remark: third parameter have to be the name of the provider as listet for purest
+      handlers_social.handleOAuth2Token(req, res, 'github');
+    }
+  });
+  server.route({
+    method: 'GET',
+    path: '/social/provider/google',
+    handler: function(req, res) {
+      handlers_social.handleOAuth2Token(req, res, 'google');
+    }
+  });
+  server.route({
+    method: 'GET',
+    path: '/social/provider/facebook',
+    handler: function(req, res) {
+      handlers_social.handleOAuth2Token(req, res, 'facebook');
+    }
+  });
+
+  server.route({
+    method: 'PUT',
+    path: '/social/provider/{provider}',
+    handler: handlers_social.addProvider,
+    config: {
+      validate: {
+        params: {
+          provider: Joi.string()
+        },
+        payload: Joi.object().keys({
+          identifier: Joi.string(),
+          provider: Joi.string(),
+          token: Joi.string(),
+          token_creation: Joi.string(),//Date
+          email: Joi.string().email(),
+          language: Joi.string().length(5)
+        }).requiredKeys('email', 'identifier', 'provider', 'token', 'token_creation'),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Add a new OAuth provider for the user - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful'
+            },
+            ' 401 ': {
+              'description': 'Not authorized to add the provider.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and send the right OAuth data.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User of JWT was not found'
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            },
+            ' 409 ': {
+              'description': 'The account of the social provider is already used. Normally by another account. Check if you have multiple accounts.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'DELETE',
+    path: '/social/provider/{provider}',
+    handler: handlers_social.deleteProvider,
+    config: {
+      validate: {
+        params: {
+          provider: Joi.string()
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Delete a OAuth provider - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to delete the provider.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Provider for the user not found.'
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/social/register',
+    handler: handlers_social.registerWithOAuth,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          identifier: Joi.string(),
+          provider: Joi.string(),
+          token: Joi.string(),
+          scope: Joi.string(),
+          token_creation: Joi.string(),//Date
+          username: Joi.string().alphanum(),
+          email: Joi.string().email(),
+          language: Joi.string().length(5),
+          forename: Joi.string(),
+          surname: Joi.string()
+        }).requiredKeys('username', 'email', 'identifier', 'provider', 'token', 'token_creation'),
+      },
+      tags: ['api'],
+      description: 'Register a new user with the data from OAuth',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.number().integer(),
+                username: Joi.string()
+              }).required()
+            },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'OAuth data is wrong or expired'
+                }
+              }
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            },
+            ' 409 ': {
+              'description': 'Provider data is already in use by another user.'
+            },
+            ' 422 ': {
+              'description': 'Wrong user data - see error message',
+              schema: Joi.object().keys({
+                statusCode: Joi.number().integer(),
+                error: Joi.string(),
+                message: Joi.string()
+              }).required()
+            },
+            ' 423 ': {
+              'description': 'The user with this provider assigned is deactivated.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/social/login',
+    handler: handlers_social.loginWithOAuth,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          identifier: Joi.string(),
+          provider: Joi.string(),
+          token: Joi.string(),
+          scope: Joi.string(),
+          token_creation: Joi.string(), //Date
+          email: Joi.string().email(),  //email of provider
+          language: Joi.string().length(5)
+        }).requiredKeys('identifier', 'provider', 'token', 'token_creation', 'email')
+      },
+      tags: ['api'],
+      description: 'Login with OAuth data',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.number().integer(),
+                username: Joi.string()
+              }).required()
+            },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Wrong userdata or oauth data. Either you have to register or you check the request parameters.'
+                }
+              }
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/social/providers/{id}',
+    handler: handlers_social.getProvidersOfUser,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true}).description('Id of the user')
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Returns array of already used providers of the user - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
