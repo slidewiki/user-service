@@ -628,9 +628,9 @@ module.exports = {
       userid: userid
     };
 
-    group.description = parseAPIParameter(group.description);
-    group.name = parseAPIParameter(group.name);
-    group.timestamp = parseAPIParameter(group.timestamp) || (new Date()).toISOString();
+    group.description = util.parseAPIParameter(group.description);
+    group.name = util.parseAPIParameter(group.name);
+    group.timestamp = util.parseAPIParameter(group.timestamp) || (new Date()).toISOString();
 
     if (group.isActive !== false)
       group.isActive = true;
