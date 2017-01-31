@@ -71,9 +71,9 @@ module.exports = {
       .then((collection) => collection.find(query));
   },
 
-  partlyUpdate: (findQuery, updateQuery) => {
+  partlyUpdate: (findQuery, updateQuery, params = undefined) => {
     return helper.connectToDatabase()
       .then((dbconn) => dbconn.collection(collectionName))
-      .then((collection) => collection.update(findQuery, updateQuery));
+      .then((collection) => collection.update(findQuery, updateQuery, params));
   }
 };
