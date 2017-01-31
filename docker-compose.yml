@@ -16,5 +16,6 @@ template:
 #    - APIKey=
     - URL_PLATFORM=http://platform.experimental.slidewiki.org
     - URL_ACTIVITIESSERVICE=http://activitiesservice.experimental.slidewiki.org
+#     - DATABASE_URL=mongodb # use a url or the name, defined in the docker-compose file, not needed here, because of docker-compose v1
   volumes:
     - /data/slidewiki-deployment/docker-compose/providerConfig.json:/nodeApp/config.json:ro
