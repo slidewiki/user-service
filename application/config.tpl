@@ -1,7 +1,7 @@
 {
   "server": {
     "protocol": "http",
-    "host": "authorizationservice.manfredfris.ch:3000"
+    "host": "userservice.experimental.slidewiki.org"
   },
   "github": {
     "key": "",

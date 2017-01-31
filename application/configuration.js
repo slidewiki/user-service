@@ -58,7 +58,7 @@ if (!co.isEmpty(process.env.URL_ACTIVITIESSERVICE)){
   url_activitiesservice = process.env.URL_ACTIVITIESSERVICE;
 }
 
-let url_platform = 'http://platform.manfredfris.ch:4000';
+let url_platform = 'platform.experimental.slidewiki.org';
 if (!co.isEmpty(process.env.URL_PLATFORM)){
   url_platform = process.env.URL_PLATFORM;
 }

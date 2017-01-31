@@ -14,7 +14,7 @@ template:
     - SMTP_FROM=me@hostername.org
 #    - SMTP_CLIENTNAME=
 #    - APIKey=
-    - URL_PLATFORM=http://platform.manfredfris.ch:4000
+    - URL_PLATFORM=http://platform.experimental.slidewiki.org
     - URL_ACTIVITIESSERVICE=http://activitiesservice.experimental.slidewiki.org
   volumes:
     - /data/slidewiki-deployment/docker-compose/providerConfig.json:/nodeApp/config.json:ro
