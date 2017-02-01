@@ -50,7 +50,7 @@ module.exports = function (server) {
                 statusCode: Joi.number().integer(),
                 error: Joi.string(),
                 message: Joi.string()
-              }).required()
+              }).required().description('Return schema')
             }
           },
           payloadType: 'form'
@@ -92,7 +92,7 @@ module.exports = function (server) {
                 expires_in: Joi.number(),
                 userid: Joi.number().integer(),
                 username: Joi.string()
-              }).required()
+              }).required().description('Return schema')
             },
             ' 404 ': {
               'description': 'No user for this credentials available.',
@@ -667,7 +667,7 @@ module.exports = function (server) {
                 expires_in: Joi.number(),
                 userid: Joi.number().integer(),
                 username: Joi.string()
-              }).required()
+              }).required().description('Return schema')
             },
             ' 401 ': {
               'description': 'The credentials are wrong',
@@ -689,7 +689,7 @@ module.exports = function (server) {
                 statusCode: Joi.number().integer(),
                 error: Joi.string(),
                 message: Joi.string()
-              }).required()
+              }).required().description('Return schema')
             },
             ' 423 ': {
               'description': 'The user with this provider assigned is deactivated.'
@@ -738,7 +738,7 @@ module.exports = function (server) {
                 expires_in: Joi.number(),
                 userid: Joi.number().integer(),
                 username: Joi.string()
-              }).required()
+              }).required().description('Return schema')
             },
             ' 401 ': {
               'description': 'The credentials are wrong',
