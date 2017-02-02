@@ -914,7 +914,7 @@ function notifiyUser(actor, receiver, type, group, isActiveAction = false) {
     if (isActiveAction)
       message = 'You ' + type + ' the group ' + group.name;
     const options = {
-      url: config.URLS.activitiesservice + '/activity/new',
+      url: require('../configs/microservices').activities.uri + '/activity/new',
       method: 'POST',
       json: true,
       body: {

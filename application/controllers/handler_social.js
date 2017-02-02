@@ -15,7 +15,7 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   util = require('./util');
 
 const PROVIDERS = ['github', 'google', 'facebook'],
-  PLATFORM_SOCIAL_URL = config.URLS.platform + '/socialLogin';
+  PLATFORM_SOCIAL_URL = require('../configs/microservices').platform.uri + '/socialLogin';
 
 module.exports = {
   //Uses provided token to get user data and stores plus response the userdata
