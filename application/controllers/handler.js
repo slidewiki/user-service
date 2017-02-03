@@ -414,13 +414,14 @@ module.exports = {
         $regex: username
       }
     };
+    console.log('query:', query);
 
     return userCtrl.find(query)
       .then((cursor1) => cursor1.project({username: 1, _id: 1}))
-      .then((cursor2) => cursor2.maxScan(10))
+      .then((cursor2) => cursor2.limit(10))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
-        //console.log('handler: checkUsername: similar usernames', array);
+        // console.log('handler: checkUsername: similar usernames', array);
         let data = array.reduce((prev, curr) => {
           prev.push({
             name: curr.username,
