@@ -34,8 +34,6 @@ RUN npm install --production
 
 ADD ./application/ ./
 
-EXPOSE 3000 80
-
 # ----------- #
 #   Cleanup   #
 # ----------- #

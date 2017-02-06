@@ -2,7 +2,7 @@
 
 const helper = require('./helper'),
   collectionName = 'oauthprovideruserdata',
-  millisNeededForTimeout = 2*86400*1000;  //2 days
+  millisNeededForExpire = 2*86400*1000;  //2 days
 
 console.log(((new Date()).toISOString()) + ': Now starting cleanup of provider collection ...');
 
@@ -10,7 +10,7 @@ return helper.connectToDatabase()
   .then((dbconn) => dbconn.collection(collectionName))
   .then((collection) => collection.deleteMany({
     'token_creation': {
-      $lt: (new Date((new Date()).getTime() - millisNeededForTimeout)).toISOString()
+      $lt: (new Date((new Date()).getTime() - millisNeededForExpire)).toISOString()
     }
   }))
   .then((result) => {
