@@ -10,7 +10,7 @@ describe('REST API', () => {
   require('chai').use(require('chai-datetime'));
   let jwtHeader, userid;
 
-  before(() => {
+  before((done) => {
     //Clean everything up before doing new tests
     Object.keys(require.cache).forEach((key) => delete require.cache[key]);
     let hapi = require('hapi');
@@ -56,6 +56,7 @@ describe('REST API', () => {
         jwtHeader = response.headers['----jwt----'];
         let payload = JSON.parse(response.payload);
         userid = payload.userid;
+        // done();
       });
     });
 
