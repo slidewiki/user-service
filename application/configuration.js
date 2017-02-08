@@ -56,16 +56,6 @@ if (!co.isEmpty(process.env.APIKEY)){
   APIKey = process.env.APIKEY;
 }
 
-let url_activitiesservice = 'http://activitiesservice.experimental.slidewiki.org';
-if (!co.isEmpty(process.env.URL_ACTIVITIESSERVICE)){
-  url_activitiesservice = process.env.URL_ACTIVITIESSERVICE;
-}
-
-let url_platform = 'platform.experimental.slidewiki.org';
-if (!co.isEmpty(process.env.URL_PLATFORM)){
-  url_platform = process.env.URL_PLATFORM;
-}
-
 module.exports = {
   MongoDB: {
     PORT: port,
@@ -85,9 +75,5 @@ module.exports = {
     port: SMTP_port,
     clientName: SMTP_clientName,
     from: SMTP_from
-  },
-  URLS: {
-    platform: url_platform,
-    activitiesservice: url_activitiesservice
   }
 };
