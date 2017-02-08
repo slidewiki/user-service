@@ -56,7 +56,7 @@ describe('REST API', () => {
         jwtHeader = response.headers['----jwt----'];
         let payload = JSON.parse(response.payload);
         userid = payload.userid;
-        // done();
+        done();
       });
     });
 
