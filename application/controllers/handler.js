@@ -580,7 +580,8 @@ module.exports = {
           return res(boom.notFound());
         }
 
-        if (document.creator.userid !== req.auth.credentials.userid) {
+        let creator = document.creator.userid || document.creator;
+        if (creator !== req.auth.credentials.userid) {
           return res(boom.unauthorized());
         }
 
@@ -604,7 +605,7 @@ module.exports = {
             let promises = [];
             document.members.forEach((member) => {
               promises.push(notifiyUser({
-                id: document.creator,
+                id: creator,
                 name: document.creator.username || 'Group leader'
               }, member.userid, 'left', document, true));
             });
@@ -662,7 +663,7 @@ module.exports = {
             let promises = [];
             group.members.forEach((member) => {
               promises.push(notifiyUser({
-                id: group.creator,
+                id: group.creator.userid || group.creator,
                 name: group.creator.username || 'Group leader'
               }, member.userid, 'joined', group, true));
             });
@@ -698,7 +699,8 @@ module.exports = {
             return res(boom.notFound());
           }
 
-          if (document.creator.userid !== group.creator.userid) {
+          let dCreator = document.creator.userid || document.creator;
+          if (dCreator !== group.creator.userid) {
             return res(boom.unauthorized());
           }
 
@@ -740,14 +742,14 @@ module.exports = {
                 group.members.forEach((member) => {
                   if (!wasUserAMember(member.userid))
                     promises.push(notifiyUser({
-                      id: group.creator,
+                      id: group.creator.userid,
                       name: group.creator.username || 'Group leader'
                     }, member.userid, 'joined', group, true));
                 });
                 document.members.forEach((member) => {
                   if (wasUserDeleted(member.userid))
                     promises.push(notifiyUser({
-                      id: document.creator,
+                      id: dCreator,
                       name: document.creator.username || 'Group leader'
                     }, member.userid, 'left', document, true));
                 });
