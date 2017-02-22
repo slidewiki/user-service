@@ -46,6 +46,9 @@ module.exports = {
             'creator.userid': userid
           },
           {
+            'creator': userid
+          },
+          {
             'members.userid': userid
           }
         ]
@@ -78,15 +81,6 @@ module.exports = {
       .then((dbconn) => dbconn.collection(collectionName))
       .then((collection) => collection.remove({
         _id: id
-      }));
-  },
-
-  findAndDelete: (id, userid) => {
-    return helper.connectToDatabase()
-      .then((dbconn) => dbconn.collection(collectionName))
-      .then((collection) => collection.findOneAndDelete({
-        _id: id,
-        'creator.userid': userid
       }));
   },
 
