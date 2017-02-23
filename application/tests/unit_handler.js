@@ -5,7 +5,7 @@
 
 describe('User service', () => {
 
-  let handler, expect;
+  let handler, handler_social, providerCtrl, expect;
 
   beforeEach((done) => {
     //Clean everything up before doing new tests
@@ -16,6 +16,8 @@ describe('User service', () => {
     chai.use(chaiAsPromised);
     expect = require('chai').expect;
     handler = require('../controllers/handler.js');
+    handler_social = require('../controllers/handler_social.js');
+    providerCtrl = require('../database/provider.js');
     done();
   });
 
@@ -30,8 +32,102 @@ describe('User service', () => {
       language: 'de'
     }]
   };
+  const now = (new Date()).toISOString();
+  const correct_oauth_user = {
+    id: '2839748234',
+    identifier: '2839748234',
+    provider: 'github',
+    token: '47a629160532535502fff76f5b6e3513a2a2da9e',
+    scope: 'user',
+    token_creation: now,//Date
+    username: 'TBoonX',
+    email: 'tboonx@googlemail.com'
+  };
+  const correct_provider = {
+    '_id' : '5811f623679e6d357a076207',
+    identifier: '2839748234',
+  	'provider' : 'github',
+  	'token' : '47a629160532535502fff76f5b6e3513a2a2da9e',
+  	'scope' : 'user',
+  	'expires' : undefined,
+  	'extra_token' : undefined,
+  	'token_creation' : now,
+  	'username' : 'TBoonX',
+  	'email' : 'tboonx@googlemail.com',
+  	'id' : '2839748234',
+  	'location' : 'Deutschland',
+  	'organization' : 'Institut für Angewandte Informatik e. V.',
+  	'description' : null,
+  	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
+  	'name' : 'Kurt Junghanns'
+  };
+  const correct_provider2 = {
+    'provider' : 'google',
+  	'token' : 'wercvrwe78nzc87 ncbr4btc67c7h7c',
+  	'scope' : 'user',
+  	'expires' : 3600,
+  	'extra_token' : undefined,
+  	'token_creation' : now,
+  	'username' : 'TBoonX',
+  	'email' : 'tboonx@googlemail.com',
+  	'id' : '453453534534534',
+    identifier: '453453534534534',
+  	'location' : 'Deutschland',
+  	'organization' : 'Institut für Angewandte Informatik e. V.',
+  	'description' : null,
+  	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
+  	'name' : 'Kurt Junghanns'
+  };
+  const wrong_provider = {
+    'provider' : 'socialface',
+  	'token' : 'wercvrwe78nzc87 ncbr4btc67c7h7c',
+  	'scope' : 'user',
+  	'expires' : 1,
+  	'extra_token' : undefined,
+  	'token_creation' : now,
+  	'username' : 'TBoonX',
+  	'email' : 'tboonx@googlemail.com',
+  	'id' : '453453534534534',
+    identifier: '453453534534534',
+  	'location' : 'Deutschland',
+  	'organization' : 'Institut für Angewandte Informatik e. V.',
+  	'description' : null,
+  	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
+  	'name' : 'Kurt Junghanns'
+  };
+  let correct_usergroup = {
+    name: 'Testgroup',
+    description: 'Used for Unit tests',
+    isActive: true,
+    members: [
+      {
+        userid: 1,
+        joined: (new Date()).toISOString(),
+        username: 'Rob'
+      }
+    ]
+  };
+  let correct_usergroup2 = {
+    name: 'Blub blabla blub',
+    description: 'Used for Unit tests',
+    isActive: true,
+    members: [
+      {
+        userid: 1,
+        joined: (new Date()).toISOString(),
+        username: 'ASW2'
+      },
+      {
+        userid: 2,
+        joined: (new Date()).toISOString(),
+        username: 'Rob'
+      }
+    ]
+  };
+  const newPassword = 'ua89nd7s8df7zsb78f';
   let userid = '',
-    jwt = '';
+    jwt = '',
+    groupid = 0;
 
   context('Using all exported functions - ', () => {
     it('Register user', () => {
@@ -52,16 +148,17 @@ describe('User service', () => {
         throw Error;
         expect(1).to.equals(2);
       });
-    });it('Register a second user with same username - should not be possible', () => {
+    });
+    it('Register a second user with same username - should not be possible', () => {
       let req = {
         payload: correct_user1
       };
       return handler.register(req, (result) => {
-        //console.log(result);
+        console.log(result);
 
         expect(result.output).to.not.equal(undefined);
         expect(result.output).to.not.equal(null);
-        expect(result.output.statusCode).to.equal(422);
+        expect(result.output.statusCode).to.equal(409);
 
         return;
       })
@@ -181,7 +278,7 @@ describe('User service', () => {
         }
       };
       return handler.getUser(req, (result) => {
-        //console.log('testresult: ', result);
+        console.log('testresult: detailed user', result);
 
         expect(result._id).to.equal(userid);
         expect(result.password).to.equal(undefined);
@@ -198,7 +295,7 @@ describe('User service', () => {
       let req = {
         payload: {
           oldPassword: 'wrong',
-          newPassword: 'ua89nd7s8df7zsb78f'
+          newPassword: newPassword
         },
         params: {
           id: userid
@@ -279,6 +376,112 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     });
+
+
+    //usergroups
+
+    it('Create usergroup', () => {
+      let req = {
+        payload: correct_usergroup,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        // console.log(result);
+
+        expect(result.name).to.equal(correct_usergroup.name);
+
+        groupid = result.id;
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+    it('Update usergroup', () => {
+      let group = correct_usergroup2;
+      group.id = groupid;
+      let req = {
+        payload: group,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        // console.log(result);
+
+        expect(result.name).to.equal('Blub blabla blub');
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+    it('Get user detailed and check groups', () => {
+      let req = {
+        params: {
+          id: userid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.getUser(req, (result) => {
+        // console.log('testresult: ', result);
+
+        expect(result._id).to.equal(userid);
+        expect(result.groups).to.not.equal(undefined);
+        expect(result.groups.length).to.equal(1);
+        expect(result.groups[0].id).to.equal(groupid);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+    it('Delete usergroup', () => {
+      let req = {
+        params: {
+          groupid: groupid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.deleteUsergroup(req, (result) => {
+        console.log(result);
+
+        expect(result).to.equal(undefined);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+
+    //delete the user
+
     it('Delete user', () => {
       let req = {
         params: {
@@ -307,15 +510,15 @@ describe('User service', () => {
     it('Login with deleted user', () => {
       let req = {
         payload: {
-          email: correct_user1.email,
-          password: correct_user1.password
+          email: 'Bazingaish' + correct_user1.email,
+          password: newPassword
         }
       };
       return handler.login(req, (result) => {
-        // console.log('result', result);
+        console.log('result', result);
 
         expect(result.isBoom).to.equal(true);
-        expect(result.output.statusCode).to.equal(401);
+        expect(result.output.statusCode).to.equal(423);
 
         return;
       })
@@ -333,10 +536,10 @@ describe('User service', () => {
         }
       };
       return handler.getPublicUser(req, (result) => {
-        // console.log(result);
+        console.log(result);
 
         expect(result.isBoom).to.equal(true);
-        expect(result.output.statusCode).to.equal(401);
+        expect(result.output.statusCode).to.equal(423);
 
         return;
       })
@@ -344,6 +547,160 @@ describe('User service', () => {
         console.log('Error', Error);
         throw Error;
         expect(1).to.equals(2);
+      });
+    });
+
+    //Social login stuff
+
+    it('Register user with OAuth data', () => {
+      //first create provider in db
+      return providerCtrl.create(correct_provider)
+        .then((insert_result) => {
+          // console.log('insert_result', insert_result);
+
+          expect(insert_result.insertedCount).to.equal(1);
+
+          let req = {
+            payload: correct_oauth_user
+          };
+          return handler_social.registerWithOAuth(req, (result) => {
+            console.log(result);
+
+            expect(result.userid).to.not.equal(undefined);
+
+            userid = result.userid;
+
+            return {
+              header: (name, data) => {
+                console.log('got header:', name, data);
+                jwt = data;
+              }
+            };
+          })
+          .catch((Error) => {
+            console.log(Error);
+            throw Error;
+            expect(1).to.equals(2);
+          });
+        });
+    });
+    it('Login with oauth', () => {
+      let req = {
+        payload: correct_oauth_user
+      };
+      return handler_social.loginWithOAuth(req, (result) => {
+        // console.log('result', result);
+
+        expect(result.userid).to.equal(userid);
+        expect(result.username).to.not.equal(undefined);
+
+        userid = result.userid;
+
+        return {
+          header: (name, data) => {
+            console.log('got header:', name, data);
+            jwt = data;
+          }
+        };
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+    it('Add provider', () => {
+      //first create provider in db
+      return providerCtrl.create(correct_provider2)
+        .then((insert_result) => {
+          // console.log('insert_result', insert_result);
+
+          expect(insert_result.insertedCount).to.equal(1);
+
+          let req = {
+            payload: correct_provider2,
+            auth: { //headers which will be set with JWT
+              credentials: {
+                userid: userid
+              }
+            }
+          };
+          return handler_social.addProvider(req, (result) => {
+            // console.log('result', result);
+
+            expect(result).to.equal(undefined);
+
+            return;
+          })
+          .catch((Error) => {
+            console.log('Error', Error);
+            throw Error;
+            expect(1).to.equals(2);
+          });
+        });
+    });
+    it('Try add wrong provider', () => {
+      //first create provider in db
+      return providerCtrl.create(wrong_provider)
+        .then((insert_result) => {
+          // console.log('insert_result', insert_result);
+
+          expect(insert_result.insertedCount).to.equal(1);
+
+          let req = {
+            payload: wrong_provider,
+            auth: { //headers which will be set with JWT
+              credentials: {
+                userid: userid
+              }
+            }
+          };
+          return handler_social.addProvider(req, (result) => {
+            // console.log('result', result);
+
+            expect(result).to.not.equal(undefined);
+            expect(result.isBoom).to.equal(true);
+            expect(result.output.statusCode).to.equal(406);
+
+            return;
+          });
+        });
+    });
+    it('list all providers of a user', () => {
+      let req = {
+        params: {
+          id: userid
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler_social.getProvidersOfUser(req, (result) => {
+        // console.log('result', result);
+
+        expect(result.length).to.equal(2);
+
+        return;
+      });
+    });
+    it('Delete provider', () => {
+      let req = {
+        params: {
+          provider: 'google'
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler_social.deleteProvider(req, (result) => {
+        // console.log('result', result);
+
+        expect(result).to.equal(undefined);
+        return;
       });
     });
   });

@@ -7,32 +7,36 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
   co = require('../common'),
   userCtrl = require('../database/user'),
+  usergroupCtrl = require('../database/usergroup'),
   config = require('../configuration'),
   jwt = require('./jwt'),
   Joi = require('joi'),
   JSSHA = require('js-sha512'),
-  SMTPConnection = require('smtp-connection');;
+  SMTPConnection = require('smtp-connection'),
+  util = require('./util'),
+  request = require('request');
 
 module.exports = {
   register: (req, res) => {
     let user = {
-      surname:  parseAPIParameter(req.payload.surname),
-      forename: parseAPIParameter(req.payload.forename),
-      username: parseAPIParameter(req.payload.username),
-      email:    parseAPIParameter(req.payload.email),
-      password: parseAPIParameter(req.payload.password),
-      frontendLanguage: parseAPIParameter(req.payload.language),
+      surname:  util.parseAPIParameter(req.payload.surname),
+      forename: util.parseAPIParameter(req.payload.forename),
+      username: util.parseAPIParameter(req.payload.username),
+      email:    util.parseAPIParameter(req.payload.email),
+      password: util.parseAPIParameter(req.payload.password),
+      frontendLanguage: util.parseAPIParameter(req.payload.language),
       country: '',
       picture: '',
       description: '',
-      organization: parseAPIParameter(req.payload.organization),
+      organization: util.parseAPIParameter(req.payload.organization),
       registered: (new Date()).toISOString(),
+      providers: [],
       authorized: false
     };
     console.log('Registration: ', user);
 
     //check if username already exists
-    return isIdentityAssigned(user.email, user.username)
+    return util.isIdentityAssigned(user.email, user.username)
       .then((result) => {
         console.log('identity already taken: ', user.email, user.username, result);
         if (result.assigned === false) {
@@ -73,7 +77,7 @@ module.exports = {
             message = 'The username is already taken';
           if (result.username === false)
             message = 'The email is already taken';
-          return res(boom.badData(message));
+          return res(boom.conflict(message));
         }
       })
       .catch((error) => {
@@ -86,15 +90,16 @@ module.exports = {
       email: decodeURI(req.payload.email),
       password: decodeURI(req.payload.password)
     };
+    console.log('query: ', query);
 
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((result) => {
-        //console.log('login: result: ', result);
+        console.log('login: result: ', result);
 
         switch (result.length) {
           case 0:
-            res(boom.unauthorized('The credentials are wrong', '{"email":"", "password": ""}'));
+            res(boom.notFound('The credentials are wrong', '{"email":"", "password": ""}'));
             break;
           case 1:
             //TODO: call authorization service for OAuth2 token
@@ -102,6 +107,10 @@ module.exports = {
             //check if enabled for trials
             if (result[0].authorized !== true) {
               res(boom.locked('Not authorized for trials'));
+              break;
+            }
+            if (result[0].deactivated === true) {
+              res(boom.locked('This user is deactivated.'));
               break;
             }
 
@@ -128,16 +137,27 @@ module.exports = {
 
   getUser: (req, res) => {
     //check if the request comes from the right user (have the right JWT data)
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
-      return res(boom.unauthorized('You cannot get detailed information about another user'));
+      return res(boom.forbidden('You cannot get detailed information about another user'));
     }
 
-    return userCtrl.read(parseStringToInteger(req.params.id))
+    return userCtrl.read(util.parseStringToInteger(req.params.id))
       .then((user) => {
         //console.log('getUser: got user:', user);
-        if (user !== undefined && user !== null && user.username !== undefined)
-          return res(prepareDetailedUserData(user));
+        if (user !== undefined && user !== null && user.username !== undefined) {
+          if (user.deactivated === true) {
+            return res(boom.locked('This user is deactivated.'));
+          }
+
+          //get groups of a user
+          return usergroupCtrl.readGroupsOfUser(req.params.id)
+            .then((array) => {
+              user.groups = array;
+
+              return res(prepareDetailedUserData(user));
+            });
+        }
         else {
           return res(boom.notFound());
         }
@@ -149,12 +169,12 @@ module.exports = {
   },
 
   deleteUser: (req, res) => {
-    let userid = parseStringToInteger(req.params.id);
+    let userid = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be deleted have the right JWT data
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
-      return res(boom.unauthorized('You cannot delete another user'));
+      return res(boom.forbidden('You cannot delete another user'));
     }
 
     return userCtrl.delete(userid)
@@ -175,12 +195,12 @@ module.exports = {
   updateUserPasswd: (req, res) => {
     let oldPassword = req.payload.oldPassword;
     let newPassword = req.payload.newPassword;
-    const user__id = parseStringToInteger(req.params.id);
+    const user__id = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
-      return res(boom.unauthorized('You cannot change the password of another user'));
+      return res(boom.forbidden('You cannot change the password of another user'));
     }
 
     //check if old password is correct
@@ -216,7 +236,7 @@ module.exports = {
                 res(boom.badImplementation());
               })
               .catch((error) => {
-                res(boom.notFound('Update failed', error));
+                res(boom.badImplementation('Update failed', error));
               });
             break;
           default:
@@ -229,12 +249,12 @@ module.exports = {
 
   updateUserProfile: (req, res) => {
     let user = req.payload;
-    user._id = parseStringToInteger(req.params.id);
+    user._id = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
-    const isUseridMatching = isJWTValidForTheGivenUserId(req);
+    const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
     if (!isUseridMatching) {
-      return res(boom.unauthorized('You cannot change the user profile of another user'));
+      return res(boom.forbidden('You cannot change the user profile of another user'));
     }
 
     console.log('updateUserProfile: use user', user);
@@ -245,21 +265,21 @@ module.exports = {
         },
         updateQuery = {
           $set: {
-            email:       parseAPIParameter(req.payload.email),
-            username:    parseAPIParameter(req.payload.username),
-            surname:     parseAPIParameter(req.payload.surname),
-            forename:    parseAPIParameter(req.payload.forename),
-            frontendLanguage:    parseAPIParameter(req.payload.language),
-            country:     parseAPIParameter(req.payload.country),
-            picture:     parseAPIParameter(req.payload.picture),
-            description: parseAPIParameter(req.payload.description),
-            organization: parseAPIParameter(req.payload.organization)
+            email:       util.parseAPIParameter(req.payload.email),
+            username:    util.parseAPIParameter(req.payload.username),
+            surname:     util.parseAPIParameter(req.payload.surname),
+            forename:    util.parseAPIParameter(req.payload.forename),
+            frontendLanguage:    util.parseAPIParameter(req.payload.language),
+            country:     util.parseAPIParameter(req.payload.country),
+            picture:     util.parseAPIParameter(req.payload.picture),
+            description: util.parseAPIParameter(req.payload.description),
+            organization: util.parseAPIParameter(req.payload.organization)
           }
         };
 
       return userCtrl.partlyUpdate(findQuery, updateQuery)
         .then((result) => {
-          console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
+          // console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
           if (result.result.ok === 1 && result.result.n === 1) {
             //success
             return res();
@@ -277,7 +297,7 @@ module.exports = {
       .then((cursor) => cursor.project({username: 1, email: 1}))
       .then((cursor2) => cursor2.next())
       .then((document) => {
-        console.log('handler: updateUserProfile: got user as document', document);
+        // console.log('handler: updateUserProfile: got user as document', document);
 
         if (document === null)
           return res(boom.notFound('No user with the given id'));
@@ -338,6 +358,10 @@ module.exports = {
         if (array.length > 1)
           return res(boom.badImplementation());
 
+        if (array[0].deactivated === true) {
+          return res(boom.locked('This user is deactivated.'));
+        }
+        
         res(preparePublicUserData(array[0]));
       })
       .catch((error) => {
@@ -381,6 +405,37 @@ module.exports = {
       .catch((error) => {
         console.log('handler: checkUsername: error', error);
         res(boom.badImplementation(error));
+      });
+  },
+
+  searchUser: (req, res) => {
+    const username = decodeURI(req.params.username);
+
+    const query = {
+      username: {
+        $regex: username
+      }
+    };
+    console.log('query:', query);
+
+    return userCtrl.find(query)
+      .then((cursor1) => cursor1.project({username: 1, _id: 1}))
+      .then((cursor2) => cursor2.limit(10))
+      .then((cursor3) => cursor3.toArray())
+      .then((array) => {
+        // console.log('handler: checkUsername: similar usernames', array);
+        let data = array.reduce((prev, curr) => {
+          prev.push({
+            name: curr.username,
+            value: curr._id
+          });
+          return prev;
+        }, []);
+        return res({success: true, results: data});
+      })
+      .catch((error) => {
+        console.log('handler: searchUser: error', error);
+        res({success: false, results: []});
       });
   },
 
@@ -460,6 +515,246 @@ module.exports = {
       })
       .catch((error) => res(error));
     });
+  },
+
+  deleteUsergroup: (req, res) => {
+    //first check if user is creator
+    return usergroupCtrl.read(req.params.groupid)
+      .then((document) => {
+        if (document === undefined || document === null) {
+          return res(boom.notFound());
+        }
+
+        if (document.creator !== req.auth.credentials.userid) {
+          return res(boom.unauthorized());
+        }
+
+        //now delete
+        return usergroupCtrl.delete(req.params.groupid)
+          .then((result) => {
+            // console.log('deleteUsergroup: deleted', result.result);
+
+            if (result.result.ok !== 1) {
+              return res(boom.badImplementation());
+            }
+
+            if (result.result.n !== 1) {
+              return res(boom.notFound());
+            }
+
+            if (document.members.length < 1)
+              return res();
+
+            //notify users
+            let promises = [];
+            document.members.forEach((member) => {
+              promises.push(notifiyUser({
+                id: document.creator,
+                name: document.creator.username || 'Group leader'
+              }, member.userid, 'left', document, true));
+            });
+            return Promise.all(promises).then(() => {
+              return res();
+            }).catch((error) => {
+              console.log('error', error);
+              //reply(boom.badImplementation());
+              //for now always succeed
+              return res();
+            });
+          });
+      });
+  },
+
+  createOrUpdateUsergroup: (req, res) => {
+    const userid = req.auth.credentials.userid;
+
+    let group = req.payload;
+
+    group.creator = userid;
+    group.description = util.parseAPIParameter(group.description);
+    group.name = util.parseAPIParameter(group.name);
+    group.timestamp = util.parseAPIParameter(group.timestamp) || (new Date()).toISOString();
+
+    if (group.isActive !== false)
+      group.isActive = true;
+    if (group.members === undefined || group.members === null || group.members.length < 0)
+      group.members = [];
+
+    if (group.id === undefined || group.id === null) {
+      //create
+      // console.log('createOrUpdateUsergroup: create group', group);
+
+      return usergroupCtrl.create(group)
+        .then((result) => {
+          // console.log('createOrUpdateUsergroup: created group', result.result || result);
+
+          if (result[0] !== undefined && result[0] !== null) {
+            //Error
+            return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+          }
+
+          if (result.insertedCount === 1) {
+            //success
+            group.id = result.insertedId;
+
+            if (group.members.length < 1)
+              return res(group);
+
+            //notify users
+            let promises = [];
+            group.members.forEach((member) => {
+              promises.push(notifiyUser({
+                id: group.creator,
+                name: group.creator.username || 'Group leader'
+              }, member.userid, 'joined', group, true));
+            });
+            return Promise.all(promises).then(() => {
+              return res(group);
+            }).catch((error) => {
+              console.log('error', error);
+              //reply(boom.badImplementation());
+              //for now always succeed
+              return res(group);
+            });
+          }
+
+          res(boom.badImplementation());
+        })
+        .catch((error) => {
+          console.log('Error', error);
+          res(boom.badImplementation(error));
+        });
+    }
+    else if (group.id < 1) {
+      //error
+      return res(boom.badData());
+    }
+    else {
+      //update
+      // console.log('createOrUpdateUsergroup: update group', group);
+
+      //first check if user is creator
+      return usergroupCtrl.read(group.id)
+        .then((document) => {
+          if (document === undefined || document === null) {
+            return res(boom.notFound());
+          }
+
+          if (document.creator !== group.creator) {
+            return res(boom.unauthorized());
+          }
+
+          //some attribute should be unchangeable
+          group.timestamp = document.timestamp;
+          group._id = document._id;
+
+          return usergroupCtrl.update(group)
+            .then((result) => {
+              // console.log('createOrUpdateUsergroup: updated group', result.result || result);
+
+              if (result[0] !== undefined && result[0] !== null) {
+                //Error
+                return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+              }
+
+              if (result.result.ok === 1) {
+                if (group.members.length < 1 && document.members.length < 1)
+                  return res(group);
+
+                //notify users
+                let wasUserAMember = (userid) => {
+                  let result = false;
+                  document.members.forEach((member) => {
+                    if (member.userid === userid)
+                      result = true;
+                  });
+                  return result;
+                };
+                let wasUserDeleted = (userid) => {
+                  let result = true;
+                  group.members.forEach((member) => {
+                    if (member.userid === userid)
+                      result = false;
+                  });
+                  return result;
+                };
+                let promises = [];
+                group.members.forEach((member) => {
+                  if (!wasUserAMember(member.userid))
+                    promises.push(notifiyUser({
+                      id: group.creator,
+                      name: group.creator.username || 'Group leader'
+                    }, member.userid, 'joined', group, true));
+                });
+                document.members.forEach((member) => {
+                  if (wasUserDeleted(member.userid))
+                    promises.push(notifiyUser({
+                      id: document.creator,
+                      name: document.creator.username || 'Group leader'
+                    }, member.userid, 'left', document, true));
+                });
+                return Promise.all(promises).then(() => {
+                  return res(group);
+                }).catch((error) => {
+                  console.log('error', error);
+                  //reply(boom.badImplementation());
+                  //for now always succeed
+                  return res(group);
+                });
+              }
+
+              res(boom.badImplementation());
+            });
+        })
+        .catch((error) => {
+          console.log('Error', error);
+          res(boom.badImplementation(error));
+        });
+    }
+  },
+
+  getUsergroups: (req, res) => {
+    let selectors = req.payload.reduce((q, element) => {
+      q.push({_id: element});
+      return q;
+    }, []);
+    let query = {
+      $or: selectors
+    };
+
+    // console.log('getUsergroups:', query);
+
+    return usergroupCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        if (array === undefined || array === null || array.length < 1) {
+          return res([]);
+        }
+
+        return res(array);
+      });
+  },
+
+  leaveUsergroup: (req, res) => {
+    return usergroupCtrl.partlyUpdate({
+      _id: req.params.groupid
+    }, {
+      $pull: {
+        members: {
+          userid: req.auth.credentials.userid
+        }
+      }
+    }).
+    then((result) => {
+      console.log('leaveUsergroup: ', result.result);
+      if (result.result.ok !== 1)
+        return res(boom.notFound());
+
+      if (result.result.nModified !== 1)
+        return res(boom.unauthorized());
+
+      return res();
+    });
   }
 };
 
@@ -505,49 +800,6 @@ function isEMailAlreadyTaken(email) {
   return myPromise;
 }
 
-function isIdentityAssigned(email, username) {
-  let myPromise = new Promise((resolve, reject) => {
-    return userCtrl.find({
-      $or: [
-        {
-          username: username
-        },
-        {
-          email: email
-        }
-      ]
-    })
-      .then((cursor) => cursor.project({email: 1, username: 1}))
-      .then((cursor2) => cursor2.toArray())
-      .then((array) => {
-        console.log('isIdentityAssigned: cursor.array.length:', array.length);
-
-        if (array.length > 0) {
-          const isEMailAssigned = !(array.reduce((prev, curr) => {
-            const sameEMail = curr.email === email;
-            return prev && !sameEMail;
-          }, true));
-          const isUsernameAssigned = !(array.reduce((prev, curr) => {
-            const sameUsername = curr.username === username;
-            return prev && !sameUsername;
-          }, true));
-
-          resolve({
-            assigned: isEMailAssigned || isUsernameAssigned,
-            username: isUsernameAssigned,
-            email: isEMailAssigned
-          });
-        } else {
-          resolve({assigned: false});
-        }
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
-  return myPromise;
-}
-
 //Remove attributes of the user data object which should not be transmitted
 function prepareDetailedUserData(user) {
   const hiddenKeys = ['password'];
@@ -569,6 +821,18 @@ function prepareDetailedUserData(user) {
   //map attributes for better API
   minimizedUser.language = minimizedUser.frontendLanguage;
   minimizedUser.frontendLanguage = undefined;
+
+  //add data for social provider stuff
+  minimizedUser.hasPassword = true;
+  if (user.password === undefined || user.password === null || user.password === '')
+    minimizedUser.hasPassword = false;
+  minimizedUser.providers = (user.providers || []).reduce((prev, cur) => {
+    if (prev.indexOf(cur.provider) === -1) {
+      prev.push(cur.provider);
+      return prev;
+    }
+    return prev;
+  }, []);
 
   return minimizedUser;
 }
@@ -594,33 +858,38 @@ function preparePublicUserData(user) {
   return minimizedUser;
 }
 
-//JWT validation inserts userid in header which should be the same as the one in the parameters
-function isJWTValidForTheGivenUserId(req) {
-  let jwt_userid = '';
-  try {
-    jwt_userid = req.auth.credentials.userid;
-  } catch (e) {}
-  //console.log(decodeURI(req.params.id), 'vs', jwt_data);
-  if (decodeURI(req.params.id).toString() !== jwt_userid.toString()) {
-    return false;
-  }
-  return true;
-}
+function notifiyUser(actor, receiver, type, group, isActiveAction = false) {
+  let promise = new Promise((resolve, reject) => {
+    let message = actor.name + ': Has ' + type + ' the group ' + group.name;
+    if (isActiveAction)
+      message = 'You ' + type + ' the group ' + group.name;
+    const options = {
+      url: require('../configs/microservices').activities.uri + '/activity/new',
+      method: 'POST',
+      json: true,
+      body: {
+        activity_type: type,
+        user_id: actor.id.toString(),
+        content_id: group._id.toString(),
+        content_kind: 'group',
+        content_name: message,
+        content_owner_id: receiver.toString()
+      }
+    };
 
-function parseAPIParameter(parameter) {
-  if (parameter === undefined || parameter === null || parameter.replace(' ', '') === '')
-    return '';
+    function callback(error, response, body) {
+      // console.log('notifiyUser: ', error, response.statusCode, body);
 
-  return decodeURI(parameter);
-}
+      if (!error && (response.statusCode === 200)) {
+        return resolve(body);
+      } else {
+        return reject(error);
+      }
+    }
 
-function parseStringToInteger(string) {
-  const integerSchema = Joi.number().integer();
-  const validationResult = integerSchema.validate(string);
-  if (validationResult.error === null) {
-    return validationResult.value;
-  }
-  return undefined;
+    request(options, callback);
+  });
+  return promise;
 }
 
 function sendMail(adr_from, adr_to, message) {

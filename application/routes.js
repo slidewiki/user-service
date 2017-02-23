@@ -4,7 +4,8 @@ Each route implementes a basic parameter/payload validation and a swagger API do
 'use strict';
 
 const Joi = require('joi'),
-  handlers = require('./controllers/handler');
+  handlers = require('./controllers/handler'),
+  handlers_social = require('./controllers/handler_social');
 
 module.exports = function (server) {
   //Register new user with credentials
@@ -49,10 +50,13 @@ module.exports = function (server) {
                 statusCode: Joi.number().integer(),
                 error: Joi.string(),
                 message: Joi.string()
-              }).required()
+              }).required().description('Return schema')
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -88,21 +92,19 @@ module.exports = function (server) {
                 expires_in: Joi.number(),
                 userid: Joi.number().integer(),
                 username: Joi.string()
-              }).required()
+              }).required().description('Return schema')
             },
-            ' 401 ': {
-              'description': 'The credentials are wrong',
-              'headers': {
-                'WWW-Authenticate': {
-                  'description': '{"email":"", "password": ""}'
-                }
-              }
+            ' 404 ': {
+              'description': 'No user for this credentials available.',
             },
             ' 423 ': {
-              'description': 'Not authorized for trials'
+              'description': 'Not authorized for trials or the user is deactivated'
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -131,19 +133,20 @@ module.exports = function (server) {
             ' 200 ': {
               'description': 'Successful',
             },
-            ' 401 ': {
-              'description': 'Not authorized to access another users profile',
-              'headers': {
-                'WWW-Authenticate': {
-                  'description': 'Use your JWT token and the right userid.'
-                }
-              }
+            ' 403 ': {
+              'description': 'You are not allowed to get the private profile of another user.'
             },
             ' 404 ': {
               'description': 'User not found. Check the id.'
+            },
+            ' 423 ': {
+              'description': 'The user is deactivated.'
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -157,7 +160,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          id: Joi.number().integer().options({convert: true})
+          id: Joi.number().integer().options({convert: true}).min(1)
         },
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -180,11 +183,17 @@ module.exports = function (server) {
                 }
               }
             },
+            ' 403 ': {
+              'description': 'You cannot delete another user.'
+            },
             ' 404 ': {
               'description': 'User not found. Check the id.'
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -205,7 +214,7 @@ module.exports = function (server) {
         payload: Joi.object().keys({
           oldPassword: Joi.string().min(8),
           newPassword: Joi.string().min(8)
-        }),
+        }).requiredKeys('oldPassword', 'newPassword'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
         }).unknown()
@@ -219,8 +228,8 @@ module.exports = function (server) {
             ' 200 ': {
               'description': 'Successful',
             },
-            ' 401 ': {
-              'description': 'Not authorized to change the password of another user.',
+            ' 403 ': {
+              'description': 'Not possible to change the password of another user.',
               'headers': {
                 'WWW-Authenticate': {
                   'description': 'Use your JWT token and the right userid.'
@@ -232,6 +241,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -248,7 +260,7 @@ module.exports = function (server) {
           id: Joi.number().integer().options({convert: true})
         },
         payload: Joi.object().keys({
-          email: Joi.string().email(),
+          email: Joi.string().email().trim().required(),
           username: Joi.string().alphanum(),
           surname: Joi.string().allow('').optional(),
           forename: Joi.string().allow('').optional(),
@@ -280,6 +292,9 @@ module.exports = function (server) {
                 }
               }
             },
+            ' 403 ': {
+              'description': 'You are not allowed to do this.'
+            },
             ' 404 ': {
               'description': 'User not found. Check the id.'
             },
@@ -291,6 +306,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -318,9 +336,15 @@ module.exports = function (server) {
             },
             ' 404 ': {
               'description': 'User not found. Check the id.'
+            },
+            ' 423 ': {
+              'description': 'This user is deactivated.'
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -354,7 +378,40 @@ module.exports = function (server) {
             }
           },
           payloadType: 'form'
+        },
+        yar: {
+          skip: true
         }
+      }
+    }
+  });
+
+  //gets dropdown data for frontend for users
+  server.route({
+    method: 'GET',
+    path: '/information/username/search/{username}',
+    handler: handlers.searchUser,
+    config: {
+      validate: {
+        params: {
+          username: Joi.string()
+        }
+      },
+      tags: ['api'],
+      description: 'Searches for user and returns JSON for semantic-ui dropdown',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          }
+        }
+      },
+      cors: {
+        origin: ['*'],
+        additionalHeaders: ['cache-control', 'x-requested-with']
       }
     }
   });
@@ -367,7 +424,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          email: Joi.string().email()
+          email: Joi.string().email().trim().required()
         }
       },
       tags: ['api'],
@@ -386,6 +443,9 @@ module.exports = function (server) {
             }
           },
           payloadType: 'json'
+        },
+        yar: {
+          skip: true
         }
       }
     }
@@ -429,6 +489,471 @@ module.exports = function (server) {
                   'description': 'Contact the server admin in order to re-activate your account.'
                 }
               }
+            }
+          },
+          payloadType: 'json'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  //Social logins
+
+  //two hidden routes which are called by the OAuth process
+  server.route({
+    method: 'GET',
+    path: '/social/provider/github',
+    handler: function(req, res) {
+      //Continue with the token
+      //Remark: third parameter have to be the name of the provider as listet for purest
+      handlers_social.handleOAuth2Token(req, res, 'github');
+    }
+  });
+  server.route({
+    method: 'GET',
+    path: '/social/provider/google',
+    handler: function(req, res) {
+      handlers_social.handleOAuth2Token(req, res, 'google');
+    }
+  });
+  server.route({
+    method: 'GET',
+    path: '/social/provider/facebook',
+    handler: function(req, res) {
+      handlers_social.handleOAuth2Token(req, res, 'facebook');
+    }
+  });
+
+  server.route({
+    method: 'PUT',
+    path: '/social/provider/{provider}',
+    handler: handlers_social.addProvider,
+    config: {
+      validate: {
+        params: {
+          provider: Joi.string()
+        },
+        payload: Joi.object().keys({
+          identifier: Joi.string(),
+          provider: Joi.string(),
+          token: Joi.string(),
+          token_creation: Joi.string(),//Date
+          email: Joi.string().email(),
+          language: Joi.string().length(5)
+        }).requiredKeys('email', 'identifier', 'provider', 'token', 'token_creation'),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Add a new OAuth provider for the user - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful'
+            },
+            ' 401 ': {
+              'description': 'Not authorized to add the provider.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and send the right OAuth data.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User of JWT was not found'
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            },
+            ' 409 ': {
+              'description': 'The account of the social provider is already used. Normally by another account. Check if you have multiple accounts.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'DELETE',
+    path: '/social/provider/{provider}',
+    handler: handlers_social.deleteProvider,
+    config: {
+      validate: {
+        params: {
+          provider: Joi.string()
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Delete a OAuth provider - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to delete the provider.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Provider for the user not found.'
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/social/register',
+    handler: handlers_social.registerWithOAuth,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          identifier: Joi.string(),
+          provider: Joi.string(),
+          token: Joi.string(),
+          scope: Joi.string(),
+          token_creation: Joi.string(),//Date
+          username: Joi.string().alphanum(),
+          email: Joi.string().email(),
+          language: Joi.string().length(5),
+          forename: Joi.string(),
+          surname: Joi.string()
+        }).requiredKeys('username', 'email', 'identifier', 'provider', 'token', 'token_creation'),
+      },
+      tags: ['api'],
+      description: 'Register a new user with the data from OAuth',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.number().integer(),
+                username: Joi.string()
+              }).required().description('Return schema')
+            },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'OAuth data is wrong or expired'
+                }
+              }
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            },
+            ' 409 ': {
+              'description': 'Provider data is already in use by another user.'
+            },
+            ' 422 ': {
+              'description': 'Wrong user data - see error message',
+              schema: Joi.object().keys({
+                statusCode: Joi.number().integer(),
+                error: Joi.string(),
+                message: Joi.string()
+              }).required().description('Return schema')
+            },
+            ' 423 ': {
+              'description': 'The user with this provider assigned is deactivated.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/social/login',
+    handler: handlers_social.loginWithOAuth,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          identifier: Joi.string(),
+          provider: Joi.string(),
+          token: Joi.string(),
+          scope: Joi.string(),
+          token_creation: Joi.string(), //Date
+          email: Joi.string().email(),  //email of provider
+          language: Joi.string().length(5)
+        }).requiredKeys('identifier', 'provider', 'token', 'token_creation', 'email')
+      },
+      tags: ['api'],
+      description: 'Login with OAuth data',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.number().integer(),
+                username: Joi.string()
+              }).required().description('Return schema')
+            },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Wrong userdata or oauth data. Either you have to register or you check the request parameters.'
+                }
+              }
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/social/providers/{id}',
+    handler: handlers_social.getProvidersOfUser,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true}).description('Id of the user')
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Returns array of already used providers of the user - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  //groups
+
+  server.route({
+    method: 'DELETE',
+    path: '/usergroup/{groupid}',
+    handler: handlers.deleteUsergroup,
+    config: {
+      validate: {
+        params: {
+          groupid: Joi.number().integer().options({convert: true})
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Delete a usergroup - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to delete this group.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right groupid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Group not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'PUT',
+    path: '/usergroup/{groupid}/leave',
+    handler: handlers.leaveUsergroup,
+    config: {
+      validate: {
+        params: {
+          groupid: Joi.number().integer().options({convert: true})
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Leave a usergroup - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right groupid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Group not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'PUT',
+    path: '/usergroup/createorupdate',
+    handler: handlers.createOrUpdateUsergroup,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          id: Joi.number().optional().description('have to be empty for create'),
+          name: Joi.string(),
+          description: Joi.string().allow('').optional(),
+          isActive: Joi.boolean().optional(),
+          timestamp: Joi.string(),
+          members: Joi.array().items(Joi.object().keys({
+            userid: Joi.number(),
+            joined: Joi.string(),
+            username: Joi.string()
+          }).requiredKeys('userid', 'joined'))
+        }).requiredKeys('name'),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Update or create a usergroup - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to update or create this usergroup.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'Group for update not found. Check the id.'
+            },
+            ' 422 ': {
+              'description': 'Wrong usergroup data - see error message'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/usergroups',
+    handler: handlers.getUsergroups,
+    config: {
+      validate: {
+        payload: Joi.array().items(Joi.number())
+      },
+      tags: ['api'],
+      description: 'Gets groups by ids',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
             }
           },
           payloadType: 'json'

@@ -1,28 +1,31 @@
-/* This module is used for confugrating the mongodb connection*/
+/* This module is used for configurating the mongodb connection*/
 'use strict';
 
-//read mongodb URL from /etc/hosts
+const co = require('./common');
+
 let host = 'localhost';
+//read mongo URL from /etc/hosts
 const fs = require('fs');
 try {
   const lines = fs.readFileSync('/etc/hosts').toString().split('\n');
-  for (let i in lines) {
-    if (lines[i].includes('mongodb')) {
-      const entrys = lines[i].split(' ');
-      host = entrys[entrys.length - 1];
-      console.log('Found mongodb host. Using ' + host + ' as database host.');
-    }
-  }
+  lines.filter((line) => line.includes('mongodb')).forEach((line) => {
+    const entries = line.split(' ');
+    host = entries[entries.length - 1];
+    console.log('Using ' + host + ' as database host.');
+  });
 } catch (e) {
-  //Windows or no read rights (bad)
+  console.log('Exception: Windows or no read rights to read /etc/hosts (bad)');
 }
+//read mongo URL from ENV
+host = (!co.isEmpty(process.env.DATABASE_URL)) ? process.env.DATABASE_URL : host;
+if(host !== 'localhost')
+  console.log('Using ' + host + ' as database host.');
 
-//read mongo port from ENV
-const co = require('./common');
 let port = 27017;
+//read mongo port from ENV
 if (!co.isEmpty(process.env.DATABASE_PORT)){
   port = process.env.DATABASE_PORT;
-  //console.log('Using port ' + port + ' as database port.'); TODO replace it with logging, that isn't printed at npm run test:unit
+  console.log('Using ' + port + ' as database port.');
 }
 
 //JWT serial
@@ -53,6 +56,11 @@ if (!co.isEmpty(process.env.ADMIN_EMAIL)){
   adminEmail = process.env.ADMIN_EMAIL;
 }
 
+let APIKey = '2cbc621f86e97189239ee8c4c80b10b3a935b8a9f5db3def7b6a3ae7c4b75cb5';
+if (!co.isEmpty(process.env.APIKEY)){
+  APIKey = process.env.APIKEY;
+}
+
 module.exports = {
   MongoDB: {
     PORT: port,
@@ -66,7 +74,7 @@ module.exports = {
     ALGORITHM:  'HS512'
   },
   SMTP: {
-    APIKey: '2cbc621f86e97189239ee8c4c80b10b3a935b8a9f5db3def7b6a3ae7c4b75cb5',
+    APIKey: APIKey,
     salt: '6cee6c6a420e0573d1a4ad8ecb44f2113d010a0c3aadd3c1251b9aa1406ba6a3',
     host: SMTP_host,
     port: SMTP_port,

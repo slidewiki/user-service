@@ -1,11 +1,11 @@
 'use strict';
 
 const helper = require('./helper'),
-  userModel = require('../models/user.js'),
-  collectionName = 'users';
+  usergroupModel = require('../models/usergroup.js'),
+  collectionName = 'usergroups';
 
 module.exports = {
-  create: (user) => {
+  create: (usergroup) => {
     return helper.connectToDatabase()
       .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, collectionName))
       .then((newId) => {
@@ -14,54 +14,79 @@ module.exports = {
           .then((db2) => db2.collection(collectionName))
           .then((collection) => {
             let isValid = false;
-            user._id = newId;
+            usergroup._id = newId;
             try {
-              isValid = userModel(user);
+              isValid = usergroupModel(usergroup);
               if (!isValid) {
-                return userModel.errors;
+                return usergroupModel.errors;
               }
-              return collection.insertOne(user);
+              return collection.insertOne(usergroup);
             } catch (e) {
-              console.log('user validation failed', e);
+              console.log('usergroup validation failed', e);
               throw e;
             }
           }); //id is created and concatinated automatically
       });
   },
 
-  read: (userid) => {
+  read: (id) => {
     return helper.connectToDatabase()
       .then((dbconn) => dbconn.collection(collectionName))
       .then((collection) => collection.findOne({
-        _id: userid
+        _id: id
       }));
   },
 
-  update: (user) => {
+  readGroupsOfUser: (userid) => {
+    return helper.connectToDatabase()
+      .then((dbconn) => dbconn.collection(collectionName))
+      .then((collection) => collection.find({
+        $or: [
+          {
+            creator: userid
+          },
+          {
+            'members.userid': userid
+          }
+        ]
+      }))
+      .then((cursor) => cursor.toArray());
+  },
+
+  update: (usergroup) => {
     return helper.connectToDatabase()
       .then((dbconn) => dbconn.collection(collectionName))
       .then((collection) => {
         let isValid = false;
         try {
-          isValid = userModel(user);
+          isValid = usergroupModel(usergroup);
           if (!isValid) {
-            return userModel.errors;
+            return usergroupModel.errors;
           }
           return collection.replaceOne({
-            _id: user._id
-          }, user);
+            _id: usergroup._id
+          }, usergroup);
         } catch (e) {
-          console.log('user validation failed', e);
+          console.log('usergroup validation failed', e);
           throw e;
         }
       });
   },
 
-  delete: (userid) => {
+  delete: (id) => {
     return helper.connectToDatabase()
       .then((dbconn) => dbconn.collection(collectionName))
       .then((collection) => collection.remove({
-        _id: userid
+        _id: id
+      }));
+  },
+
+  findAndDelete: (id, userid) => {
+    return helper.connectToDatabase()
+      .then((dbconn) => dbconn.collection(collectionName))
+      .then((collection) => collection.findOneAndDelete({
+        _id: id,
+        creator: userid
       }));
   },
 
@@ -71,9 +96,9 @@ module.exports = {
       .then((collection) => collection.find(query));
   },
 
-  partlyUpdate: (findQuery, updateQuery, params = undefined) => {
+  partlyUpdate: (findQuery, updateQuery) => {
     return helper.connectToDatabase()
       .then((dbconn) => dbconn.collection(collectionName))
-      .then((collection) => collection.update(findQuery, updateQuery, params));
+      .then((collection) => collection.update(findQuery, updateQuery));
   }
 };
