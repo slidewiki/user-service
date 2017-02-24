@@ -11,6 +11,15 @@ WORKDIR /nodeApp
 RUN apt-get update
 RUN apt-get install -y cron supervisor
 
+# ----------------------- #
+#   Installation NodeJS   #
+# ----------------------- #
+
+ADD ./application/package.json ./
+RUN npm install --production
+
+ADD ./application/ ./
+
 # ---------------------- #
 #   Configuration Cron   #
 # ---------------------- #
@@ -24,15 +33,6 @@ ADD crontab /etc/cron.d/simple-cron
 ADD application/cleanup.sh /cleanup.sh
 
 RUN chmod +x /cleanup.sh && chmod 0644 /etc/cron.d/simple-cron
-
-# ----------------------- #
-#   Installation NodeJS   #
-# ----------------------- #
-
-ADD ./application/package.json ./
-RUN npm install --production
-
-ADD ./application/ ./
 
 # ----------- #
 #   Cleanup   #

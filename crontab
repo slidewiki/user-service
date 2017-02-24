@@ -1,2 +1,4 @@
-@hourly root /cleanup.sh &>> /var/log/cron.log
+*/5 * * * * root echo "5 minutes later ..." >> /dev/stdout
+@hourly root /bin/bash --login /nodeApp/cleanup.sh >> /dev/stdout
+*/5 * * * * root /bin/bash --login /nodeApp/cleanup.sh >> /dev/stdout
 # An empty line is required at the end of this file for a valid cron file.
