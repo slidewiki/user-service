@@ -5,13 +5,31 @@
 [![Framework](https://img.shields.io/badge/Framework-NodeJS%206.2.0-blue.svg)](https://nodejs.org/)
 [![Webserver](https://img.shields.io/badge/Webserver-Hapi%2013.4.0-blue.svg)](http://hapijs.com/)
 
-This service manages the user accounts in terms of CRUD operations with their credentials and informations.
-There is a collaboration with the authentification service, with handles OAuth2.
-The API is just a draft.
+This service manages the user accounts in terms of CRUD operations with their credentials, information and groups.
+Also there are routes for handling social login with facebook, google and github, via OAuth2.
 
 ##API:
 
 See http://userservice.experimental.slidewiki.org/documentation
+
+##Side effects
+
+The docker container of this services uses supervisord in order to run the NodeJS application and doing a periodically cleanup of the database (only collections which are in the domain of this service) in parallel.
+
+##Social login
+
+Using the SlideWiki platform to start social login, this service gets the tokens and manages them.
+These social logins are used to sign up or sign in a SlideWiki user.
+As this service communicates with the social providers in order to fulfill the OAuth2 workflow and request user information, the credentials for the providers are stored in the application/config.json file.
+application/config.tpl is a template of such a configuration file - there are just the identifiers and secrets missing.
+In order to get these identifiers and secrets, for each provider an application must be created, activated for OAuth2 and configured for the target domain:
+
+* Facebook: https://developers.facebook.com/
+* Github: Under /settings/applications of your organization or repository
+* Google: https://console.developers.google.com
+
+In there the allowed callback URLs have to be defined.
+Their structure is: http(s)://your.domain.ending/connect/providername/callback , e.g. http://userservice.experimental.slidewiki.org/connect/github/callback
 
 ##Installation and running (in a container, works both on unix and Windows):
 
