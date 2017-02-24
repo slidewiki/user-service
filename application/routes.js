@@ -646,7 +646,8 @@ module.exports = function (server) {
           email: Joi.string().email(),
           language: Joi.string().length(5),
           forename: Joi.string(),
-          surname: Joi.string()
+          surname: Joi.string(),
+          organization: Joi.string()
         }).requiredKeys('username', 'email', 'identifier', 'provider', 'token', 'token_creation'),
       },
       tags: ['api'],
@@ -750,6 +751,9 @@ module.exports = function (server) {
             },
             ' 406 ': {
               'description': 'Provider is not available.'
+            },
+            ' 423 ': {
+              'description': 'Not authorized for trials or the user is deactivated'
             }
           },
           payloadType: 'form'

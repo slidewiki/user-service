@@ -12,7 +12,6 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   jwt = require('./jwt'),
   Joi = require('joi'),
   JSSHA = require('js-sha512'),
-  SMTPConnection = require('smtp-connection'),
   util = require('./util'),
   request = require('request');
 
@@ -53,7 +52,7 @@ module.exports = {
 
               if (result.insertedCount === 1) {
                 //success
-                sendMail('registration@slidewiki.org', config.ADMIN.email,
+                util.sendMail('registration@slidewiki.org', config.ADMIN.email,
                   'subject: User sign-up\n\n' +
                   user.username + ' : ' + user.forename + ' ' + user.surname + '\n' +
                   user.organization + '\n' +
@@ -361,7 +360,7 @@ module.exports = {
         if (array[0].deactivated === true) {
           return res(boom.locked('This user is deactivated.'));
         }
-        
+
         res(preparePublicUserData(array[0]));
       })
       .catch((error) => {
@@ -481,7 +480,7 @@ module.exports = {
       const hashedPassword = JSSHA.sha512(newPassword + config.SMTP.salt);
 
       console.log('resetPassword: email is in use thus we send a mail');
-      let connectionPromise = sendMail(config.SMTP.from, email,
+      let connectionPromise = util.sendMail(config.SMTP.from, email,
         'Subject: Password reset\n\nDear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team'
         );
 
@@ -890,63 +889,4 @@ function notifiyUser(actor, receiver, type, group, isActiveAction = false) {
     request(options, callback);
   });
   return promise;
-}
-
-function sendMail(adr_from, adr_to, message) {
-  let myPromise = new Promise((resolve, reject) => {
-    let connection;
-    try {
-      connection = new SMTPConnection({
-        host: config.SMTP.host,
-        port: config.SMTP.port,
-        name: config.SMTP.clientName,
-        connectionTimeout: 4000,
-        opportunisticTLS: true
-      });
-    }
-    catch (e) {
-      console.log(e);
-      return reject(boom.badImplementation('Wrong SMTP configuration'));
-    }
-
-    connection.on('error', (err) => {
-      console.log('ERROR on SMTP Client:', err);
-      return reject(err);
-    });
-
-    connection.connect((result) => {
-      //Result of connected event
-      console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
-
-      //TODO handle different languages
-
-      connection.send({
-        from: adr_from,
-        to: adr_to
-      },
-      message,
-      (err, info) => {
-        console.log('tried to send the email:', err, info);
-
-        try {
-          connection.quit();
-        }
-        catch (e) {
-          console.log('SMTP connection quit failed:', e);
-        }
-
-        if (err !== null) {
-          return reject(boom.badImplementation(err));
-        }
-
-        //handle info object
-        if (info.rejected.length > 0) {
-          return reject(boom.badImplementation('Email was rejected'));
-        }
-
-        resolve({email: adr_to, message: info.response});
-      });
-    });
-  });
-  return myPromise;
 }

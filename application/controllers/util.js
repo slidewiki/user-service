@@ -1,7 +1,9 @@
 'use strict';
 
 const userCtrl = require('../database/user'),
-  Joi = require('joi');
+  Joi = require('joi'),
+  config = require('../configuration'),
+  SMTPConnection = require('smtp-connection');
 
 module.exports = {
   isJWTValidForTheGivenUserId: (req) => {
@@ -73,5 +75,64 @@ module.exports = {
       return validationResult.value;
     }
     return undefined;
+  },
+
+  sendMail: (adr_from, adr_to, message) => {
+    let myPromise = new Promise((resolve, reject) => {
+      let connection;
+      try {
+        connection = new SMTPConnection({
+          host: config.SMTP.host,
+          port: config.SMTP.port,
+          name: config.SMTP.clientName,
+          connectionTimeout: 4000,
+          opportunisticTLS: true
+        });
+      }
+      catch (e) {
+        console.log(e);
+        return reject(boom.badImplementation('Wrong SMTP configuration'));
+      }
+
+      connection.on('error', (err) => {
+        console.log('ERROR on SMTP Client:', err);
+        return reject(err);
+      });
+
+      connection.connect((result) => {
+        //Result of connected event
+        console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
+
+        //TODO handle different languages
+
+        connection.send({
+          from: adr_from,
+          to: adr_to
+        },
+        message,
+        (err, info) => {
+          console.log('tried to send the email:', err, info);
+
+          try {
+            connection.quit();
+          }
+          catch (e) {
+            console.log('SMTP connection quit failed:', e);
+          }
+
+          if (err !== null) {
+            return reject(boom.badImplementation(err));
+          }
+
+          //handle info object
+          if (info.rejected.length > 0) {
+            return reject(boom.badImplementation('Email was rejected'));
+          }
+
+          resolve({email: adr_to, message: info.response});
+        });
+      });
+    });
+    return myPromise;
   }
 };

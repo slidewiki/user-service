@@ -248,10 +248,11 @@ module.exports = {
               country:          document.location || '',
               picture:          document.picture || '',
               description:      document.description || '',
-              organization:     document.organization || '',
+              organization:     util.parseAPIParameter(req.payload.organization) || document.organization || '',
               registered:       (new Date()).toISOString(),
               forename:         util.parseAPIParameter(req.payload.forename) || '',
               surname:          util.parseAPIParameter(req.payload.surname) || '',
+              authorized: false,
               providers: [
                 {
                   provider:       document.provider,
@@ -285,6 +286,13 @@ module.exports = {
 
                       if (result.insertedCount === 1) {
                         //success
+                        sendMail('registration@slidewiki.org', config.ADMIN.email,
+                          'subject: User sign-up\n\n' +
+                          result.username + ' : ' + result.forename + ' ' + result.surname + '\n' +
+                          result.organization + '\n' +
+                          result.email
+                          );
+
                         return res({
                           userid: result.insertedId,
                           username: user.username,
@@ -359,7 +367,11 @@ module.exports = {
               case 1:
                 //TODO: call authorization service for OAuth2 token
 
-
+                //check if enabled for trials
+                if (result[0].authorized !== true) {
+                  res(boom.locked('Not authorized for trials'));
+                  break;
+                }
                 if (result[0].deactivated === true) {
                   res(boom.unauthorized('This user is deactivated.'));
                   break;
