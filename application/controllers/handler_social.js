@@ -291,7 +291,9 @@ module.exports = {
                           result.username + ' : ' + result.forename + ' ' + result.surname + '\n' +
                           result.organization + '\n' +
                           result.email
-                          );
+                          )
+                          .then(() => {})
+                          .catch((err) => {console.log('ERROR', err);});
 
                         return res({
                           userid: result.insertedId,

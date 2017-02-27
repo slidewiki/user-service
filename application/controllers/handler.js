@@ -57,7 +57,9 @@ module.exports = {
                   user.username + ' : ' + user.forename + ' ' + user.surname + '\n' +
                   user.organization + '\n' +
                   user.email
-                  );
+                  )
+                  .then(() => {})
+                  .catch((err) => {console.log('ERROR', err);});
 
                 return res({
                   userid: result.insertedId
