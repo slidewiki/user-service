@@ -22,7 +22,7 @@ module.exports = {
       surname:  util.parseAPIParameter(req.payload.surname),
       forename: util.parseAPIParameter(req.payload.forename),
       username: util.parseAPIParameter(req.payload.username),
-      email:    util.parseAPIParameter(req.payload.email),
+      email:    util.parseAPIParameter(req.payload.email).toLowerCase(),
       password: util.parseAPIParameter(req.payload.password),
       frontendLanguage: util.parseAPIParameter(req.payload.language),
       country: '',
@@ -79,7 +79,7 @@ module.exports = {
 
   login: (req, res) => {
     const query = {
-      email: decodeURI(req.payload.email),
+      email: decodeURI(req.payload.email).toLowerCase(),
       password: decodeURI(req.payload.password)
     };
     console.log('query: ', query);
@@ -263,7 +263,7 @@ module.exports = {
         },
         updateQuery = {
           $set: {
-            email:       util.parseAPIParameter(req.payload.email),
+            email:       util.parseAPIParameter(req.payload.email).toLowerCase(),
             username:    util.parseAPIParameter(req.payload.username),
             surname:     util.parseAPIParameter(req.payload.surname),
             forename:    util.parseAPIParameter(req.payload.forename),
@@ -307,7 +307,7 @@ module.exports = {
           return res(boom.notAcceptable('username could not be changed!'));
         }
 
-        if (decodeURI(req.payload.email) === oldEMail) {
+        if (decodeURI(req.payload.email).toLowerCase() === oldEMail) {
           return updateCall();
         }
         else {
@@ -459,7 +459,7 @@ module.exports = {
   },
 
   resetPassword: (req, res) => {
-    const email = req.payload.email;
+    const email = req.payload.email.toLowerCase();
     const APIKey = req.payload.APIKey;
 
     if (APIKey !== config.SMTP.APIKey) {
