@@ -1,2 +1,2 @@
-* * * * * root echo "1 minute later ..." &>> /var/log/cron.log
-# asdasd
+* * * * * root /cleanup.sh > /var/log/cron.log 2>&1
+# An empty line or comment is required at the end of this file for a valid cron file.
