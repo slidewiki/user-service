@@ -438,7 +438,7 @@ module.exports = {
   },
 
   checkEmail: (req, res) => {
-    const email = decodeURI(req.params.email);
+    const email = new RegExp(decodeURI(req.params.email), 'i');
 
     return userCtrl.find({
       email: email
