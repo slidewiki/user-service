@@ -1,17 +1,38 @@
 FROM node:6.9-slim
-MAINTAINER Roy Meissner <meissner@informatik.uni-leipzig.de>
+MAINTAINER Kurt Junghanns <kjunghanns@informatik.uni-leipzig.de>
 
 RUN mkdir /nodeApp
 WORKDIR /nodeApp
 
-# ---------------- #
-#   Installation   #
-# ---------------- #
+# --------------------- #
+#   Installation Cron   #
+# --------------------- #
+
+RUN apt-get update
+RUN apt-get install -y cron supervisor
+
+# ----------------------- #
+#   Installation NodeJS   #
+# ----------------------- #
 
 ADD ./application/package.json ./
 RUN npm install --production
 
 ADD ./application/ ./
+
+# ---------------------- #
+#   Configuration Cron   #
+# ---------------------- #
+
+RUN mkdir -p /var/log/supervisor && touch /var/log/cron.log
+
+ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Add crontab file in the cron directory
+ADD crontab /etc/cron.d/simple-cron
+ADD application/cleanup.sh /cleanup.sh
+
+RUN chmod +x /cleanup.sh && chmod 0644 /etc/cron.d/simple-cron
 
 # ----------- #
 #   Cleanup   #
@@ -24,4 +45,5 @@ RUN apt-get autoremove -y && apt-get -y clean && \
 #   Run!   #
 # -------- #
 
-CMD npm start
+Entrypoint []
+CMD supervisord
