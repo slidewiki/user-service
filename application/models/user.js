@@ -117,6 +117,9 @@ const user = {
     organization: {
       type: 'string'
     },
+    deactivated: {
+      type: 'boolean'
+    },
     authorized: {
       type: 'boolean'
     },

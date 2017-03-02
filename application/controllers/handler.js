@@ -169,6 +169,7 @@ module.exports = {
       });
   },
 
+  //add attribute "deactivated" to user document
   deleteUser: (req, res) => {
     let userid = util.parseStringToInteger(req.params.id);
 
@@ -178,10 +179,19 @@ module.exports = {
       return res(boom.forbidden('You cannot delete another user'));
     }
 
-    return userCtrl.delete(userid)
+    const findQuery = {
+      _id: userid
+    };
+    const updateQuery = {
+      $set: {
+        deactivated: true
+      }
+    };
+
+    return userCtrl.partlyUpdate(findQuery, updateQuery)
       .then((result) => {
         // console.log('deleteUser: delete with', userid, 'results in', result.result);
-        if (result.result.n === 1) {
+        if (result.result.ok === 1 && result.result.n === 1) {
           return res();
         }
 

@@ -286,7 +286,7 @@ module.exports = {
 
                       if (result.insertedCount === 1) {
                         //success
-                        sendMail('registration@slidewiki.org', config.ADMIN.email,
+                        util.sendMail('registration@slidewiki.org', config.ADMIN.email,
                           'subject: User sign-up\n\n' +
                           result.username + ' : ' + result.forename + ' ' + result.surname + '\n' +
                           result.organization + '\n' +

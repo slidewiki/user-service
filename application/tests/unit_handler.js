@@ -589,19 +589,9 @@ describe('User service', () => {
         payload: correct_oauth_user
       };
       return handler_social.loginWithOAuth(req, (result) => {
-        // console.log('result', result);
+        console.log('result', result);
 
-        expect(result.userid).to.equal(userid);
-        expect(result.username).to.not.equal(undefined);
-
-        userid = result.userid;
-
-        return {
-          header: (name, data) => {
-            console.log('got header:', name, data);
-            jwt = data;
-          }
-        };
+        expect(result.output.statusCode).to.equal(423);
       })
       .catch((Error) => {
         console.log('Error', Error);
