@@ -1008,4 +1008,28 @@ module.exports = function (server) {
       }
     }
   });
+
+  server.route({
+    method: 'POST',
+    path: '/users',
+    handler: handlers.getUsers,
+    config: {
+      validate: {
+        payload: Joi.array().items(Joi.number())
+      },
+      tags: ['api'],
+      description: 'Get users by ids (public data)',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          },
+          payloadType: 'json'
+        }
+      }
+    }
+  });
 };

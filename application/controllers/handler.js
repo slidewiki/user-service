@@ -845,6 +845,35 @@ module.exports = {
         console.log('getUser: error', error);
         res(boom.notFound('Wrong user id', error));
       });
+  },
+
+  getUsers: (req, res) => {
+    if (req.payload === undefined || req.payload.length < 1)
+      return res(boom.badData());
+
+    let selectors = req.payload.reduce((q, element) => {
+      q.push({_id: element});
+      return q;
+    }, []);
+    let query = {
+      $or: selectors
+    };
+
+    console.log('getUsers:', query);
+
+    return userCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        if (array === undefined || array === null || array.length < 1) {
+          return res([]);
+        }
+
+        let publicUsers = array.reduce((array, user) => {
+          array.push(preparePublicUserData(user));
+          return array;
+        }, []);
+        return res(publicUsers);
+      });
   }
 };
 
