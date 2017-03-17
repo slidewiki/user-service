@@ -104,6 +104,7 @@ module.exports = {
             res({
               userid: result[0]._id,
               username: result[0].username,
+              picture: result[0].picture,
               access_token: 'dummy',
               expires_in: 0
             })
@@ -417,7 +418,7 @@ module.exports = {
     console.log('query:', query);
 
     return userCtrl.find(query)
-      .then((cursor1) => cursor1.project({username: 1, _id: 1}))
+      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1}))
       .then((cursor2) => cursor2.limit(10))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
@@ -425,7 +426,10 @@ module.exports = {
         let data = array.reduce((prev, curr) => {
           prev.push({
             name: curr.username,
-            value: curr._id
+            value: encodeURIComponent(JSON.stringify({
+              userid: curr._id,
+              picture: curr.picture
+            }))
           });
           return prev;
         }, []);
@@ -576,7 +580,8 @@ module.exports = {
           return res(boom.notFound());
         }
 
-        if (document.creator !== req.auth.credentials.userid) {
+        let creator = document.creator.userid || document.creator;
+        if (creator !== req.auth.credentials.userid) {
           return res(boom.unauthorized());
         }
 
@@ -600,7 +605,7 @@ module.exports = {
             let promises = [];
             document.members.forEach((member) => {
               promises.push(notifiyUser({
-                id: document.creator,
+                id: creator,
                 name: document.creator.username || 'Group leader'
               }, member.userid, 'left', document, true));
             });
@@ -621,7 +626,10 @@ module.exports = {
 
     let group = req.payload;
 
-    group.creator = userid;
+    group.creator = {
+      userid: userid
+    };
+
     group.description = util.parseAPIParameter(group.description);
     group.name = util.parseAPIParameter(group.name);
     group.timestamp = util.parseAPIParameter(group.timestamp) || (new Date()).toISOString();
@@ -655,7 +663,7 @@ module.exports = {
             let promises = [];
             group.members.forEach((member) => {
               promises.push(notifiyUser({
-                id: group.creator,
+                id: group.creator.userid || group.creator,
                 name: group.creator.username || 'Group leader'
               }, member.userid, 'joined', group, true));
             });
@@ -691,7 +699,8 @@ module.exports = {
             return res(boom.notFound());
           }
 
-          if (document.creator !== group.creator) {
+          let dCreator = document.creator.userid || document.creator;
+          if (dCreator !== group.creator.userid) {
             return res(boom.unauthorized());
           }
 
@@ -733,14 +742,14 @@ module.exports = {
                 group.members.forEach((member) => {
                   if (!wasUserAMember(member.userid))
                     promises.push(notifiyUser({
-                      id: group.creator,
+                      id: group.creator.userid,
                       name: group.creator.username || 'Group leader'
                     }, member.userid, 'joined', group, true));
                 });
                 document.members.forEach((member) => {
                   if (wasUserDeleted(member.userid))
                     promises.push(notifiyUser({
-                      id: document.creator,
+                      id: dCreator,
                       name: document.creator.username || 'Group leader'
                     }, member.userid, 'left', document, true));
                 });
@@ -765,6 +774,9 @@ module.exports = {
   },
 
   getUsergroups: (req, res) => {
+    if (req.payload === undefined || req.payload.length < 1)
+      return res(boom.badData());
+
     let selectors = req.payload.reduce((q, element) => {
       q.push({_id: element});
       return q;
@@ -782,7 +794,14 @@ module.exports = {
           return res([]);
         }
 
-        return res(array);
+        let enrichedGroups_promises = array.reduce((prev, curr) => {
+          prev.push(enrichGroupMembers(curr));
+          return prev;
+        }, []);
+        return Promise.all(enrichedGroups_promises)
+          .then((enrichedGroups) => {
+            return res(enrichedGroups);
+          });
       });
   },
 
@@ -806,6 +825,55 @@ module.exports = {
 
       return res();
     });
+  },
+
+  //
+
+  getUserdata: (req, res) => {
+    return usergroupCtrl.readGroupsOfUser(req.auth.credentials.userid)
+      .then((array) => {
+        if (array === undefined || array === null)
+          return res(boom.notFound());
+
+        return res({
+          id: req.auth.credentials.userid,
+          username: req.auth.credentials.username,
+          groups: array
+        });
+      })
+      .catch((error) => {
+        console.log('getUser: error', error);
+        res(boom.notFound('Wrong user id', error));
+      });
+  },
+
+  getUsers: (req, res) => {
+    if (req.payload === undefined || req.payload.length < 1)
+      return res(boom.badData());
+
+    let selectors = req.payload.reduce((q, element) => {
+      q.push({_id: element});
+      return q;
+    }, []);
+    let query = {
+      $or: selectors
+    };
+
+    console.log('getUsers:', query);
+
+    return userCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        if (array === undefined || array === null || array.length < 1) {
+          return res([]);
+        }
+
+        let publicUsers = array.reduce((array, user) => {
+          array.push(preparePublicUserData(user));
+          return array;
+        }, []);
+        return res(publicUsers);
+      });
   }
 };
 
@@ -941,4 +1009,65 @@ function notifiyUser(actor, receiver, type, group, isActiveAction = false) {
     request(options, callback);
   });
   return promise;
+}
+
+//Uses userids of creator and members in order to add username and picture
+function enrichGroupMembers(group) {
+  let userids = group.members.reduce((prev, curr) => {
+    prev.push(curr.userid);
+    return prev;
+  }, []);
+  userids.push(group.creator.userid);
+
+  console.log('enrichGroupMembers: group, userids', group, userids);
+
+  let query = {
+    _id: {
+      $in: userids
+    }
+  };
+  return userCtrl.find(query)
+    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1}))
+    .then((cursor2) => cursor2.toArray())
+    .then((array) => {
+      array = array.reduce((prev, curr) => {
+        if (curr._id) {
+          curr.userid = curr._id;
+          delete curr._id;
+        }
+        prev.push(curr);
+        return prev;
+      }, []);
+      let creator = array.filter((user) => {
+        return user.userid === group.creator.userid;
+      });
+      let members = array.filter((user) => {
+        return user.userid !== group.creator.userid;
+      });
+
+      console.log('enrichGroupMembers: got users', creator, members.concat(group.members));
+
+      //add joined attribute to members
+      members = (members.concat(group.members)).reduce((prev, curr) => {
+        if (prev[curr.userid] === undefined)
+          prev[curr.userid] = {};
+
+        if (curr.joined === undefined) {
+          prev[curr.userid].userid = curr.userid;
+          prev[curr.userid].username = curr.username;
+          prev[curr.userid].picture = curr.picture;
+        }
+        else
+          prev[curr.userid].joined = curr.joined;
+        return prev;
+      }, {});
+      members = Object.keys(members).map((key) => { return members[key]; }).filter((member) => {return member.joined && member.userid && member.username;});
+
+      group.creator = creator[0];
+      group.members = members;
+
+      console.log('enrichGroupMembers: got new members', members);
+
+      return group;
+    });
 }

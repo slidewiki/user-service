@@ -900,8 +900,7 @@ module.exports = function (server) {
           timestamp: Joi.string(),
           members: Joi.array().items(Joi.object().keys({
             userid: Joi.number(),
-            joined: Joi.string(),
-            username: Joi.string()
+            joined: Joi.string()
           }).requiredKeys('userid', 'joined'))
         }).requiredKeys('name'),
         headers: Joi.object({
@@ -948,6 +947,78 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Gets groups by ids',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          },
+          payloadType: 'json'
+        }
+      }
+    }
+  });
+
+
+
+  // Routes for other services
+
+  server.route({
+    method: 'GET',
+    path: '/userdata',
+    handler: handlers.getUserdata,
+    config: {
+      validate: {
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Get information about the logged in user - JWT needed',
+      response: {
+        schema: Joi.object().keys({
+          id: Joi.number().required(),
+          username: Joi.string().required(),
+          groups: Joi.array().items(Joi.object().keys({
+            _id: Joi.number(),
+            name: Joi.string(),
+            creator: Joi.number(),
+            members: Joi.array().items(Joi.object().keys({
+              userid: Joi.number(),
+              joined: Joi.string()
+            }).requiredKeys('userid', 'joined'))
+          }).requiredKeys('_id', 'name', 'creator'))
+        }).required('id', 'username')
+      },
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/users',
+    handler: handlers.getUsers,
+    config: {
+      validate: {
+        payload: Joi.array().items(Joi.number())
+      },
+      tags: ['api'],
+      description: 'Get users by ids (public data)',
       auth: false,
       plugins: {
         'hapi-swagger': {

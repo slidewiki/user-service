@@ -102,8 +102,7 @@ describe('User service', () => {
     members: [
       {
         userid: 1,
-        joined: (new Date()).toISOString(),
-        username: 'Rob'
+        joined: (new Date()).toISOString()
       }
     ]
   };
@@ -114,13 +113,11 @@ describe('User service', () => {
     members: [
       {
         userid: 1,
-        joined: (new Date()).toISOString(),
-        username: 'ASW2'
+        joined: (new Date()).toISOString()
       },
       {
         userid: 2,
-        joined: (new Date()).toISOString(),
-        username: 'Rob'
+        joined: (new Date()).toISOString()
       }
     ]
   };
@@ -446,6 +443,51 @@ describe('User service', () => {
         expect(result.groups).to.not.equal(undefined);
         expect(result.groups.length).to.equal(1);
         expect(result.groups[0].id).to.equal(groupid);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+    it('Get user as service', () => {
+      let req = {
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.getUserdata(req, (result) => {
+        // console.log('testresult: ', result);
+
+        expect(result.id).to.equal(userid);
+        expect(result.email).to.not.equal('');
+        expect(result.groups).to.not.equal(undefined);
+        expect(result.groups.length).to.equal(1);
+        expect(result.groups[0].id).to.equal(groupid);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    }).timeout(60000);
+    it('Get usergroup', () => {
+      let req = {
+        payload: [groupid]
+      };
+      return handler.getUsergroups(req, (result) => {
+        console.log('testresult: ', result);
+
+        expect(result[0]).to.not.equal(undefined);
+        expect(result[0].creator.userid).to.equal(userid);
+        expect(result[0].creator.username).to.not.equal(undefined);
+        expect(result[0].members.length).to.equal(0);
 
         return;
       })

@@ -27,7 +27,13 @@ const usergroup = {
       type: 'boolean'
     },
     creator: {
-      type: 'integer'
+      type: 'object',
+      properties: {
+        userid: {
+          type: 'integer'
+        }
+      },
+      required: ['userid']
     },
     members: {
       type: 'array',
@@ -41,7 +47,8 @@ const usergroup = {
             type: 'string',
             format: 'date-time'
           }
-        }
+        },
+        required: ['userid']
       }
     }
   },
