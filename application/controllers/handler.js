@@ -630,14 +630,28 @@ module.exports = {
       userid: userid
     };
 
+    let referenceDateTime = util.parseAPIParameter(req.payload.referenceDateTime) || (new Date()).toISOString();
+    delete group.referenceDateTime;
+
     group.description = util.parseAPIParameter(group.description);
     group.name = util.parseAPIParameter(group.name);
-    group.timestamp = util.parseAPIParameter(group.timestamp) || (new Date()).toISOString();
+    group.timestamp = util.parseAPIParameter(group.timestamp);
+
+    if (group.timestamp === undefined || group.timestamp === null || group.timestamp === '')
+      group.timestamp = referenceDateTime;
 
     if (group.isActive !== false)
       group.isActive = true;
     if (group.members === undefined || group.members === null || group.members.length < 0)
       group.members = [];
+
+    //add joined attribute if not given
+    group.members = group.members.reduce((array, user) => {
+      if (user.joined === undefined || user.joined === '')
+        user.joined = referenceDateTime;
+      array.push(user);
+      return array;
+    }, []);
 
     if (group.id === undefined || group.id === null) {
       //create

@@ -897,11 +897,12 @@ module.exports = function (server) {
           name: Joi.string(),
           description: Joi.string().allow('').optional(),
           isActive: Joi.boolean().optional(),
-          timestamp: Joi.string(),
+          timestamp: Joi.string().allow('').optional(),
           members: Joi.array().items(Joi.object().keys({
             userid: Joi.number(),
-            joined: Joi.string()
-          }).requiredKeys('userid', 'joined'))
+            joined: Joi.string().allow('').optional()
+          }).requiredKeys('userid')),
+          referenceDateTime: Joi.string().allow('').optional()
         }).requiredKeys('name'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
