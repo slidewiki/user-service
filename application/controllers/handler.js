@@ -413,12 +413,17 @@ module.exports = {
     const query = {
       username: {
         $regex: username
+      },
+      deactivated:{
+        $not: {
+          $eq: true
+        }
       }
     };
     console.log('query:', query);
 
     return userCtrl.find(query)
-      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1}))
+      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, surname: 1, forename: 1, organization: 1}))
       .then((cursor2) => cursor2.limit(10))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
@@ -428,7 +433,10 @@ module.exports = {
             name: curr.username,
             value: encodeURIComponent(JSON.stringify({
               userid: curr._id,
-              picture: curr.picture
+              picture: curr.picture,
+              surname: curr.surname,
+              forename: curr.forename,
+              organization: curr.organization
             }))
           });
           return prev;
