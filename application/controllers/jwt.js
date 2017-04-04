@@ -9,11 +9,11 @@ const jwt = require('jsonwebtoken'),
 
 module.exports = {
   validate: (decoded, request, callback) => {
-    console.log('JWT validation called - data: ', decoded);
     let isValid = false;
     if ((decoded.userid !== undefined && decoded.userid !== null) && (decoded.username !== undefined && decoded.username !== null))
       isValid = true;
-    console.log('Data is valid:', isValid);
+    else
+      console.log('JWT Data is NOT valid:', decoded);
     callback(null, isValid);
   },
   createToken: (data) => {

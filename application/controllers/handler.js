@@ -32,7 +32,7 @@ module.exports = {
       registered: (new Date()).toISOString(),
       providers: []
     };
-    console.log('Registration: ', user);
+    console.log('Registration: ', user.username, user.email);
 
     //check if username already exists
     return util.isIdentityAssigned(user.email, user.username)
@@ -60,7 +60,7 @@ module.exports = {
               res(boom.badImplementation());
             })
             .catch((error) => {
-              console.log('register: catch: ', error);
+              console.log('Error on creating a user:', error);
               res(boom.badImplementation('Error', error));
             });
         } else {
@@ -73,6 +73,7 @@ module.exports = {
         }
       })
       .catch((error) => {
+        console.log('Error: ', error);
         res(boom.badImplementation('Error', error));
       });
   },
@@ -82,12 +83,12 @@ module.exports = {
       email: decodeURI(req.payload.email).toLowerCase().replace(/\s/g,''),
       password: decodeURI(req.payload.password)
     };
-    console.log('query: ', query);
+    console.log('search query: ', query.email, query.password.substr(0, 5)+'...');
 
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((result) => {
-        console.log('login: result: ', result);
+        console.log('login: result: ', result._id, result.username, result.registered);
 
         switch (result.length) {
           case 0:
@@ -119,6 +120,7 @@ module.exports = {
         }
       })
       .catch((error) => {
+        console.log('Error: ', error);
         res(boom.badImplementation(error));
       });
   },
@@ -151,7 +153,7 @@ module.exports = {
         }
       })
       .catch((error) => {
-        console.log('getUser: error', error);
+        console.log('getUser: Error', error);
         res(boom.notFound('Wrong user id', error));
       });
   },
@@ -186,6 +188,7 @@ module.exports = {
         res(boom.notFound('Deletion failed - no matched id'));
       })
       .catch((error) => {
+        console.log('Error: ', error);
         return res(boom.badImplementation('Deletion failed', error));
       });
   },
@@ -243,6 +246,10 @@ module.exports = {
             res(boom.badImplementation('Found multiple users'));
             break;
         }
+      })
+      .catch((error) => {
+        console.log('Error: ', error);
+        return res(boom.badImplementation('Update password failed', error));
       });
   },
 
@@ -256,7 +263,7 @@ module.exports = {
       return res(boom.forbidden('You cannot change the user profile of another user'));
     }
 
-    console.log('updateUserProfile: use user', user);
+    console.log('updateUserProfile: use user', user.email, user.username);
 
     let updateCall = function() {
       const findQuery = {
@@ -278,7 +285,7 @@ module.exports = {
 
       return userCtrl.partlyUpdate(findQuery, updateQuery)
         .then((result) => {
-          // console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
+          console.log('handler: updateUserProfile:', user._id,  result.result);
           if (result.result.ok === 1 && result.result.n === 1) {
             //success
             return res();
@@ -305,7 +312,7 @@ module.exports = {
           oldEMail = document.email;
 
         if (decodeURI(req.payload.username) !== oldUsername) {
-          return res(boom.notAcceptable('username could not be changed!'));
+          return res(boom.notAcceptable('Username could not be changed!'));
         }
 
         if (decodeURI(req.payload.email).toLowerCase() === oldEMail) {
@@ -390,7 +397,7 @@ module.exports = {
 
         return userCtrl.find(query)
           .then((cursor1) => cursor1.project({username: 1}))
-          .then((cursor2) => cursor2.maxScan(40))
+          .then((cursor2) => cursor2.limit(40))
           .then((cursor3) => cursor3.toArray())
           .then((array) => {
             //console.log('handler: checkUsername: similar usernames', array);
@@ -469,8 +476,6 @@ module.exports = {
     if (APIKey !== config.SMTP.APIKey) {
       return res(boom.forbidden('Wrong APIKey was used'));
     }
-
-    console.log('ResetPassword: APIKey is ok');
 
     return isEMailAlreadyTaken(email)
     .then((isTaken) => {
@@ -618,6 +623,10 @@ module.exports = {
               return res();
             });
           });
+      })
+      .catch((error) => {
+        console.log('handler: deleteUsergroup: error', error);
+        res(boom.badImplementation(error));
       });
   },
 
@@ -655,7 +664,7 @@ module.exports = {
 
     if (group.id === undefined || group.id === null) {
       //create
-      // console.log('createOrUpdateUsergroup: create group', group);
+      console.log('createOrUpdateUsergroup: create group', group.name);
 
       return usergroupCtrl.create(group)
         .then((result) => {
@@ -674,6 +683,7 @@ module.exports = {
               return res(group);
 
             //notify users
+            console.log('Notify '+group.members.length+' users...');
             let promises = [];
             group.members.forEach((member) => {
               promises.push(notifiyUser({
@@ -704,7 +714,7 @@ module.exports = {
     }
     else {
       //update
-      // console.log('createOrUpdateUsergroup: update group', group);
+      console.log('createOrUpdateUsergroup: update group', group.id);
 
       //first check if user is creator
       return usergroupCtrl.read(group.id)
@@ -767,6 +777,7 @@ module.exports = {
                       name: document.creator.username || 'Group leader'
                     }, member.userid, 'left', document, true));
                 });
+                console.log('Notify '+promises.length+' users...');
                 return Promise.all(promises).then(() => {
                   return res(group);
                 }).catch((error) => {
@@ -799,7 +810,7 @@ module.exports = {
       $or: selectors
     };
 
-    // console.log('getUsergroups:', query);
+    console.log('getUsergroups:', query);
 
     return usergroupCtrl.find(query)
       .then((cursor) => cursor.toArray())
@@ -856,7 +867,7 @@ module.exports = {
         });
       })
       .catch((error) => {
-        console.log('getUser: error', error);
+        console.log('getUserdata: error', error);
         res(boom.notFound('Wrong user id', error));
       });
   },
@@ -1059,7 +1070,7 @@ function enrichGroupMembers(group) {
         return user.userid !== group.creator.userid;
       });
 
-      console.log('enrichGroupMembers: got users', creator, members.concat(group.members));
+      console.log('enrichGroupMembers: got users', creator, members.concat(group.members).length);
 
       //add joined attribute to members
       members = (members.concat(group.members)).reduce((prev, curr) => {
@@ -1080,7 +1091,7 @@ function enrichGroupMembers(group) {
       group.creator = creator[0];
       group.members = members;
 
-      console.log('enrichGroupMembers: got new members', members);
+      console.log('enrichGroupMembers: got new members', members.length);
 
       return group;
     });
