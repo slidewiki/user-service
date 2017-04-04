@@ -209,6 +209,7 @@ module.exports = {
         }
       })
       .catch((error) => {
+        console.log('Error', error);
         res(boom.notFound('Deleting provider failed', error));
       });
   },
@@ -266,7 +267,7 @@ module.exports = {
                 }
               ]
             };
-            console.log('Registration with OAuth data: ', user);
+            console.log('Registration with OAuth data: ', user.username, user.email, user.providers[0].identifier);
 
             //check if username already exists
             return util.isIdentityAssigned(user.email, user.username)
@@ -313,6 +314,7 @@ module.exports = {
                 }
               })
               .catch((error) => {
+                console.log('Error', error);
                 res(boom.badImplementation('Error', error));
               });
           });
