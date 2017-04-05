@@ -88,13 +88,13 @@ module.exports = {
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((result) => {
-        console.log('login: user object:', result[0]._id, result[0].username, result[0].registered);
-
         switch (result.length) {
           case 0:
             res(boom.notFound('The credentials are wrong', '{"email":"", "password": ""}'));
             break;
           case 1:
+            console.log('login: user object:', result[0]._id, result[0].username, result[0].registered);
+            
             //TODO: call authorization service for OAuth2 token
 
             if (result[0].deactivated === true) {
