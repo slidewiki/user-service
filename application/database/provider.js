@@ -39,7 +39,7 @@ module.exports = {
     };
     if (provider.email)
       query.email = provider.email;
-    console.log('getIfValid: search for', query);
+    console.log('getIfValid: search for', query.provider, query.identifier, '...');
 
     return helper.connectToDatabase()
       .then((dbconn) => dbconn.collection(collectionName))
@@ -52,7 +52,6 @@ module.exports = {
 
             return cursor.next()
               .then((document) => {
-                console.log('provider.js isValid() got document', document._id);
                 let expires = 86400;
                 if (document.expires !== undefined && document.expires !== null )
                   expires = document.expires;
