@@ -209,6 +209,7 @@ module.exports = {
         }
       })
       .catch((error) => {
+        console.log('Error while deleting provider with userid '+req.auth.credentials.userid+':', error, 'used updateQuery:', updateQuery);
         res(boom.notFound('Deleting provider failed', error));
       });
   },
@@ -266,7 +267,7 @@ module.exports = {
                 }
               ]
             };
-            console.log('Registration with OAuth data: ', user);
+            console.log('Registration with OAuth data: ', user.username, user.email, user.providers[0].identifier);
 
             //check if username already exists
             return util.isIdentityAssigned(user.email, user.username)
@@ -300,7 +301,9 @@ module.exports = {
                       res(boom.badImplementation());
                     })
                     .catch((error) => {
-                      console.log('register: catch: ', error);
+                      delete user.providers[0].token;
+                      delete user.providers[0].extra_token;
+                      console.log('Error - create user failed:', error, 'used user object:', user);
                       res(boom.badImplementation('Error', error));
                     });
                 } else {
@@ -313,12 +316,14 @@ module.exports = {
                 }
               })
               .catch((error) => {
+                console.log('Error - util.isIdentityAssigned('+user.email+', '+user.username+') failed:', error);
                 res(boom.badImplementation('Error', error));
               });
           });
       })
       .catch((error) => {
-        console.log('Error', error);
+        delete provider.token;
+        console.log('Error - providerCtrl.getIfValid or isProviderAlreadyUsedBySomeone failed:', error, 'used provider:', provider);
         res(boom.badImplementation(error));
       });
   },
