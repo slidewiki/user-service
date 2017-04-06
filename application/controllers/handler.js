@@ -32,7 +32,6 @@ module.exports = {
       registered: (new Date()).toISOString(),
       providers: []
     };
-    console.log('Registration: ', user);
 
     //check if username already exists
     return util.isIdentityAssigned(user.email, user.username)
@@ -60,7 +59,7 @@ module.exports = {
               res(boom.badImplementation());
             })
             .catch((error) => {
-              console.log('register: catch: ', error);
+              console.log('Error on creating a user:', error);
               res(boom.badImplementation('Error', error));
             });
         } else {
@@ -73,6 +72,8 @@ module.exports = {
         }
       })
       .catch((error) => {
+        delete user.password;
+        console.log('Error:', error, 'with user:', user);
         res(boom.badImplementation('Error', error));
       });
   },
@@ -82,18 +83,18 @@ module.exports = {
       email: decodeURI(req.payload.email).toLowerCase().replace(/\s/g,''),
       password: decodeURI(req.payload.password)
     };
-    console.log('query: ', query);
+    console.log('try logging in with email', query.email);
 
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((result) => {
-        console.log('login: result: ', result);
-
         switch (result.length) {
           case 0:
             res(boom.notFound('The credentials are wrong', '{"email":"", "password": ""}'));
             break;
           case 1:
+            console.log('login: user object:', result[0]._id, result[0].username, result[0].registered);
+
             //TODO: call authorization service for OAuth2 token
 
             if (result[0].deactivated === true) {
@@ -119,6 +120,7 @@ module.exports = {
         }
       })
       .catch((error) => {
+        console.log('Error: ', error);
         res(boom.badImplementation(error));
       });
   },
@@ -151,7 +153,7 @@ module.exports = {
         }
       })
       .catch((error) => {
-        console.log('getUser: error', error);
+        console.log('Error while getting user with id '+req.params.id+':', error);
         res(boom.notFound('Wrong user id', error));
       });
   },
@@ -186,6 +188,7 @@ module.exports = {
         res(boom.notFound('Deletion failed - no matched id'));
       })
       .catch((error) => {
+        console.log('Error while deleting user with id '+userid+':', error);
         return res(boom.badImplementation('Deletion failed', error));
       });
   },
@@ -235,14 +238,20 @@ module.exports = {
                 res(boom.badImplementation());
               })
               .catch((error) => {
-                res(boom.badImplementation('Update failed', error));
+                console.log('Error while updating password of user with id '+user__id+':', error);
+                res(boom.badImplementation('Update password failed', error));
               });
             break;
           default:
             //should not happen
+            console.log('BIG PROBLEM: multiple users in the database have the same id and password!');
             res(boom.badImplementation('Found multiple users'));
             break;
         }
+      })
+      .catch((error) => {
+        console.log('Error while updating password of user with id '+user__id+':', error);
+        return res(boom.badImplementation('Update password failed', error));
       });
   },
 
@@ -255,8 +264,6 @@ module.exports = {
     if (!isUseridMatching) {
       return res(boom.forbidden('You cannot change the user profile of another user'));
     }
-
-    console.log('updateUserProfile: use user', user);
 
     let updateCall = function() {
       const findQuery = {
@@ -278,15 +285,16 @@ module.exports = {
 
       return userCtrl.partlyUpdate(findQuery, updateQuery)
         .then((result) => {
-          // console.log('handler: updateUserProfile: updateCall:', updateQuery,  result.result);
           if (result.result.ok === 1 && result.result.n === 1) {
             //success
             return res();
           }
 
+          console.log('Update query failed with query and result:', updateQuery, result.result);
           return res(boom.badImplementation());
         })
         .catch((error) => {
+          console.log('Update query failed with query and error:', updateQuery, error);
           return res(boom.notFound('Profile update failed', error));
         });
     };
@@ -305,7 +313,7 @@ module.exports = {
           oldEMail = document.email;
 
         if (decodeURI(req.payload.username) !== oldUsername) {
-          return res(boom.notAcceptable('username could not be changed!'));
+          return res(boom.notAcceptable('It is impossible to change the username!'));
         }
 
         if (decodeURI(req.payload.email).toLowerCase() === oldEMail) {
@@ -324,8 +332,7 @@ module.exports = {
         }
       })
       .catch((error1) => {
-        console.log('handler: updateUserProfile: Error while getting user', error1);
-        // return res(boom.badImplementation(error));
+        console.log('handler: updateUserProfile: Error while getting user', error1, 'the user is:', user);
 
         const error = boom.badImplementation('Unknown error');
 
@@ -390,7 +397,7 @@ module.exports = {
 
         return userCtrl.find(query)
           .then((cursor1) => cursor1.project({username: 1}))
-          .then((cursor2) => cursor2.maxScan(40))
+          .then((cursor2) => cursor2.limit(40))
           .then((cursor3) => cursor3.toArray())
           .then((array) => {
             //console.log('handler: checkUsername: similar usernames', array);
@@ -469,8 +476,6 @@ module.exports = {
     if (APIKey !== config.SMTP.APIKey) {
       return res(boom.forbidden('Wrong APIKey was used'));
     }
-
-    console.log('ResetPassword: APIKey is ok');
 
     return isEMailAlreadyTaken(email)
     .then((isTaken) => {
@@ -612,12 +617,16 @@ module.exports = {
             return Promise.all(promises).then(() => {
               return res();
             }).catch((error) => {
-              console.log('error', error);
+              console.log('Error while processing notification of users:', error);
               //reply(boom.badImplementation());
               //for now always succeed
               return res();
             });
           });
+      })
+      .catch((error) => {
+        console.log('error while reading or deleting the usergroup '+req.params.groupid+':', error);
+        res(boom.badImplementation(error));
       });
   },
 
@@ -655,7 +664,7 @@ module.exports = {
 
     if (group.id === undefined || group.id === null) {
       //create
-      // console.log('createOrUpdateUsergroup: create group', group);
+      console.log('create group', group.name);
 
       return usergroupCtrl.create(group)
         .then((result) => {
@@ -674,6 +683,7 @@ module.exports = {
               return res(group);
 
             //notify users
+            console.log('Notify '+group.members.length+' users...');
             let promises = [];
             group.members.forEach((member) => {
               promises.push(notifiyUser({
@@ -684,7 +694,7 @@ module.exports = {
             return Promise.all(promises).then(() => {
               return res(group);
             }).catch((error) => {
-              console.log('error', error);
+              console.log('Error while processing notification of users:', error);
               //reply(boom.badImplementation());
               //for now always succeed
               return res(group);
@@ -694,7 +704,7 @@ module.exports = {
           res(boom.badImplementation());
         })
         .catch((error) => {
-          console.log('Error', error);
+          console.log('Error while creating group:', error, group);
           res(boom.badImplementation(error));
         });
     }
@@ -704,7 +714,7 @@ module.exports = {
     }
     else {
       //update
-      // console.log('createOrUpdateUsergroup: update group', group);
+      console.log('update group', group.id);
 
       //first check if user is creator
       return usergroupCtrl.read(group.id)
@@ -767,21 +777,23 @@ module.exports = {
                       name: document.creator.username || 'Group leader'
                     }, member.userid, 'left', document, true));
                 });
+                console.log('Notify '+promises.length+' users...');
                 return Promise.all(promises).then(() => {
                   return res(group);
                 }).catch((error) => {
-                  console.log('error', error);
+                  console.log('Error while processing notification of users:', error);
                   //reply(boom.badImplementation());
                   //for now always succeed
                   return res(group);
                 });
               }
 
-              res(boom.badImplementation());
+              console.log('Failed updating group '+group._id+' and got result:', result.result, group);
+              return res(boom.badImplementation());
             });
         })
         .catch((error) => {
-          console.log('Error', error);
+          console.log('Error while reading group '+group.id+':', error);
           res(boom.badImplementation(error));
         });
     }
@@ -799,7 +811,7 @@ module.exports = {
       $or: selectors
     };
 
-    // console.log('getUsergroups:', query);
+    console.log('getUsergroups:', query);
 
     return usergroupCtrl.find(query)
       .then((cursor) => cursor.toArray())
@@ -816,6 +828,10 @@ module.exports = {
           .then((enrichedGroups) => {
             return res(enrichedGroups);
           });
+      })
+      .catch((error) => {
+        console.log('Error while reading groups:', error);
+        res(boom.badImplementation(error));
       });
   },
 
@@ -856,7 +872,7 @@ module.exports = {
         });
       })
       .catch((error) => {
-        console.log('getUser: error', error);
+        console.log('getUserdata('+req.auth.credentials.userid+') error:', error);
         res(boom.notFound('Wrong user id', error));
       });
   },
@@ -1059,7 +1075,7 @@ function enrichGroupMembers(group) {
         return user.userid !== group.creator.userid;
       });
 
-      console.log('enrichGroupMembers: got users', creator, members.concat(group.members));
+      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0]._id, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
 
       //add joined attribute to members
       members = (members.concat(group.members)).reduce((prev, curr) => {
@@ -1080,7 +1096,7 @@ function enrichGroupMembers(group) {
       group.creator = creator[0];
       group.members = members;
 
-      console.log('enrichGroupMembers: got new members', members);
+      console.log('enrichGroupMembers: got new members (after reading from database, adding joined attribute and cleanup), amount:', members.length);
 
       return group;
     });
