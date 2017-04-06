@@ -423,7 +423,7 @@ module.exports = {
     console.log('query:', query);
 
     return userCtrl.find(query)
-      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, surname: 1, forename: 1, organization: 1}))
+      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1}))
       .then((cursor2) => cursor2.limit(10))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
@@ -434,8 +434,7 @@ module.exports = {
             value: encodeURIComponent(JSON.stringify({
               userid: curr._id,
               picture: curr.picture,
-              surname: curr.surname,
-              forename: curr.forename,
+              country: curr.country,
               organization: curr.organization
             }))
           });
@@ -444,7 +443,7 @@ module.exports = {
         return res({success: true, results: data});
       })
       .catch((error) => {
-        console.log('handler: searchUser: error', error);
+        console.log('handler: searchUser: error', error, 'with query:', query);
         res({success: false, results: []});
       });
   },
