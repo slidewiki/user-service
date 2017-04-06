@@ -94,7 +94,7 @@ module.exports = {
             break;
           case 1:
             console.log('login: user object:', result[0]._id, result[0].username, result[0].registered);
-            
+
             //TODO: call authorization service for OAuth2 token
 
             if (result[0].deactivated === true) {
@@ -244,7 +244,7 @@ module.exports = {
             break;
           default:
             //should not happen
-            console.log('BIG PROBLEM: multiple users in the database have the same and password!');
+            console.log('BIG PROBLEM: multiple users in the database have the same id and password!');
             res(boom.badImplementation('Found multiple users'));
             break;
         }
