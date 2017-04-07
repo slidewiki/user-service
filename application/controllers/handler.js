@@ -1064,7 +1064,7 @@ function enrichGroupMembers(group) {
     }
   };
   return userCtrl.find(query)
-    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1}))
+    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1, country: 1, organization: 1}))
     .then((cursor2) => cursor2.toArray())
     .then((array) => {
       array = array.reduce((prev, curr) => {
@@ -1093,6 +1093,8 @@ function enrichGroupMembers(group) {
           prev[curr.userid].userid = curr.userid;
           prev[curr.userid].username = curr.username;
           prev[curr.userid].picture = curr.picture;
+          prev[curr.userid].country = curr.country;
+          prev[curr.userid].organization = curr.organization;
         }
         else
           prev[curr.userid].joined = curr.joined;
