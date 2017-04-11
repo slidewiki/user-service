@@ -436,13 +436,20 @@ module.exports = {
       .then((array) => {
         // console.log('handler: checkUsername: similar usernames', array);
         let data = array.reduce((prev, curr) => {
+          let description = curr.username;
+          if (curr.organization)
+            description = description + ', ' + curr.organization;
+          if (curr.country)
+            description = description + ', ' + curr.country;
+          console.log('new description:', description);
           prev.push({
-            name: curr.username,
+            name: description,
             value: encodeURIComponent(JSON.stringify({
               userid: curr._id,
               picture: curr.picture,
               country: curr.country,
-              organization: curr.organization
+              organization: curr.organization,
+              username: curr.username
             }))
           });
           return prev;
