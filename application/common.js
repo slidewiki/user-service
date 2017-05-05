@@ -1,6 +1,8 @@
 /* some common functions that can be used everywhere inside the program*/
 'use strict';
 
+const JSSHA = require('js-sha512');
+
 module.exports = {
   isEmpty: function(toTest) {
     return (toTest === undefined ||
@@ -16,6 +18,10 @@ module.exports = {
       delete o._id;
     }
     return o;
+  },
+
+  hashPassword: function(input){
+    return JSSHA.sha512(input + config.SALT);
   },
 
   parseAjvValidationErrors: function(array) {
