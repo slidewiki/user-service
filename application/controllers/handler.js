@@ -314,7 +314,7 @@ module.exports = {
         const oldUsername = document.username,
           oldEMail = document.email;
 
-        if (decodeURI(req.payload.username) !== oldUsername) {
+        if (decodeURI(req.payload.username).toLowerCase() !== oldUsername.toLowerCase()) {
           return res(boom.notAcceptable('It is impossible to change the username!'));
         }
 
@@ -380,9 +380,9 @@ module.exports = {
 
   checkUsername: (req, res) => {
     const username = decodeURI(req.params.username);
-
+console.log(req.params);
     return userCtrl.find({
-      username: username
+      username: new RegExp(username.replace(/\s/g,''), 'i')
     })
       .then((cursor) => cursor.count())
       .then((count) => {
@@ -392,9 +392,7 @@ module.exports = {
         }
 
         const query = {
-          username: {
-            $regex: username
-          }
+          username: new RegExp(username.replace(/\s/g,'') + '*', 'i')
         };
 
         return userCtrl.find(query)
@@ -420,9 +418,7 @@ module.exports = {
     const username = decodeURI(req.params.username);
 
     const query = {
-      username: {
-        $regex: username
-      }
+      username: new RegExp(username.replace(/\s/g,'') + '*', 'i')
     };
     console.log('query:', query);
 
@@ -638,7 +634,8 @@ module.exports = {
     let group = req.payload;
 
     group.creator = {
-      userid: userid
+      userid: userid,
+      username: req.auth.credentials.username
     };
 
     let referenceDateTime = util.parseAPIParameter(req.payload.referenceDateTime) || (new Date()).toISOString();

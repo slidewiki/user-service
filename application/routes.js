@@ -358,7 +358,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          username: Joi.string()
+          username: Joi.string().alphanum()
         }
       },
       tags: ['api'],
@@ -394,7 +394,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          username: Joi.string()
+          username: Joi.string().alphanum()
         }
       },
       tags: ['api'],

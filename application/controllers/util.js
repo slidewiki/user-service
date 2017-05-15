@@ -21,10 +21,10 @@ module.exports = {
       return userCtrl.find({
         $or: [
           {
-            username: username
+            username: new RegExp(username.replace(/\s/g,''), 'i')
           },
           {
-            email: email
+            email: new RegExp(email.replace(/\s/g,''), 'i')
           }
         ]
       })
@@ -35,11 +35,11 @@ module.exports = {
 
           if (array.length > 0) {
             const isEMailAssigned = !(array.reduce((prev, curr) => {
-              const sameEMail = curr.email === email;
+              const sameEMail = curr.email.toLowerCase() === email.toLowerCase();
               return prev && !sameEMail;
             }, true));
             const isUsernameAssigned = !(array.reduce((prev, curr) => {
-              const sameUsername = curr.username === username;
+              const sameUsername = curr.username.toLowerCase() === username.toLowerCase();
               return prev && !sameUsername;
             }, true));
 
