@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "ajv": "^4.11.0",
+    "async": "^2.4.0",
     "boom": "^4.2.0",
     "database-cleaner": "^1.2.0",
     "good": "^7.1.0",
@@ -40,10 +41,10 @@
     "js-sha512": "^0.2.2",
     "mongodb": "^2.2.22",
     "purest": "2.0.1",
-    "yar": "^8.1.0",
     "request": "^2.78.0",
     "smtp-connection": "^2.12.0",
-    "vision": "^4.1.1"
+    "vision": "^4.1.1",
+    "yar": "^8.1.0"
   },
   "engines": {
     "node": ">=6.9.0"
