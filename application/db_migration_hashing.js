@@ -22,6 +22,7 @@ if(process.argv.length < 3 || process.argv.length > 3){
 userDB.find({})
 .then((cursor) => {
   cursor.count().then((count) => console.log(count + ' users found, starting migration ...'));
+  // I haven't found any other way to implement it than this one, maybe except for lazy evaluation via yield
   let q = async.queue((user, callback) => {
     let hashedPassword = JSSHA.sha512(user.password + salt);
     userDB.partlyUpdate({'_id': user._id}, {'$set': {'password': hashedPassword}}).then(() => {
