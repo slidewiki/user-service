@@ -380,7 +380,7 @@ module.exports = {
 
   checkUsername: (req, res) => {
     const username = decodeURI(req.params.username);
-
+    
     return userCtrl.find({
       username: username
     })
