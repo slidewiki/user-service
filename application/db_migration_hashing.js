@@ -32,7 +32,7 @@ userDB.find({})
   }, Infinity);
 
   cursor.forEach((user) => {
-    if(!co.isEmpty(user)){
+    if(!co.isEmpty(user) && user.passord && user._id){
       q.push(user);
     }
   });
