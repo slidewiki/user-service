@@ -21,8 +21,8 @@ module.exports = {
     return o;
   },
 
-  hashPassword: function(input){
-    return JSSHA.sha512(input + config.SALT);
+  hashPassword: function(input, salt = config.SALT){
+    return JSSHA.sha512(input + salt);
   },
 
   parseAjvValidationErrors: function(array) {

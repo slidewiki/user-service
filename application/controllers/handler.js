@@ -380,7 +380,7 @@ module.exports = {
 
   checkUsername: (req, res) => {
     const username = decodeURI(req.params.username);
-    
+
     return userCtrl.find({
       username: username
     })
@@ -474,6 +474,7 @@ module.exports = {
   resetPassword: (req, res) => {
     const email = req.payload.email.replace(/\s/g,'');
     const APIKey = req.payload.APIKey;
+    const salt = req.payload.salt;
 
     if (APIKey !== config.SMTP.APIKey) {
       return res(boom.forbidden('Wrong APIKey was used'));
@@ -487,8 +488,10 @@ module.exports = {
       }
 
       const newPassword = require('crypto').randomBytes(9).toString('hex');
-      /* The password is hasehd one time at the client site (inner hash) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
-      const hashedPassword = co.hashPassword(co.hashPassword(newPassword));
+      /* The password is hashed one time at the client site (inner hash and optional) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
+      let hashedPassword = co.hashPassword(newPassword);
+      if (salt && salt.length > 0)
+        hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt));
 
       console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
