@@ -380,7 +380,7 @@ module.exports = {
 
   checkUsername: (req, res) => {
     const username = decodeURI(req.params.username);
-    
+
     return userCtrl.find({
       username: username
     })
@@ -443,7 +443,6 @@ module.exports = {
             description = description + ', ' + curr.organization;
           if (curr.country)
             description = description + ', ' + curr.country;
-          console.log('new description:', description);
           prev.push({
             name: description,
             value: encodeURIComponent(JSON.stringify({
