@@ -80,7 +80,7 @@ module.exports = {
 
   login: (req, res) => {
     const query = {
-      email: decodeURI(req.payload.email).toLowerCase().replace(/\s/g,''),
+      email: new RegExp(decodeURI(req.payload.email).replace(/\s/g,''), 'i'),
       password: decodeURI(req.payload.password)
     };
     console.log('try logging in with email', query.email);
@@ -256,7 +256,9 @@ module.exports = {
   },
 
   updateUserProfile: (req, res) => {
+    let email = util.parseAPIParameter(req.payload.email).replace(/\s/g,'');
     let user = req.payload;
+    user.email = email;
     user._id = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
@@ -271,7 +273,7 @@ module.exports = {
         },
         updateQuery = {
           $set: {
-            email:       util.parseAPIParameter(req.payload.email).toLowerCase().replace(/\s/g,''),
+            email:       email.toLowerCase(),
             username:    util.parseAPIParameter(req.payload.username),
             surname:     util.parseAPIParameter(req.payload.surname),
             forename:    util.parseAPIParameter(req.payload.forename),
@@ -316,12 +318,12 @@ module.exports = {
           return res(boom.notAcceptable('It is impossible to change the username!'));
         }
 
-        if (decodeURI(req.payload.email).toLowerCase() === oldEMail) {
+        if (email.toLowerCase() === oldEMail.toLowerCase()) {
           return updateCall();
         }
         else {
           //check if email already exists
-          return isEMailAlreadyTaken(user.email)
+          return isEMailAlreadyTaken(email)
             .then((isTaken) => {
               if (isTaken === false) {
                 return updateCall();
@@ -378,7 +380,7 @@ module.exports = {
 
   checkUsername: (req, res) => {
     const username = decodeURI(req.params.username);
-
+    
     return userCtrl.find({
       username: username
     })
@@ -484,7 +486,7 @@ module.exports = {
   },
 
   resetPassword: (req, res) => {
-    const email = req.payload.email.toLowerCase().replace(/\s/g,'');
+    const email = req.payload.email.replace(/\s/g,'');
     const APIKey = req.payload.APIKey;
 
     if (APIKey !== config.SMTP.APIKey) {
@@ -532,7 +534,7 @@ module.exports = {
 
           connection.send({
             from: config.SMTP.from,
-            to: email
+            to: email.toLowerCase()
           },
           'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
           (err, info) => {
@@ -565,7 +567,7 @@ module.exports = {
 
         //change password in the database
         const findQuery = {
-          email: data.email
+          email: new RegExp(data.email, 'i')
         };
         const updateQuery = {
           $set: {
@@ -945,7 +947,7 @@ function isUsernameAlreadyTaken(username) {
 function isEMailAlreadyTaken(email) {
   let myPromise = new Promise((resolve, reject) => {
     return userCtrl.find({
-      email: email
+      email: new RegExp(email, 'i')
     })
       .then((cursor) => cursor.count())
       .then((count) => {

@@ -52,9 +52,9 @@ let plugins = [
     options: {
       host: host,
       info: {
-        title: 'Example API',
-        description: 'Powered by node, hapi, joi, hapi-swaggered, hapi-swaggered-ui and swagger-ui',
-        version: '0.1.0'
+        title: 'User API',
+        description: 'Whole API description of th user-service with live testing feature! Powered by node, hapi, joi, hapi-swaggered, hapi-swaggered-ui and swagger-ui',
+        version: '1.x'
       }
     }
   },
