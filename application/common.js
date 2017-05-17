@@ -2,7 +2,7 @@
 'use strict';
 
 const JSSHA = require('js-sha512');
-const config = require('./config.json');
+const config = require('./configuration.json');
 
 module.exports = {
   isEmpty: function(toTest) {
