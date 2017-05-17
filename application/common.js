@@ -2,7 +2,6 @@
 'use strict';
 
 const JSSHA = require('js-sha512');
-const config = require('./configuration.js');
 
 module.exports = {
   isEmpty: function(toTest) {
@@ -21,7 +20,7 @@ module.exports = {
     return o;
   },
 
-  hashPassword: function(input, salt = config.SALT){
+  hashPassword: function(input, salt){
     return JSSHA.sha512(input + salt);
   },
 

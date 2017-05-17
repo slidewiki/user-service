@@ -23,7 +23,7 @@ module.exports = {
       forename: util.parseAPIParameter(req.payload.forename),
       username: util.parseAPIParameter(req.payload.username),
       email:    util.parseAPIParameter(req.payload.email).toLowerCase().replace(/\s/g,''),
-      password: co.hashPassword(util.parseAPIParameter(req.payload.password)),
+      password: co.hashPassword(util.parseAPIParameter(req.payload.password), config.SALT),
       frontendLanguage: util.parseAPIParameter(req.payload.language),
       country: '',
       picture: '',
@@ -81,7 +81,7 @@ module.exports = {
   login: (req, res) => {
     const query = {
       email: new RegExp(decodeURI(req.payload.email).replace(/\s/g,''), 'i'),
-      password: co.hashPassword(decodeURI(req.payload.password))
+      password: co.hashPassword(decodeURI(req.payload.password), config.SALT)
     };
     console.log('try logging in with email', query.email);
 
@@ -195,8 +195,8 @@ module.exports = {
 
   //User profile
   updateUserPasswd: (req, res) => {
-    let oldPassword = co.hashPassword(req.payload.oldPassword);
-    let newPassword = co.hashPassword(req.payload.newPassword);
+    let oldPassword = co.hashPassword(req.payload.oldPassword, config.SALT);
+    let newPassword = co.hashPassword(req.payload.newPassword, config.SALT);
     const user__id = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
@@ -489,9 +489,9 @@ module.exports = {
 
       const newPassword = require('crypto').randomBytes(9).toString('hex');
       /* The password is hashed one time at the client site (inner hash and optional) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
-      let hashedPassword = co.hashPassword(newPassword);
+      let hashedPassword = co.hashPassword(newPassword, config.SALT);
       if (salt && salt.length > 0)
-        hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt));
+        hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt), config.SALT);
 
       console.log('resetPassword: email is in use thus we connect to the SMTP server');
 

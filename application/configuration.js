@@ -1,7 +1,7 @@
 /* This module is used for configurating the mongodb connection*/
 'use strict';
 
-const co = require('./common');
+const co = require('./common.js');
 
 let host = 'localhost';
 //read mongo URL from /etc/hosts
