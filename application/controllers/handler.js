@@ -379,8 +379,9 @@ module.exports = {
   },
 
   checkUsername: (req, res) => {
+    console.log(req.params);
+    
     const username = decodeURI(req.params.username);
-console.log(req.params);
     return userCtrl.find({
       username: new RegExp(username.replace(/\s/g,''), 'i')
     })
