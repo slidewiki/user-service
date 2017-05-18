@@ -260,7 +260,7 @@ module.exports = function (server) {
           id: Joi.number().integer().options({convert: true})
         },
         payload: Joi.object().keys({
-          email: Joi.string().email().trim().required(),
+          email: Joi.string().email().required(),
           username: Joi.string().alphanum(),
           surname: Joi.string().allow('').optional(),
           forename: Joi.string().allow('').optional(),

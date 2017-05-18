@@ -22,7 +22,7 @@ module.exports = {
       surname:  util.parseAPIParameter(req.payload.surname),
       forename: util.parseAPIParameter(req.payload.forename),
       username: util.parseAPIParameter(req.payload.username),
-      email:    util.parseAPIParameter(req.payload.email).toLowerCase().replace(/\s/g,''),
+      email:    util.parseAPIParameter(req.payload.email).toLowerCase(),
       password: util.parseAPIParameter(req.payload.password),
       frontendLanguage: util.parseAPIParameter(req.payload.language),
       country: '',
@@ -80,7 +80,16 @@ module.exports = {
 
   login: (req, res) => {
     const query = {
-      email: new RegExp(decodeURI(req.payload.email).replace(/\s/g,''), 'i'),
+      $and: [
+        {
+          email: new RegExp(req.payload.email, 'i')
+        },
+        {
+          email: {
+            $where: 'this.email.length === ' + req.payload.email.length
+          }
+        }
+      ],
       password: decodeURI(req.payload.password)
     };
     console.log('try logging in with email', query.email);
@@ -256,7 +265,7 @@ module.exports = {
   },
 
   updateUserProfile: (req, res) => {
-    let email = util.parseAPIParameter(req.payload.email).replace(/\s/g,'');
+    let email = req.payload.email;
     let user = req.payload;
     user.email = email;
     user._id = util.parseStringToInteger(req.params.id);
@@ -380,10 +389,19 @@ module.exports = {
 
   checkUsername: (req, res) => {
     console.log(req.params);
-    
+
     const username = decodeURI(req.params.username);
     return userCtrl.find({
-      username: new RegExp(username.replace(/\s/g,''), 'i')
+      $and: [
+        {
+          username: new RegExp(username, 'i')
+        },
+        {
+          username: {
+            $where: 'this.username.length === ' + username.length
+          }
+        }
+      ]
     })
       .then((cursor) => cursor.count())
       .then((count) => {
@@ -448,10 +466,10 @@ module.exports = {
   },
 
   checkEmail: (req, res) => {
-    const email = new RegExp(decodeURI(req.params.email).replace(/\s/g,''), 'i');
+    const email = decodeURI(req.params.email).replace(/\s/g,'');
 
     return userCtrl.find({
-      email: email
+      email: new RegExp(email, 'i')
     })
       .then((cursor) => cursor.count())
       .then((count) => {
@@ -469,7 +487,7 @@ module.exports = {
   },
 
   resetPassword: (req, res) => {
-    const email = req.payload.email.replace(/\s/g,'');
+    const email = req.payload.email;
     const APIKey = req.payload.APIKey;
 
     if (APIKey !== config.SMTP.APIKey) {
@@ -931,7 +949,16 @@ function isUsernameAlreadyTaken(username) {
 function isEMailAlreadyTaken(email) {
   let myPromise = new Promise((resolve, reject) => {
     return userCtrl.find({
-      email: new RegExp(email, 'i')
+      $and: [
+        {
+          email: new RegExp(email, 'i')
+        },
+        {
+          email: {
+            $where: 'this.email.length === ' + email.length
+          }
+        }
+      ]
     })
       .then((cursor) => cursor.count())
       .then((count) => {

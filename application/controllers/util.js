@@ -21,10 +21,28 @@ module.exports = {
       return userCtrl.find({
         $or: [
           {
-            username: new RegExp(username.replace(/\s/g,''), 'i')
+            $and: [
+              {
+                username: new RegExp(username, 'i')
+              },
+              {
+                username: {
+                  $where: 'this.username.length === ' + username.length
+                }
+              }
+            ]
           },
           {
-            email: new RegExp(email.replace(/\s/g,''), 'i')
+            $and: [
+              {
+                email: new RegExp(email, 'i')
+              },
+              {
+                email: {
+                  $where: 'this.email.length === ' + email.length
+                }
+              }
+            ]
           }
         ]
       })
