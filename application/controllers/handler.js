@@ -85,9 +85,7 @@ module.exports = {
           email: new RegExp(req.payload.email, 'i')
         },
         {
-          email: {
-            $where: 'this.email.length === ' + req.payload.email.length
-          }
+          $where: 'this.email.length === ' + req.payload.email.length
         }
       ],
       password: decodeURI(req.payload.password)
@@ -397,9 +395,7 @@ module.exports = {
           username: new RegExp(username, 'i')
         },
         {
-          username: {
-            $where: 'this.username.length === ' + username.length
-          }
+          $where: 'this.username.length === ' + username.length
         }
       ]
     })
@@ -954,9 +950,7 @@ function isEMailAlreadyTaken(email) {
           email: new RegExp(email, 'i')
         },
         {
-          email: {
-            $where: 'this.email.length === ' + email.length
-          }
+          $where: 'this.email.length === ' + email.length
         }
       ]
     })

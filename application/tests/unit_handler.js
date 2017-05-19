@@ -40,7 +40,7 @@ describe('User service', () => {
     token: '47a629160532535502fff76f5b6e3513a2a2da9e',
     scope: 'user',
     token_creation: now,//Date
-    username: 'TBoonX',
+    username: 'TBoonXXX',
     email: 'tboonx@googlemail.com'
   };
   const correct_provider = {
@@ -165,6 +165,26 @@ describe('User service', () => {
         expect(1).to.equals(2);
       });
     });
+    it('Register a second user with same username with upper case - should not be possible', () => {
+      let req = {
+        payload: JSON.parse(JSON.stringify(correct_user1))
+      };
+      req.payload.username = 'TBoonX';
+      return handler.register(req, (result) => {
+        console.log(result);
+
+        expect(result.output).to.not.equal(undefined);
+        expect(result.output).to.not.equal(null);
+        expect(result.output.statusCode).to.equal(409);
+
+        return;
+      })
+      .catch((Error) => {
+        console.log(Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
     it('Get user public', () => {
       //first with _id
       let req = {
@@ -227,7 +247,7 @@ describe('User service', () => {
         payload: {
           email: correct_user1.email,
           username: correct_user1.username,
-          forename: correct_user1.forename,
+          forename: correct_user1.forename + ' von',
           surname: correct_user1.surname
         },
         params: {

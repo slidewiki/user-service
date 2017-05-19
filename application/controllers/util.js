@@ -26,9 +26,7 @@ module.exports = {
                 username: new RegExp(username, 'i')
               },
               {
-                username: {
-                  $where: 'this.username.length === ' + username.length
-                }
+                $where: 'this.username.length === ' + username.length
               }
             ]
           },
@@ -38,9 +36,7 @@ module.exports = {
                 email: new RegExp(email, 'i')
               },
               {
-                email: {
-                  $where: 'this.email.length === ' + email.length
-                }
+                $where: 'this.email.length === ' + email.length
               }
             ]
           }

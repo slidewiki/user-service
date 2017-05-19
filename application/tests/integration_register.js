@@ -30,7 +30,7 @@ describe('REST API', () => {
 
       server.auth.default('jwt');
       require('../routes.js')(server);
-      return db.cleanDatabase('slidewiki');
+      return db.cleanDatabase(config.MongoDB.SLIDEWIKIDATABASE);
     });
 
   });
