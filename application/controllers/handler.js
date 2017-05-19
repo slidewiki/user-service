@@ -21,7 +21,7 @@ module.exports = {
     let user = {
       surname:  util.parseAPIParameter(req.payload.surname),
       forename: util.parseAPIParameter(req.payload.forename),
-      username: util.parseAPIParameter(req.payload.username),
+      username: util.parseAPIParameter(req.payload.username).replace(/\s/g,''),
       email:    util.parseAPIParameter(req.payload.email).toLowerCase(),
       password: util.parseAPIParameter(req.payload.password),
       frontendLanguage: util.parseAPIParameter(req.payload.language),
@@ -281,7 +281,7 @@ module.exports = {
         updateQuery = {
           $set: {
             email:       email.toLowerCase(),
-            username:    util.parseAPIParameter(req.payload.username),
+            username:    util.parseAPIParameter(req.payload.username).replace(/\s/g,''),
             surname:     util.parseAPIParameter(req.payload.surname),
             forename:    util.parseAPIParameter(req.payload.forename),
             frontendLanguage:    util.parseAPIParameter(req.payload.language),
@@ -352,7 +352,7 @@ module.exports = {
   },
 
   getPublicUser: (req, res) => {
-    let identifier = decodeURI(req.params.identifier);
+    let identifier = decodeURI(req.params.identifier).replace(/\s/g,'');
     let query = {};
     const integerSchema = Joi.number().integer();
     const validationResult = integerSchema.validate(identifier);
@@ -388,7 +388,7 @@ module.exports = {
   checkUsername: (req, res) => {
     console.log(req.params);
 
-    const username = decodeURI(req.params.username);
+    const username = decodeURI(req.params.username).replace(/\s/g,'');
     return userCtrl.find({
       $and: [
         {
@@ -430,7 +430,7 @@ module.exports = {
   },
 
   searchUser: (req, res) => {
-    const username = decodeURI(req.params.username);
+    const username = decodeURI(req.params.username).replace(/\s/g,'');
 
     const query = {
       username: new RegExp(username.replace(/\s/g,'') + '*', 'i')

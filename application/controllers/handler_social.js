@@ -40,7 +40,7 @@ module.exports = {
           //   credentials: req.query,
           //   user: user.origin
           // },
-          username: user.nickname,
+          username: user.nickname.replace(/\s/g,''),
           email: user.email,
           id: user.id.toString(),
           location: user.location,
@@ -242,7 +242,7 @@ module.exports = {
             }
 
             let user = {
-              username:         util.parseAPIParameter(req.payload.username) || document.username,
+              username:         util.parseAPIParameter(req.payload.username).replace(/\s/g,'') || document.username.replace(/\s/g,''),
               email:            util.parseAPIParameter(req.payload.email),
               frontendLanguage: 'en_EN',
               spokenLanguages: [util.parseAPIParameter(req.payload.language)],
