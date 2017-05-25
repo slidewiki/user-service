@@ -356,6 +356,12 @@ module.exports = {
       query.username = identifier;
     }
 
+    // check for static user first
+    let staticUser = userCtrl.findStaticUser(query);
+    if (staticUser) {
+      return res(preparePublicUserData(staticUser));
+    }
+
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((array) => {
@@ -387,8 +393,18 @@ module.exports = {
       .then((cursor) => cursor.count())
       .then((count) => {
         //console.log('checkUsername: username:', username, '  cursor.count():', count);
+
+        // init this here because we may have to include a static user name
+        let staticUserNames = [];
         if (count === 0) {
-          return res({taken: false, alsoTaken: []});
+          // also check if it's in static users
+          let staticUser = userCtrl.findStaticUserByName(username);
+          if (staticUser) {
+            staticUserNames.push(staticUser.username);
+          } else {
+            // not found as before
+            return res({taken: false, alsoTaken: []});
+          }
         }
 
         const query = {
@@ -406,7 +422,7 @@ module.exports = {
             let alreadyTaken = array.reduce((prev, curr) => {
               prev.push(curr.username);
               return prev;
-            }, []);
+            }, staticUserNames);
             return res({taken: true, alsoTaken: alreadyTaken});
           });
       })
@@ -887,6 +903,9 @@ module.exports = {
     if (req.payload === undefined || req.payload.length < 1)
       return res(boom.badData());
 
+    // keep initial result for static users
+    let staticUsers = userCtrl.findStaticUsersByIds(req.payload);
+
     let selectors = req.payload.reduce((q, element) => {
       q.push({_id: element});
       return q;
@@ -901,13 +920,13 @@ module.exports = {
       .then((cursor) => cursor.toArray())
       .then((array) => {
         if (array === undefined || array === null || array.length < 1) {
-          return res([]);
+          return res(staticUsers);
         }
 
         let publicUsers = array.reduce((array, user) => {
           array.push(preparePublicUserData(user));
           return array;
-        }, []);
+        }, staticUsers);
         return res(publicUsers);
       });
   }

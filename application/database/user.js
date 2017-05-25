@@ -4,7 +4,20 @@ const helper = require('./helper'),
   userModel = require('../models/user.js'),
   collectionName = 'users';
 
-module.exports = {
+// hardcoded (static) users
+// the attributes included are only the public user attributes needed
+const staticUsers = [
+  {
+    _id: -1,
+    username: 'system',
+    organization: '',
+    picture: '',
+    description: 'This is a reserved system account',
+    country: '',
+  },
+];
+
+let self = module.exports = {
   create: (user) => {
     return helper.connectToDatabase()
       .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, collectionName))
@@ -75,5 +88,29 @@ module.exports = {
     return helper.connectToDatabase()
       .then((dbconn) => dbconn.collection(collectionName))
       .then((collection) => collection.update(findQuery, updateQuery, params));
-  }
+  },
+
+  findStaticUserById: function(userid) {
+    // return nothing if non-static or unknown
+    if (userid > 0) return null;
+    // maybe null
+    return staticUsers.find((u) => u._id === userid);
+  },
+
+  findStaticUsersByIds: function(userids) {
+    if (!userids) return [];
+    return staticUsers.filter((u) => userids.some((id) => (id === u._id)));
+  },
+
+  // check username against static users array
+  findStaticUserByName: function(username) {
+    if (!username) return null;
+    // maybe null
+    return staticUsers.find((u) => u.username === username.toLowerCase());
+  },
+
+  findStaticUser: function(query) {
+    return self.findStaticUserByName(query.username) || self.findStaticUserById(query._id);
+  },
+
 };

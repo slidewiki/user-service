@@ -18,6 +18,16 @@ module.exports = {
 
   isIdentityAssigned: (email, username) => {
     let myPromise = new Promise((resolve, reject) => {
+      // check for static users!!
+      let staticUser = userCtrl.findStaticUserByName(username);
+      if (staticUser) {
+        return resolve({
+          assigned: true,
+          username: true,
+          email: false,
+        });
+      }
+
       return userCtrl.find({
         $or: [
           {
