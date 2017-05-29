@@ -422,22 +422,35 @@ module.exports = {
     const query = {
       username: {
         $regex: username
+      },
+      deactivated:{
+        $not: {
+          $eq: true
+        }
       }
     };
     console.log('query:', query);
 
     return userCtrl.find(query)
-      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1}))
+      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1}))
       .then((cursor2) => cursor2.limit(10))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
         // console.log('handler: checkUsername: similar usernames', array);
         let data = array.reduce((prev, curr) => {
+          let description = curr.username;
+          if (curr.organization)
+            description = description + ', ' + curr.organization;
+          if (curr.country)
+            description = description + ', ' + curr.country;
           prev.push({
-            name: curr.username,
+            name: description,
             value: encodeURIComponent(JSON.stringify({
               userid: curr._id,
-              picture: curr.picture
+              picture: curr.picture,
+              country: curr.country,
+              organization: curr.organization,
+              username: curr.username
             }))
           });
           return prev;
@@ -445,7 +458,7 @@ module.exports = {
         return res({success: true, results: data});
       })
       .catch((error) => {
-        console.log('handler: searchUser: error', error);
+        console.log('handler: searchUser: error', error, 'with query:', query);
         res({success: false, results: []});
       });
   },
@@ -1063,7 +1076,7 @@ function enrichGroupMembers(group) {
     }
   };
   return userCtrl.find(query)
-    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1}))
+    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1, country: 1, organization: 1}))
     .then((cursor2) => cursor2.toArray())
     .then((array) => {
       array = array.reduce((prev, curr) => {
@@ -1092,6 +1105,8 @@ function enrichGroupMembers(group) {
           prev[curr.userid].userid = curr.userid;
           prev[curr.userid].username = curr.username;
           prev[curr.userid].picture = curr.picture;
+          prev[curr.userid].country = curr.country;
+          prev[curr.userid].organization = curr.organization;
         }
         else
           prev[curr.userid].joined = curr.joined;
