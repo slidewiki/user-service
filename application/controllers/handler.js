@@ -23,7 +23,6 @@ module.exports = {
       forename: util.parseAPIParameter(req.payload.forename),
       username: util.parseAPIParameter(req.payload.username).replace(/\s/g,''),
       email:    util.parseAPIParameter(req.payload.email).toLowerCase(),
-      password: util.parseAPIParameter(req.payload.password),
       password: co.hashPassword(util.parseAPIParameter(req.payload.password), config.SALT),
       frontendLanguage: util.parseAPIParameter(req.payload.language),
       country: '',
@@ -479,7 +478,14 @@ module.exports = {
     const email = decodeURI(req.params.email).replace(/\s/g,'');
 
     return userCtrl.find({
-      email: new RegExp(email, 'i')
+      $and: [
+        {
+          email: new RegExp(email, 'i')
+        },
+        {
+          $where: 'this.email.length === ' + email.length
+        }
+      ]
     })
       .then((cursor) => cursor.count())
       .then((count) => {
@@ -582,7 +588,14 @@ module.exports = {
 
         //change password in the database
         const findQuery = {
-          email: new RegExp(data.email, 'i')
+          $and: [
+            {
+              email: new RegExp(data.email, 'i')
+            },
+            {
+              $where: 'this.email.length === ' + data.email.length
+            }
+          ]
         };
         const updateQuery = {
           $set: {
