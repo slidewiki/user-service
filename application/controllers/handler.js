@@ -24,6 +24,7 @@ module.exports = {
       username: util.parseAPIParameter(req.payload.username).replace(/\s/g,''),
       email:    util.parseAPIParameter(req.payload.email).toLowerCase(),
       password: util.parseAPIParameter(req.payload.password),
+      password: co.hashPassword(util.parseAPIParameter(req.payload.password), config.SALT),
       frontendLanguage: util.parseAPIParameter(req.payload.language),
       country: '',
       picture: '',
@@ -88,7 +89,7 @@ module.exports = {
           $where: 'this.email.length === ' + req.payload.email.length
         }
       ],
-      password: decodeURI(req.payload.password)
+      password: co.hashPassword(decodeURI(req.payload.password), config.SALT)
     };
     console.log('try logging in with email', query.email);
 
@@ -202,8 +203,8 @@ module.exports = {
 
   //User profile
   updateUserPasswd: (req, res) => {
-    let oldPassword = req.payload.oldPassword;
-    let newPassword = req.payload.newPassword;
+    let oldPassword = co.hashPassword(req.payload.oldPassword, config.SALT);
+    let newPassword = co.hashPassword(req.payload.newPassword, config.SALT);
     const user__id = util.parseStringToInteger(req.params.id);
 
     //check if the user which should be updated have the right JWT data
@@ -386,7 +387,7 @@ module.exports = {
   },
 
   checkUsername: (req, res) => {
-    console.log(req.params);
+    // console.log(req.params);
 
     const username = decodeURI(req.params.username).replace(/\s/g,'');
     return userCtrl.find({
@@ -433,22 +434,35 @@ module.exports = {
     const username = decodeURI(req.params.username).replace(/\s/g,'');
 
     const query = {
-      username: new RegExp(username.replace(/\s/g,'') + '*', 'i')
+      username: new RegExp(username.replace(/\s/g,'') + '*', 'i'),
+      deactivated:{
+        $not: {
+          $eq: true
+        }
+      }
     };
     console.log('query:', query);
 
     return userCtrl.find(query)
-      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1}))
+      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1}))
       .then((cursor2) => cursor2.limit(10))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
         // console.log('handler: checkUsername: similar usernames', array);
         let data = array.reduce((prev, curr) => {
+          let description = curr.username;
+          if (curr.organization)
+            description = description + ', ' + curr.organization;
+          if (curr.country)
+            description = description + ', ' + curr.country;
           prev.push({
-            name: curr.username,
+            name: description,
             value: encodeURIComponent(JSON.stringify({
               userid: curr._id,
-              picture: curr.picture
+              picture: curr.picture,
+              country: curr.country,
+              organization: curr.organization,
+              username: curr.username
             }))
           });
           return prev;
@@ -456,7 +470,7 @@ module.exports = {
         return res({success: true, results: data});
       })
       .catch((error) => {
-        console.log('handler: searchUser: error', error);
+        console.log('handler: searchUser: error', error, 'with query:', query);
         res({success: false, results: []});
       });
   },
@@ -485,6 +499,7 @@ module.exports = {
   resetPassword: (req, res) => {
     const email = req.payload.email;
     const APIKey = req.payload.APIKey;
+    const salt = req.payload.salt;
 
     if (APIKey !== config.SMTP.APIKey) {
       return res(boom.forbidden('Wrong APIKey was used'));
@@ -498,7 +513,10 @@ module.exports = {
       }
 
       const newPassword = require('crypto').randomBytes(9).toString('hex');
-      const hashedPassword = JSSHA.sha512(newPassword + config.SMTP.salt);
+      /* The password is hashed one time at the client site (inner hash and optional) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
+      let hashedPassword = co.hashPassword(newPassword, config.SALT);
+      if (salt && salt.length > 0)
+        hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt), config.SALT);
 
       console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
@@ -1078,7 +1096,7 @@ function enrichGroupMembers(group) {
     }
   };
   return userCtrl.find(query)
-    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1}))
+    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1, country: 1, organization: 1}))
     .then((cursor2) => cursor2.toArray())
     .then((array) => {
       array = array.reduce((prev, curr) => {
@@ -1107,6 +1125,8 @@ function enrichGroupMembers(group) {
           prev[curr.userid].userid = curr.userid;
           prev[curr.userid].username = curr.username;
           prev[curr.userid].picture = curr.picture;
+          prev[curr.userid].country = curr.country;
+          prev[curr.userid].organization = curr.organization;
         }
         else
           prev[curr.userid].joined = curr.joined;
