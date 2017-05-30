@@ -15,38 +15,43 @@ return helper.connectToDatabase()
         return helper.connectToDatabase()
           .then((db) => db.collection('users'))
           .then((coll) => coll.mapReduce(function() {
-            emit(this.username.toLowerCase().replace(/\s/g,''), this);
+            emit(this.username.toLowerCase().replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\-._~\=\*\+\#\;\\/]/g, ''), this);
           },
             function(key, values) {
-              return {
-                count: values.length,
+              if (values.length === undefined || values.length === null || values.length < 1)
+                values = [values];
+              let o = {
+                count: 1,
                 username: key,
                 users: values.reduce(function(prev, curr) {
-                  if (curr.count)
-                    prev.concat(curr.users);
+                  if (curr.count === undefined || curr.count === null || curr.count < 1)
+                    prev.push(curr.value);
                   else
-                    prev.push(curr);
+                    prev.concat(curr.users);
                   return prev;
                 }, [])
               };
+              o.count = o.users.length;
+              return o;
             },
             {out: 'users_duplications'}
           ))
+          .then((collection) => collection.count())
           .then((result) => {
             console.log('Got result from first mapReduce:', result);
             return helper.connectToDatabase()
               .then((db) => db.collection('users_duplications'))
               .then((coll) => coll.mapReduce(function() {
-                if (this.value.count === undefined) {
-                  this.value.username = this.value.username.replace(/\s/g,'_');
+                if (this.value.count === undefined || this.value.count === null || this.value.count < 1) {
+                  this.value.username = this.value.username.replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\=\*\+\#\;\\/]/g,'_');
                   emit(this.value._id, this.value);
                 }
                 else {
                   let i = 0;
                   this.value.users.forEach(function(user) {
-                    let username = user.username.replace(/\s/g,'_');
+                    let username = user.username.replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\=\*\+\#\;\\/]/g,'_');
                     for (let j = 0; j < i; j++) {
-                      username = username+'ish';
+                      username = username+'_';
                     }
                     i++;
                     user.username = username;
@@ -55,26 +60,22 @@ return helper.connectToDatabase()
                 }
               },
                 function(key, values) {
-
-                  return values;
+                  console.log('value slength: ', values.length);
+                  return values[0];
                 },
                 {out: 'users_migrated'}
               ))
+              .then((collection) => collection.count())
               .then((result) => {
                 console.log('Got result from second mapReduce:', result);
                 return helper.connectToDatabase()
-                  .then((db) => db.collection('users'))
-                  .then((collection) => collection.drop())
-                  .then(() => {
-                    return helper.connectToDatabase()
-                      .then((db) => db.collection('users_migrated'))
-                      .then((coll) => coll.aggregate([{ $replaceRoot: { newRoot: '$value' } },{ $out: 'users' }]))
-                      // .then((collection) => collection.toArray())
-                      .then((result) => {
-                        console.log('Finished!!! Got results from aggregate:', result);
-                        process.exit(0);
-                        return true;
-                      });
+                  .then((db) => db.collection('users_migrated'))
+                  .then((coll) => coll.aggregate([{ $replaceRoot: { newRoot: '$value' } },{ $out: 'users' }]))
+                  .then((collection) => collection.toArray())
+                  .then((result) => {
+                    console.log('Finished!!! Got results from aggregate:', result.length);
+                    process.exit(0);
+                    return true;
                   });
               });
           });
