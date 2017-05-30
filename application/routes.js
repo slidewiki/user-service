@@ -18,7 +18,7 @@ module.exports = function (server) {
         payload: Joi.object().keys({
           forename: Joi.string().allow('').optional(),
           surname: Joi.string().allow('').optional(),
-          username: Joi.string().alphanum(),
+          username: Joi.string().regex(/^[\w\-.~_]*$/),
           email: Joi.string().email(),
           password: Joi.string().min(8),
           language: Joi.string().length(5),
@@ -261,7 +261,7 @@ module.exports = function (server) {
         },
         payload: Joi.object().keys({
           email: Joi.string().email().required(),
-          username: Joi.string().alphanum(),
+          username: Joi.string().regex(/^[\w\-.~_]*$/),
           surname: Joi.string().allow('').optional(),
           forename: Joi.string().allow('').optional(),
           //sex: Joi.string(),  //not used right now
@@ -358,7 +358,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          username: Joi.string().alphanum()
+          username: Joi.string().regex(/^[\w\-.~_]*$/)
         }
       },
       tags: ['api'],
@@ -394,7 +394,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          username: Joi.string().alphanum()
+          username: Joi.string().regex(/^[\w\-.~_]*$/)
         }
       },
       tags: ['api'],
@@ -643,7 +643,7 @@ module.exports = function (server) {
           token: Joi.string(),
           scope: Joi.string(),
           token_creation: Joi.string(),//Date
-          username: Joi.string().alphanum(),
+          username: Joi.string().regex(/^[\w\-.~_]*$/),
           email: Joi.string().email(),
           language: Joi.string().length(5),
           forename: Joi.string(),

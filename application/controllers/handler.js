@@ -354,13 +354,25 @@ module.exports = {
   getPublicUser: (req, res) => {
     let identifier = decodeURI(req.params.identifier).replace(/\s/g,'');
     let query = {};
+
+    //validate identifier if its an integer or a username
     const integerSchema = Joi.number().integer();
-    const validationResult = integerSchema.validate(identifier);
+    const validationResult = Joi.validate(identifier, integerSchema);
     if (validationResult.error === null) {
       query._id = validationResult.value;
     }
     else {
-      query.username = identifier;
+      // console.log('no integer try reading as username');
+      let schema = Joi.string().regex(/^[\w\-.~]*$/);
+      let valid = Joi.validate(identifier, schema);
+
+      if (valid.error === null) {
+        query.username = valid.value;
+      }
+      else {
+        console.log('username is invalid:', identifier, valid.error);
+        return res(boom.notFound());
+      }
     }
 
     return userCtrl.find(query)
@@ -388,7 +400,18 @@ module.exports = {
   checkUsername: (req, res) => {
     // console.log(req.params);
 
-    const username = decodeURI(req.params.username).replace(/\s/g,'');
+    let username = decodeURI(req.params.username).replace(/\s/g,'');
+    let schema = Joi.string().regex(/^[\w\-.~]*$/);
+    let valid = Joi.validate(username, schema);
+
+    if (valid.error === null) {
+      username = valid.value;
+    }
+    else {
+      console.log('username is invalid:', username, valid.error);
+      return res({taken: true, alsoTaken: []});
+    }
+
     return userCtrl.find({
       $and: [
         {
@@ -430,7 +453,17 @@ module.exports = {
   },
 
   searchUser: (req, res) => {
-    const username = decodeURI(req.params.username).replace(/\s/g,'');
+    let username = decodeURI(req.params.username).replace(/\s/g,'');
+    let schema = Joi.string().regex(/^[\w\-.~]*$/);
+    let valid = Joi.validate(username, schema);
+
+    if (valid.error === null) {
+      username = valid.value;
+    }
+    else {
+      console.log('username is invalid:', username, valid.error);
+      return res({success: false, results: []});
+    }
 
     const query = {
       username: new RegExp(username.replace(/\s/g,'') + '*', 'i'),
@@ -447,7 +480,7 @@ module.exports = {
       .then((cursor2) => cursor2.limit(10))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
-        // console.log('handler: checkUsername: similar usernames', array);
+        // console.log('handler: searchUser: similar usernames', array);
         let data = array.reduce((prev, curr) => {
           let description = curr.username;
           if (curr.organization)
