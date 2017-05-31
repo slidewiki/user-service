@@ -100,4 +100,37 @@ describe('User service database', () => {
         });
     });
   });
+
+  context('When accessing static users', () => {
+
+    it('should recognise `system` user with id equal to `-1`', () => {
+      let user = db.findStaticUserById(-1);
+      expect(user).to.be.an('object').that.has.property('username', 'system');
+    });
+
+    it('should only find `system` user when requesting static users with various ids', () => {
+      let users = db.findStaticUsersByIds([-1, -2, 0, 666]);
+      expect(users).to.be.an('array').that.has.lengthOf(1);
+      expect(users[0]).to.be.an('object').that.has.property('username', 'system');
+    });
+
+    it('should recognise `system` user by its name', () => {
+      let user = db.findStaticUserByName('system');
+      expect(user).to.be.an('object').that.has.property('_id', -1);
+    });
+
+    it('should recognise `system` user by its name or id', () => {
+      let user = db.findStaticUser({ username: 'system1', _id: -1 });
+      expect(user).to.be.an('object');
+      expect(user).to.have.property('username', 'system');
+      expect(user).to.have.property('_id', -1);
+
+      user = db.findStaticUser({ username: 'system', _id: 5 });
+      expect(user).to.be.an('object');
+      expect(user).to.have.property('username', 'system');
+      expect(user).to.have.property('_id', -1);
+    });
+
+  });
+
 });
