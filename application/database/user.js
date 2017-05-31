@@ -99,7 +99,7 @@ let self = module.exports = {
 
   findStaticUsersByIds: function(userids) {
     if (!userids) return [];
-    return staticUsers.filter((u) => userids.some((id) => (id === u._id)));
+    return staticUsers.filter((u) => userids.includes(u._id));
   },
 
   // check username against static users array
