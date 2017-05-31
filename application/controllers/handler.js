@@ -442,7 +442,7 @@ module.exports = {
           if (curr.organization)
             description = description + ', ' + curr.organization;
           if (curr.country)
-            description = description + ', ' + curr.country;
+            description = description + ' (' + curr.country + ')';
           prev.push({
             name: description,
             value: encodeURIComponent(JSON.stringify({
