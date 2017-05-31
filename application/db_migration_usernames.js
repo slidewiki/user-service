@@ -25,9 +25,17 @@ return helper.connectToDatabase()
                 username: key,
                 users: values.reduce(function(prev, curr) {
                   if (curr.count === undefined || curr.count === null || curr.count < 1)
-                    prev.push(curr.value);
-                  else
-                    prev.concat(curr.users);
+                    prev.push(curr);
+                  else {
+                    let result = [];
+                    prev.forEach((e) => {
+                      result.push(e);
+                    });
+                    curr.users.forEach((e) => {
+                      result.push(e);
+                    });
+                    prev = result;
+                  }
                   return prev;
                 }, [])
               };
@@ -49,18 +57,22 @@ return helper.connectToDatabase()
                 else {
                   let i = 0;
                   this.value.users.forEach(function(user) {
-                    let username = user.username.replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\=\*\+\#\;\\/]/g,'_');
-                    for (let j = 0; j < i; j++) {
-                      username = username+'_';
+                    if (user !== undefined) {
+                      let username = user.username.replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\=\*\+\#\;\\/]/g,'_');
+                      while (username.charAt(username.length-1) === '_') {
+                        username = username.substr(0, username.length-1);
+                      }
+                      for (let j = 0; j < i; j++) {
+                        username = username+'_';
+                      }
+                      i++;
+                      user.username = username;
+                      emit(user._id, user);
                     }
-                    i++;
-                    user.username = username;
-                    emit(user._id, user);
                   });
                 }
               },
                 function(key, values) {
-                  console.log('value slength: ', values.length);
                   return values[0];
                 },
                 {out: 'users_migrated'}
