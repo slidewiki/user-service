@@ -461,7 +461,8 @@ module.exports = function (server) {
         payload: {
           email: Joi.string().email(),
           language: Joi.string().length(5),
-          APIKey: Joi.string().alphanum()
+          APIKey: Joi.string().alphanum().description('Client specific key. Is needed to use this route.'),
+          salt: Joi.string().allow('').optional().description('When this parameter is given, then the service assume that the client will hash the users plaintext password with SHA-512(password + salt)')
         }
       },
       tags: ['api'],
