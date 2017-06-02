@@ -389,12 +389,12 @@ module.exports = function (server) {
   //gets dropdown data for frontend for users
   server.route({
     method: 'GET',
-    path: '/information/username/search/{username}',
+    path: '/information/username/search/{username?}',
     handler: handlers.searchUser,
     config: {
       validate: {
         params: {
-          username: Joi.string().regex(/^[\w\-.~_]*$/)
+          username: Joi.string().regex(/^[\w\-.~_]*$/).allow('').optional()
         }
       },
       tags: ['api'],
