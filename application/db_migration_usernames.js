@@ -15,6 +15,10 @@ return helper.connectToDatabase()
         return helper.connectToDatabase()
           .then((db) => db.collection('users'))
           .then((coll) => coll.mapReduce(function() {
+            if (!this.username || !this.email)
+              return;
+
+            this.email = this.email.toLowerCase();
             emit(this.username.toLowerCase().replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\-._~\=\*\+\#\;\\/]/g, ''), this);
           },
             function(key, values) {
