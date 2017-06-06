@@ -80,14 +80,7 @@ module.exports = {
 
   login: (req, res) => {
     const query = {
-      $and: [
-        {
-          email: new RegExp(req.payload.email, 'i')
-        },
-        {
-          $where: 'this.email.length === ' + req.payload.email.length
-        }
-      ],
+      email: req.payload.email.toLowerCase(),
       password: co.hashPassword(decodeURI(req.payload.password), config.SALT)
     };
     console.log('try logging in with email', query.email);
@@ -263,7 +256,7 @@ module.exports = {
   },
 
   updateUserProfile: (req, res) => {
-    let email = req.payload.email;
+    let email = req.payload.email.toLowerCase();
     let user = req.payload;
     user.email = email;
     user._id = util.parseStringToInteger(req.params.id);
@@ -280,8 +273,8 @@ module.exports = {
         },
         updateQuery = {
           $set: {
-            email:       email.toLowerCase(),
-            username:    util.parseAPIParameter(req.payload.username).replace(/\s/g,''),
+            email:       email,
+            username:    util.parseAPIParameter(req.payload.username),
             surname:     util.parseAPIParameter(req.payload.surname),
             forename:    util.parseAPIParameter(req.payload.forename),
             frontendLanguage:    util.parseAPIParameter(req.payload.language),
@@ -325,7 +318,7 @@ module.exports = {
           return res(boom.notAcceptable('It is impossible to change the username!'));
         }
 
-        if (email.toLowerCase() === oldEMail.toLowerCase()) {
+        if (email === oldEMail) {
           return updateCall();
         }
         else {
@@ -419,14 +412,7 @@ module.exports = {
     }
 
     return userCtrl.find({
-      $and: [
-        {
-          username: new RegExp(username, 'i')
-        },
-        {
-          $where: 'this.username.length === ' + username.length
-        }
-      ]
+      username: new RegExp('^' + username + '$', 'i')
     })
       .then((cursor) => cursor.count())
       .then((count) => {
@@ -446,7 +432,7 @@ module.exports = {
         }
 
         const query = {
-          username: new RegExp(username.replace(/\s/g,'') + '*', 'i')
+          username: new RegExp(username + '*', 'i')
         };
 
         return userCtrl.find(query)
@@ -529,17 +515,10 @@ module.exports = {
   },
 
   checkEmail: (req, res) => {
-    const email = decodeURI(req.params.email).replace(/\s/g,'');
+    const email = decodeURI(req.params.email).replace(/\s/g,'').toLowerCase();
 
     return userCtrl.find({
-      $and: [
-        {
-          email: new RegExp(email, 'i')
-        },
-        {
-          $where: 'this.email.length === ' + email.length
-        }
-      ]
+      email: email
     })
       .then((cursor) => cursor.count())
       .then((count) => {
@@ -557,7 +536,7 @@ module.exports = {
   },
 
   resetPassword: (req, res) => {
-    const email = req.payload.email;
+    const email = req.payload.email.toLowerCase();
     const APIKey = req.payload.APIKey;
     const salt = req.payload.salt;
 
@@ -609,7 +588,7 @@ module.exports = {
 
           connection.send({
             from: config.SMTP.from,
-            to: email.toLowerCase()
+            to: email
           },
           'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
           (err, info) => {
@@ -642,14 +621,7 @@ module.exports = {
 
         //change password in the database
         const findQuery = {
-          $and: [
-            {
-              email: new RegExp(data.email, 'i')
-            },
-            {
-              $where: 'this.email.length === ' + data.email.length
-            }
-          ]
+          email: email
         };
         const updateQuery = {
           $set: {
@@ -1033,14 +1005,7 @@ function isUsernameAlreadyTaken(username) {
 function isEMailAlreadyTaken(email) {
   let myPromise = new Promise((resolve, reject) => {
     return userCtrl.find({
-      $and: [
-        {
-          email: new RegExp(email, 'i')
-        },
-        {
-          $where: 'this.email.length === ' + email.length
-        }
-      ]
+      email: email
     })
       .then((cursor) => cursor.count())
       .then((count) => {
