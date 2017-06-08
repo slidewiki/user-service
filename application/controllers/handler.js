@@ -21,8 +21,8 @@ module.exports = {
     let user = {
       surname:  util.parseAPIParameter(req.payload.surname),
       forename: util.parseAPIParameter(req.payload.forename),
-      username: util.parseAPIParameter(req.payload.username),
-      email:    util.parseAPIParameter(req.payload.email).toLowerCase().replace(/\s/g,''),
+      username: util.parseAPIParameter(req.payload.username).replace(/\s/g,''),
+      email:    util.parseAPIParameter(req.payload.email).toLowerCase(),
       password: co.hashPassword(util.parseAPIParameter(req.payload.password), config.SALT),
       frontendLanguage: util.parseAPIParameter(req.payload.language),
       country: '',
@@ -80,7 +80,7 @@ module.exports = {
 
   login: (req, res) => {
     const query = {
-      email: new RegExp(decodeURI(req.payload.email).replace(/\s/g,''), 'i'),
+      email: req.payload.email.toLowerCase(),
       password: co.hashPassword(decodeURI(req.payload.password), config.SALT)
     };
     console.log('try logging in with email', query.email);
@@ -256,7 +256,7 @@ module.exports = {
   },
 
   updateUserProfile: (req, res) => {
-    let email = util.parseAPIParameter(req.payload.email).replace(/\s/g,'');
+    let email = req.payload.email.toLowerCase();
     let user = req.payload;
     user.email = email;
     user._id = util.parseStringToInteger(req.params.id);
@@ -273,7 +273,7 @@ module.exports = {
         },
         updateQuery = {
           $set: {
-            email:       email.toLowerCase(),
+            email:       email,
             username:    util.parseAPIParameter(req.payload.username),
             surname:     util.parseAPIParameter(req.payload.surname),
             forename:    util.parseAPIParameter(req.payload.forename),
@@ -314,11 +314,11 @@ module.exports = {
         const oldUsername = document.username,
           oldEMail = document.email;
 
-        if (decodeURI(req.payload.username) !== oldUsername) {
+        if (decodeURI(req.payload.username).toLowerCase() !== oldUsername.toLowerCase()) {
           return res(boom.notAcceptable('It is impossible to change the username!'));
         }
 
-        if (email.toLowerCase() === oldEMail.toLowerCase()) {
+        if (email === oldEMail) {
           return updateCall();
         }
         else {
@@ -345,15 +345,27 @@ module.exports = {
   },
 
   getPublicUser: (req, res) => {
-    let identifier = decodeURI(req.params.identifier);
+    let identifier = decodeURI(req.params.identifier).replace(/\s/g,'');
     let query = {};
+
+    //validate identifier if its an integer or a username
     const integerSchema = Joi.number().integer();
-    const validationResult = integerSchema.validate(identifier);
+    const validationResult = Joi.validate(identifier, integerSchema);
     if (validationResult.error === null) {
       query._id = validationResult.value;
     }
     else {
-      query.username = identifier;
+      // console.log('no integer try reading as username');
+      let schema = Joi.string().regex(/^[\w\-.~]*$/);
+      let valid = Joi.validate(identifier, schema);
+
+      if (valid.error === null) {
+        query.username = valid.value;
+      }
+      else {
+        console.log('username is invalid:', identifier, valid.error);
+        return res(boom.notFound());
+      }
     }
 
     // check for static user first
@@ -361,6 +373,12 @@ module.exports = {
     if (staticUser) {
       return res(preparePublicUserData(staticUser));
     }
+
+    //if no static user and username is given then use regex case insensitive
+    if (query.username)
+      query.username = new RegExp('^' + query.username + '$', 'i');
+
+    // console.log(query);
 
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
@@ -385,10 +403,22 @@ module.exports = {
   },
 
   checkUsername: (req, res) => {
-    const username = decodeURI(req.params.username);
+    // console.log(req.params);
+
+    let username = decodeURI(req.params.username).replace(/\s/g,'');
+    let schema = Joi.string().regex(/^[\w\-.~]*$/);
+    let valid = Joi.validate(username, schema);
+
+    if (valid.error === null) {
+      username = valid.value;
+    }
+    else {
+      console.log('username is invalid:', username, valid.error);
+      return res({taken: true, alsoTaken: []});
+    }
 
     return userCtrl.find({
-      username: username
+      username: new RegExp('^' + username + '$', 'i')
     })
       .then((cursor) => cursor.count())
       .then((count) => {
@@ -408,9 +438,7 @@ module.exports = {
         }
 
         const query = {
-          username: {
-            $regex: username
-          }
+          username: new RegExp(username + '*', 'i')
         };
 
         return userCtrl.find(query)
@@ -433,12 +461,20 @@ module.exports = {
   },
 
   searchUser: (req, res) => {
-    const username = decodeURI(req.params.username);
+    let username = decodeURI(req.params.username).replace(/\s/g,'');
+    let schema = Joi.string().regex(/^[\w\-.~]*$/);
+    let valid = Joi.validate(username, schema);
+
+    if (valid.error === null) {
+      username = valid.value;
+    }
+    else {
+      console.log('username is invalid:', username, valid.error);
+      return res({success: false, results: []});
+    }
 
     const query = {
-      username: {
-        $regex: username
-      },
+      username: new RegExp(username.replace(/\s/g,'') + '*', 'i'),
       deactivated:{
         $not: {
           $eq: true
@@ -457,7 +493,7 @@ module.exports = {
       .then((cursor2) => cursor2.limit(8))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
-        // console.log('handler: checkUsername: similar usernames', array);
+        // console.log('handler: searchUser: similar usernames', array);
         let data = array.reduce((prev, curr) => {
           let description = curr.username;
           if (curr.organization)
@@ -485,7 +521,7 @@ module.exports = {
   },
 
   checkEmail: (req, res) => {
-    const email = new RegExp(decodeURI(req.params.email).replace(/\s/g,''), 'i');
+    const email = decodeURI(req.params.email).replace(/\s/g,'').toLowerCase();
 
     return userCtrl.find({
       email: email
@@ -506,7 +542,7 @@ module.exports = {
   },
 
   resetPassword: (req, res) => {
-    const email = req.payload.email.replace(/\s/g,'');
+    const email = req.payload.email.toLowerCase();
     const APIKey = req.payload.APIKey;
     const salt = req.payload.salt;
 
@@ -558,7 +594,7 @@ module.exports = {
 
           connection.send({
             from: config.SMTP.from,
-            to: email.toLowerCase()
+            to: email
           },
           'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
           (err, info) => {
@@ -591,7 +627,7 @@ module.exports = {
 
         //change password in the database
         const findQuery = {
-          email: new RegExp(data.email, 'i')
+          email: email
         };
         const updateQuery = {
           $set: {
@@ -676,7 +712,8 @@ module.exports = {
     let group = req.payload;
 
     group.creator = {
-      userid: userid
+      userid: userid,
+      username: req.auth.credentials.username
     };
 
     let referenceDateTime = util.parseAPIParameter(req.payload.referenceDateTime) || (new Date()).toISOString();
@@ -974,7 +1011,7 @@ function isUsernameAlreadyTaken(username) {
 function isEMailAlreadyTaken(email) {
   let myPromise = new Promise((resolve, reject) => {
     return userCtrl.find({
-      email: new RegExp(email, 'i')
+      email: email
     })
       .then((cursor) => cursor.count())
       .then((count) => {

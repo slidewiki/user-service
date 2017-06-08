@@ -31,7 +31,7 @@ module.exports = {
       return userCtrl.find({
         $or: [
           {
-            username: username
+            username: new RegExp('^' + username + '$', 'i')
           },
           {
             email: email
@@ -49,7 +49,7 @@ module.exports = {
               return prev && !sameEMail;
             }, true));
             const isUsernameAssigned = !(array.reduce((prev, curr) => {
-              const sameUsername = curr.username === username;
+              const sameUsername = curr.username.toLowerCase() === username.toLowerCase();
               return prev && !sameUsername;
             }, true));
 

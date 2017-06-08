@@ -30,7 +30,7 @@ describe('REST API', () => {
 
       server.auth.default('jwt');
       require('../routes.js')(server);
-      return db.cleanDatabase('slidewiki').then(() => {
+      return db.cleanDatabase(config.MongoDB.SLIDEWIKIDATABASE).then(() => {
         let options = {
           method: 'POST',
           url: '/register',
@@ -44,7 +44,6 @@ describe('REST API', () => {
     });
 
   });
-
   const fullData = {
     username: 'jdoe',
     email: 'jdoe@test.test',
@@ -192,6 +191,7 @@ describe('REST API', () => {
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
+        console.log('payload:', payload);
         payload.should.be.an('object').and.contain.keys('success', 'results');
         payload.success.should.be.a('boolean').and.equal(true);
         payload.results.should.be.an('array').and.be.not.empty;

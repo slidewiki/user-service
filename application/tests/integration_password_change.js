@@ -32,7 +32,7 @@ describe('REST API', () => {
 
       server.auth.default('jwt');
       require('../routes.js')(server);
-      return db.cleanDatabase('slidewiki').then(() => {
+      return db.cleanDatabase(config.MongoDB.SLIDEWIKIDATABASE).then(() => {
         let options = {
           method: 'POST',
           url: '/register',
