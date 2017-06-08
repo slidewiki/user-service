@@ -21,7 +21,7 @@ module.exports = function (server) {
           username: Joi.string().regex(/^[\w\-.~_]*$/),
           email: Joi.string().email(),
           password: Joi.string().min(8),
-          language: Joi.string().length(5),
+          language: Joi.string().regex(/^\w{2,5}$/),
           organization: Joi.string()
         }).requiredKeys('username', 'email', 'password', 'language'),
       },
@@ -265,7 +265,7 @@ module.exports = function (server) {
           surname: Joi.string().allow('').optional(),
           forename: Joi.string().allow('').optional(),
           //sex: Joi.string(),  //not used right now
-          language: Joi.string().length(5),
+          language: Joi.string().regex(/^\w{2,5}$/),
           country: Joi.string().allow('').optional(),
           picture: Joi.string().uri().allow('').optional(),
           description: Joi.string().allow('').optional(),
@@ -460,7 +460,7 @@ module.exports = function (server) {
       validate: {
         payload: {
           email: Joi.string().email(),
-          language: Joi.string().length(5),
+          language: Joi.string().regex(/^\w{2,5}$/),
           APIKey: Joi.string().alphanum().description('Client specific key. Is needed to use this route.'),
           salt: Joi.string().allow('').optional().description('When this parameter is given, then the service assume that the client will hash the users plaintext password with SHA-512(password + salt)')
         }
@@ -543,7 +543,7 @@ module.exports = function (server) {
           token: Joi.string(),
           token_creation: Joi.string(),//Date
           email: Joi.string().email(),
-          language: Joi.string().length(5)
+          language: Joi.string().regex(/^\w{2,5}$/)
         }).requiredKeys('email', 'identifier', 'provider', 'token', 'token_creation'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -645,7 +645,7 @@ module.exports = function (server) {
           token_creation: Joi.string(),//Date
           username: Joi.string().regex(/^[\w\-.~_]*$/),
           email: Joi.string().email(),
-          language: Joi.string().length(5),
+          language: Joi.string().regex(/^\w{2,5}$/),
           forename: Joi.string(),
           surname: Joi.string()
         }).requiredKeys('username', 'email', 'identifier', 'provider', 'token', 'token_creation'),
@@ -718,7 +718,7 @@ module.exports = function (server) {
           scope: Joi.string(),
           token_creation: Joi.string(), //Date
           email: Joi.string().email(),  //email of provider
-          language: Joi.string().length(5)
+          language: Joi.string().regex(/^\w{2,5}$/)
         }).requiredKeys('identifier', 'provider', 'token', 'token_creation', 'email')
       },
       tags: ['api'],
