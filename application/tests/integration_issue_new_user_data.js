@@ -260,7 +260,7 @@ describe('REST API', () => {
       });
     });
 
-    // could not be used anymore because language could be 2 or 5 characters long
+    // could not be used anymore because language could be 2 to 5 characters long
     // it('it should reply 400 in case the language parameter is not a language', () => {
     //   let opt = JSON.parse(JSON.stringify(options));
     //   opt.url += userid + '/profile';
