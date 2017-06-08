@@ -933,7 +933,7 @@ module.exports = function (server) {
               'description': 'Wrong usergroup data - see error message'
             }
           },
-          payloadType: 'form'
+          payloadType: 'json'
         }
       }
     }
