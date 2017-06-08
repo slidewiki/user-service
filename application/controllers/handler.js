@@ -360,7 +360,7 @@ module.exports = {
       let valid = Joi.validate(identifier, schema);
 
       if (valid.error === null) {
-        query.username = valid.value;
+        query.username = new RegExp('^' + valid.value + '$', 'i');
       }
       else {
         console.log('username is invalid:', identifier, valid.error);
