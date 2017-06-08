@@ -360,7 +360,7 @@ module.exports = {
       let valid = Joi.validate(identifier, schema);
 
       if (valid.error === null) {
-        query.username = new RegExp('^' + valid.value + '$', 'i');
+        query.username = valid.value;
       }
       else {
         console.log('username is invalid:', identifier, valid.error);
@@ -373,6 +373,12 @@ module.exports = {
     if (staticUser) {
       return res(preparePublicUserData(staticUser));
     }
+
+    //if no static user and username is given then use regex case insensitive
+    if (query.username)
+      query.username = new RegExp('^' + query.username + '$', 'i');
+
+    // console.log(query);
 
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
