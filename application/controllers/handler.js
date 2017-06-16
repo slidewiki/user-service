@@ -86,7 +86,35 @@ module.exports = {
   },
 
   activateUser: (req, res) => {
+    const email = util.parseAPIParameter(req.params.email),
+      secret = util.parseAPIParameter(req.params.secret);
 
+    const query = {
+      email: email,
+      activate_secret: secret,
+      authorised: false
+    };
+
+    console.log('trying to activate ', email);
+
+    return userCtrl.partlyUpdate(query, {
+      $set: {
+        authorised: true
+      }
+    })
+    .then((result) => {
+      // console.log(result.result);
+      if (result.result.ok === 1 && result.result.n === 1) {
+        //success
+        return res();
+      }
+
+      return res(boom.forbidden('Wrong credentials were used'));
+    })
+    .catch((error) => {
+      console.log('Error:', error);
+      return res(boom.badImplementation());
+    });
   },
 
   login: (req, res) => {
