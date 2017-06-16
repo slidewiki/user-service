@@ -12,7 +12,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   jwt = require('./jwt'),
   Joi = require('joi'),
   util = require('./util'),
-  request = require('request');
+  request = require('request'),
+  PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '';
 
 module.exports = {
   register: (req, res) => {
@@ -106,7 +107,9 @@ module.exports = {
       // console.log(result.result);
       if (result.result.ok === 1 && result.result.n === 1) {
         //success
-        return res();
+        return res()
+          .redirect(PLATFORM_INFORMATION_URL)
+          .temporary(true);
       }
 
       return res(boom.forbidden('Wrong credentials were used'));

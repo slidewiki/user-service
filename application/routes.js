@@ -63,7 +63,7 @@ module.exports = function (server) {
   });
 
   server.route({
-    method: 'PUT',
+    method: 'GET',
     path: '/user/activate/{email}/{secret}',
     handler: handlers.activateUser,
     config: {
