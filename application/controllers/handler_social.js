@@ -245,7 +245,7 @@ module.exports = {
             let user = {
               username:         util.parseAPIParameter(req.payload.username).replace(/\s/g,'') || document.username.replace(/\s/g,''),
               email:            util.parseAPIParameter(req.payload.email).toLowerCase(),
-              frontendLanguage: 'en_EN',
+              frontendLanguage: 'en',
               spokenLanguages: [util.parseAPIParameter(req.payload.language)],
               country:          document.location || '',
               picture:          document.picture || '',

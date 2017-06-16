@@ -116,8 +116,6 @@ module.exports = {
         //Result of connected event
         console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
 
-        //TODO handle different languages
-
         connection.send({
           from: config.SMTP.from,
           to: email
