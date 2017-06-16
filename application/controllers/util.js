@@ -108,7 +108,8 @@ module.exports = {
 
       connection.on('error', (err) => {
         console.log('ERROR on SMTP Client:', err);
-        return resolve({email: email, message:  'dummy'});//DEBUG
+        if (process.env.NODE_ENV === 'test')
+          return resolve({email: email, message:  'dummy'});//DEBUG
         return reject(err);
       });
 

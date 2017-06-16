@@ -426,12 +426,12 @@ module.exports = {
     if (query.username)
       query.username = new RegExp('^' + query.username + '$', 'i');
 
-    // console.log(query);
+    console.log(query);
 
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((array) => {
-        // console.log('handler: getPublicUser: ', query, array);
+        console.log('handler: getPublicUser: ', query, array);
 
         if (array.length === 0)
           return res(boom.notFound());
@@ -443,7 +443,7 @@ module.exports = {
         }
 
         //check if authorised
-        if (result[0].authorised === false) {
+        if (array[0].authorised === false) {
           return res(boom.locked('User is not authorised yet.'));
         }
 
