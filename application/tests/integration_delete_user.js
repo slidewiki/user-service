@@ -41,7 +41,16 @@ describe('REST API', () => {
           },
           payload: minimalData
         };
-        return server.inject(options);
+        return server.inject(options)
+          .then((response) => {
+            return server.inject({
+              method: 'GET',
+              url: '/user/activate/'+minimalData.email+'/'+JSON.parse(response.payload).secret,
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+          });
       }).then(() => {
         let options = {
           method: 'POST',

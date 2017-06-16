@@ -41,7 +41,16 @@ describe('REST API', () => {
           },
           payload: fullData
         };
-        return server.inject(options);
+        return server.inject(options)
+          .then((response) => {
+            return server.inject({
+              method: 'GET',
+              url: '/user/activate/'+fullData.email+'/'+JSON.parse(response.payload).secret,
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+          });
       }).then(() => {
         let options = {
           method: 'POST',

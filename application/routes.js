@@ -29,7 +29,8 @@ module.exports = function (server) {
       description: 'Register a new user with unique username and email',
       response: {
         schema: Joi.object().keys({
-          userid: Joi.number().integer()
+          userid: Joi.number().integer(),
+          secret: Joi.string().description('Used for the route /user/activate/{eail/{secret}}')
         })
       },
       auth: false,

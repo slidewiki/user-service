@@ -55,7 +55,8 @@ module.exports = {
                   if (result.insertedCount === 1) {
                     //success
                     return res({
-                      userid: result.insertedId
+                      userid: result.insertedId,
+                      secret: user.activate_secret
                     });
                   }
 
