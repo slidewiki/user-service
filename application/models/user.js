@@ -123,6 +123,9 @@ const user = {
     providers: {
       type: 'array',
       items: provider
+    },
+    authorised: {
+      type: 'boolean'
     }
   },
   required: ['email', 'username', 'frontendLanguage']

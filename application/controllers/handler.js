@@ -141,6 +141,12 @@ module.exports = {
               break;
             }
 
+            //check if authorised
+            if (result[0].authorised === false) {
+              res(boom.locked('User is not authorised yet.'));
+              break;
+            }
+
             res({
               userid: result[0]._id,
               username: result[0].username,
@@ -433,6 +439,11 @@ module.exports = {
           return res(boom.locked('This user is deactivated.'));
         }
 
+        //check if authorised
+        if (result[0].authorised === false) {
+          return res(boom.locked('User is not authorised yet.'));
+        }
+
         res(preparePublicUserData(array[0]));
       })
       .catch((error) => {
@@ -517,6 +528,11 @@ module.exports = {
       deactivated:{
         $not: {
           $eq: true
+        }
+      },
+      authorised: {
+        $not: {
+          $eq: false
         }
       }
     };
