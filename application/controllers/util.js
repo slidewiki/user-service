@@ -2,7 +2,6 @@
 
 const userCtrl = require('../database/user'),
   SMTPConnection = require('smtp-connection'),
-  JSSHA = require('js-sha512'),
   config = require('../configuration'),
   Joi = require('joi');
 
@@ -89,6 +88,8 @@ module.exports = {
   },
 
   sendEMail: (email, text) => {
+    console.log('trying to send an email:', email, text);
+
     return new Promise((resolve, reject) => {
       //send email before changing data on MongoDB
       let connection;

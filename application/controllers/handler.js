@@ -28,7 +28,9 @@ module.exports = {
       description: '',
       organization: util.parseAPIParameter(req.payload.organization),
       registered: (new Date()).toISOString(),
-      providers: []
+      providers: [],
+      activate_secret: require('crypto').randomBytes(64).toString('hex'),
+      authorised: false
     };
 
     //check if username already exists
@@ -36,29 +38,36 @@ module.exports = {
       .then((result) => {
         console.log('identity already taken: ', user.email, user.username, result);
         if (result.assigned === false) {
-          //TODO: check email
+          //Send email before creating the user
+          return util.sendEMail(user.email,
+              'Dear '+user.forename+' '+user.surname+',\nHappy welcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link: <a href="https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'">Activate Account</a>\nGreetings,\nThe SlideWiki team')
+            .then(() => {
+              return userCtrl.create(user)
+                .then((result) => {
+                  // console.log('register: user create result: ', result);
 
-          return userCtrl.create(user)
-            .then((result) => {
-              // console.log('register: user create result: ', result);
+                  if (result[0] !== undefined && result[0] !== null) {
+                    //Error
+                    return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+                  }
 
-              if (result[0] !== undefined && result[0] !== null) {
-                //Error
-                return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-              }
+                  if (result.insertedCount === 1) {
+                    //success
+                    return res({
+                      userid: result.insertedId
+                    });
+                  }
 
-              if (result.insertedCount === 1) {
-                //success
-                return res({
-                  userid: result.insertedId
+                  res(boom.badImplementation());
+                })
+                .catch((error) => {
+                  console.log('Error on creating a user:', error);
+                  res(boom.badImplementation('Error', error));
                 });
-              }
-
-              res(boom.badImplementation());
             })
             .catch((error) => {
-              console.log('Error on creating a user:', error);
-              res(boom.badImplementation('Error', error));
+              console.log('Error sending the email:', error);
+              return res(boom.badImplementation('Error', error));
             });
         } else {
           let message = 'The username and email is already taken';
@@ -74,6 +83,10 @@ module.exports = {
         console.log('Error:', error, 'with user:', user);
         res(boom.badImplementation('Error', error));
       });
+  },
+
+  activateUser: (req, res) => {
+
   },
 
   login: (req, res) => {

@@ -62,6 +62,47 @@ module.exports = function (server) {
     }
   });
 
+  server.route({
+    method: 'PUT',
+    path: '/user/activate/{email}/{secret}',
+    handler: handlers.activateUser,
+    config: {
+      validate: {
+        params: {
+          secret: Joi.string(),
+          email: Joi.string().email()
+        }
+      },
+      tags: ['api'],
+      description: 'Activate a user after registration',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 403 ': {
+              'description': 'Wrong credentials were used.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use the correct email plus secret and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
   //Login with credentials
   server.route({
     method: 'POST',
