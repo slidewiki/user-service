@@ -30,7 +30,7 @@ describe('REST API', () => {
 
       server.auth.default('jwt');
       require('../routes.js')(server);
-      return db.cleanDatabase('slidewiki').then(() => {
+      return db.cleanDatabase(config.MongoDB.SLIDEWIKIDATABASE).then(() => {
         let options = {
           method: 'POST',
           url: '/register',
@@ -44,7 +44,6 @@ describe('REST API', () => {
     });
 
   });
-
   const fullData = {
     username: 'jdoe',
     email: 'jdoe@test.test',
@@ -142,6 +141,21 @@ describe('REST API', () => {
       });
     });
 
+    it('it should reply that the `system` username is already used and tell similar used usernames', () => {
+      let opt = JSON.parse(JSON.stringify(options2));
+      opt.url += 'system';
+      return server.inject(opt).then((response) => {
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
+        response.statusCode.should.equal(200);
+        response.payload.should.be.a('string');
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('taken', 'alsoTaken');
+        payload.taken.should.be.a('boolean').and.equal(true);
+        payload.alsoTaken.should.be.an('array').and.be.not.empty;
+        payload.alsoTaken.should.contain('system');
+      });
+    });
+
     it('it should reply that a username is not used in case it is not in use', () => {
       let opt = JSON.parse(JSON.stringify(options2));
       opt.url += 'hero';
@@ -177,13 +191,14 @@ describe('REST API', () => {
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
+        console.log('payload:', payload);
         payload.should.be.an('object').and.contain.keys('success', 'results');
         payload.success.should.be.a('boolean').and.equal(true);
         payload.results.should.be.an('array').and.be.not.empty;
         payload.results.should.have.lengthOf(1);
         let tmp = payload.results[0];
         tmp.should.be.an('object').and.contain.keys('name', 'value');
-        tmp.name.should.equal(fullData.username);
+        tmp.name.should.equal(fullData.username+', '+fullData.organization);
         let value = JSON.parse(decodeURIComponent(tmp.value));
         value.userid.should.equal(1);
       });
@@ -200,6 +215,34 @@ describe('REST API', () => {
         payload.should.be.an('object').and.contain.keys('success', 'results');
         payload.success.should.be.a('boolean').and.equal(true);
         payload.results.should.be.an('array').and.be.empty;
+      });
+    });
+
+    it('it should reply that the `system` username is not a registered user', () => {
+      let opt = JSON.parse(JSON.stringify(options3));
+      opt.url += 'system';
+      return server.inject(opt).then((response) => {
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
+        response.statusCode.should.equal(200);
+        response.payload.should.be.a('string');
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('success', 'results');
+        payload.success.should.be.a('boolean').and.equal(true);
+        payload.results.should.be.an('array').and.be.empty;
+      });
+    });
+
+    it('it should not return the `system` username as a registered user when searching with string `sys`', () => {
+      let opt = JSON.parse(JSON.stringify(options3));
+      opt.url += 'sys';
+      return server.inject(opt).then((response) => {
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
+        response.statusCode.should.equal(200);
+        response.payload.should.be.a('string');
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('success', 'results');
+        payload.success.should.be.a('boolean').and.equal(true);
+        payload.results.should.be.an('array').and.not.include('system');
       });
     });
 
@@ -228,6 +271,20 @@ describe('REST API', () => {
         payload._id.should.be.a('number').and.equal(1);
         payload.username.should.be.an('string').and.equal(fullData.username);
         payload.organization.should.be.an('string').and.equal(fullData.organization);
+      });
+    });
+
+    it('it should reply the public user information for the `system` user', () => {
+      let opt = JSON.parse(JSON.stringify(options4));
+      opt.url += 'system';
+      return server.inject(opt).then((response) => {
+        response.should.be.an('object').and.contain.keys('statusCode', 'payload');
+        response.statusCode.should.equal(200);
+        response.payload.should.be.a('string');
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('_id', 'username', 'country', 'picture', 'description', 'organization');
+        payload._id.should.be.a('number').and.equal(-1);
+        payload.username.should.be.an('string').and.equal('system');
       });
     });
 

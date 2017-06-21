@@ -18,10 +18,10 @@ module.exports = function (server) {
         payload: Joi.object().keys({
           forename: Joi.string().allow('').optional(),
           surname: Joi.string().allow('').optional(),
-          username: Joi.string().alphanum(),
+          username: Joi.string().regex(/^[\w\-.~_]*$/),
           email: Joi.string().email(),
           password: Joi.string().min(8).description('This string could be a plain password or a hash and have to be used on other routes as well, like /login and /resetpassword and /user/{id}/passwd'),
-          language: Joi.string().length(5),
+          language: Joi.string().regex(/^\w{2,5}$/),
           organization: Joi.string()
         }).requiredKeys('username', 'email', 'password', 'language'),
       },
@@ -260,12 +260,12 @@ module.exports = function (server) {
           id: Joi.number().integer().options({convert: true})
         },
         payload: Joi.object().keys({
-          email: Joi.string().email().trim().required(),
-          username: Joi.string().alphanum(),
+          email: Joi.string().email().required(),
+          username: Joi.string().regex(/^[\w\-.~_]*$/),
           surname: Joi.string().allow('').optional(),
           forename: Joi.string().allow('').optional(),
           //sex: Joi.string(),  //not used right now
-          language: Joi.string().length(5),
+          language: Joi.string().regex(/^\w{2,5}$/),
           country: Joi.string().allow('').optional(),
           picture: Joi.string().uri().allow('').optional(),
           description: Joi.string().allow('').optional(),
@@ -358,7 +358,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          username: Joi.string()
+          username: Joi.string().regex(/^[\w\-.~_]*$/)
         }
       },
       tags: ['api'],
@@ -389,12 +389,12 @@ module.exports = function (server) {
   //gets dropdown data for frontend for users
   server.route({
     method: 'GET',
-    path: '/information/username/search/{username}',
+    path: '/information/username/search/{username?}',
     handler: handlers.searchUser,
     config: {
       validate: {
         params: {
-          username: Joi.string()
+          username: Joi.string().regex(/^[\w\-.~_]*$/).allow('').optional()
         }
       },
       tags: ['api'],
@@ -460,7 +460,7 @@ module.exports = function (server) {
       validate: {
         payload: {
           email: Joi.string().email(),
-          language: Joi.string().length(5),
+          language: Joi.string().regex(/^\w{2,5}$/),
           APIKey: Joi.string().alphanum().description('Client specific key. Is needed to use this route.'),
           salt: Joi.string().allow('').optional().description('When this parameter is given, then the service assumes that the client will hash the users plaintext password with SHA-512(password + salt). The salt and algorithm should not be changed in a client, because then the via this route created password will not work after such a change.')
         }
@@ -543,7 +543,7 @@ module.exports = function (server) {
           token: Joi.string(),
           token_creation: Joi.string(),//Date
           email: Joi.string().email(),
-          language: Joi.string().length(5)
+          language: Joi.string().regex(/^\w{2,5}$/)
         }).requiredKeys('email', 'identifier', 'provider', 'token', 'token_creation'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -643,9 +643,9 @@ module.exports = function (server) {
           token: Joi.string(),
           scope: Joi.string(),
           token_creation: Joi.string(),//Date
-          username: Joi.string().alphanum(),
+          username: Joi.string().regex(/^[\w\-.~_]*$/),
           email: Joi.string().email(),
-          language: Joi.string().length(5),
+          language: Joi.string().regex(/^\w{2,5}$/),
           forename: Joi.string(),
           surname: Joi.string()
         }).requiredKeys('username', 'email', 'identifier', 'provider', 'token', 'token_creation'),
@@ -718,7 +718,7 @@ module.exports = function (server) {
           scope: Joi.string(),
           token_creation: Joi.string(), //Date
           email: Joi.string().email(),  //email of provider
-          language: Joi.string().length(5)
+          language: Joi.string().regex(/^\w{2,5}$/)
         }).requiredKeys('identifier', 'provider', 'token', 'token_creation', 'email')
       },
       tags: ['api'],
@@ -933,7 +933,7 @@ module.exports = function (server) {
               'description': 'Wrong usergroup data - see error message'
             }
           },
-          payloadType: 'form'
+          payloadType: 'json'
         }
       }
     }

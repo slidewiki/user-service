@@ -30,7 +30,7 @@ describe('REST API', () => {
 
       server.auth.default('jwt');
       require('../routes.js')(server);
-      return db.cleanDatabase('slidewiki');
+      return db.cleanDatabase(config.MongoDB.SLIDEWIKIDATABASE);
     });
 
   });
@@ -103,6 +103,25 @@ describe('REST API', () => {
     it('it should return 409 about an already existing user', () => {
       let opt = JSON.parse(JSON.stringify(options));
       opt.payload = minimalData;
+      return server.inject(opt).then((response) => {
+        // console.log('testresult:', response.statusCode, response.payload);
+        response.should.be.an('object').and.contain.keys('statusCode','payload');
+        response.statusCode.should.equal(409);
+        response.payload.should.be.a('string');
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('statusCode', 'error', 'message');
+        payload.error.should.be.a('string').and.equal('Conflict');
+      });
+    });
+
+    it('it should return 409 about the static `system` user', () => {
+      let opt = JSON.parse(JSON.stringify(options));
+      opt.payload = {
+        username: 'system',
+        email: 'system@test.test',
+        password: '12345678',
+        language: 'en_EN',
+      };
       return server.inject(opt).then((response) => {
         // console.log('testresult:', response.statusCode, response.payload);
         response.should.be.an('object').and.contain.keys('statusCode','payload');
