@@ -20,7 +20,7 @@ module.exports = function (server) {
           surname: Joi.string().allow('').optional(),
           username: Joi.string().regex(/^[\w\-.~_]*$/),
           email: Joi.string().email(),
-          password: Joi.string().min(8),
+          password: Joi.string().min(8).description('This string could be a plain password or a hash and have to be used on other routes as well, like /login and /resetpassword and /user/{id}/passwd'),
           language: Joi.string().regex(/^\w{2,5}$/),
           organization: Joi.string()
         }).requiredKeys('username', 'email', 'password', 'language'),
@@ -71,7 +71,7 @@ module.exports = function (server) {
       validate: {
         payload: Joi.object().keys({
           email: Joi.string().email(),
-          password: Joi.string()
+          password: Joi.string().description('Password set via /register or /resetPassword or  and /user/{id}/passwd')
         })
       },
       tags: ['api'],
@@ -213,7 +213,7 @@ module.exports = function (server) {
         },
         payload: Joi.object().keys({
           oldPassword: Joi.string().min(8),
-          newPassword: Joi.string().min(8)
+          newPassword: Joi.string().min(8).description('This password could be a plain password or a hash and have to be used on other routes as well, like /login and /resetpassword')
         }).requiredKeys('oldPassword', 'newPassword'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -462,7 +462,7 @@ module.exports = function (server) {
           email: Joi.string().email(),
           language: Joi.string().regex(/^\w{2,5}$/),
           APIKey: Joi.string().alphanum().description('Client specific key. Is needed to use this route.'),
-          salt: Joi.string().allow('').optional().description('When this parameter is given, then the service assume that the client will hash the users plaintext password with SHA-512(password + salt)')
+          salt: Joi.string().allow('').optional().description('When this parameter is given, then the service assumes that the client will hash the users plaintext password with SHA-512(password + salt). The salt and algorithm should not be changed in a client, because then the via this route created password will not work after such a change.')
         }
       },
       tags: ['api'],
@@ -492,7 +492,7 @@ module.exports = function (server) {
               }
             }
           },
-          payloadType: 'json'
+          payloadType: 'form'
         },
         yar: {
           skip: true
