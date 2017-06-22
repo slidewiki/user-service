@@ -471,6 +471,7 @@ module.exports = {
     }
     else {
       if (username === '') {
+        //search random users - a* matches everyone
         username = 'a*';
       }
       else  {
