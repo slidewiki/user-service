@@ -462,20 +462,26 @@ module.exports = {
 
   searchUser: (req, res) => {
     let username = decodeURI(req.params.username).replace(/\s/g,'');
+
     let schema = Joi.string().regex(/^[\w\-.~]*$/);
     let valid = Joi.validate(username, schema);
 
     if (valid.error === null) {
-      username = valid.value;
+      username = valid.value + '+';
     }
     else {
-      console.log('username is invalid:', username, valid.error);
-      return res({success: false, results: []});
+      if (username === '') {
+        username = 'a*';
+      }
+      else  {
+        console.log('username is invalid:', username, valid.error);
+        return res({success: false, results: []});
+      }
     }
 
     const query = {
-      username: new RegExp(username.replace(/\s/g,'') + '*', 'i'),
-      deactivated:{
+      username: new RegExp(username, 'i'),
+      deactivated: {
         $not: {
           $eq: true
         }
