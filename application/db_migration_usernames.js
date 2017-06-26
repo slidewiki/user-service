@@ -55,14 +55,14 @@ return helper.connectToDatabase()
               .then((db) => db.collection('users_duplications'))
               .then((coll) => coll.mapReduce(function() {
                 if (this.value.count === undefined || this.value.count === null || this.value.count < 1) {
-                  this.value.username = this.value.username.replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\=\*\+\#\;\\/]/g,'_');
+                  this.value.username = this.value.username.replace(/[|\s&;$%&§{[\]}@"<>()+,!?=*+#;\\/]/g,'_');
                   emit(this.value._id, this.value);
                 }
                 else {
                   let i = 0;
                   this.value.users.forEach(function(user) {
                     if (user !== undefined) {
-                      let username = user.username.replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\=\*\+\#\;\\/]/g,'_');
+                      let username = user.username.replace(/[|\s&;$%&§{[\]}@"<>()+,!?=*+#;\\/]/g,'_');
                       while (username.charAt(username.length-1) === '_') {
                         username = username.substr(0, username.length-1);
                       }

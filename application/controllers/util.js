@@ -8,7 +8,7 @@ module.exports = {
     let jwt_userid = '';
     try {
       jwt_userid = req.auth.credentials.userid;
-    } catch (e) {}
+    } catch (e) {/**/}
     //console.log(decodeURI(req.params.id), 'vs', jwt_data);
     if (decodeURI(req.params.id).toString() !== jwt_userid.toString()) {
       return false;

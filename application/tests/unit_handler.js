@@ -44,56 +44,56 @@ describe('User service', () => {
     email: 'tboonx@googlemail.com'
   };
   const correct_provider = {
-    '_id' : '5811f623679e6d357a076207',
+    '_id': '5811f623679e6d357a076207',
     identifier: '2839748234',
-  	'provider' : 'github',
-  	'token' : '47a629160532535502fff76f5b6e3513a2a2da9e',
-  	'scope' : 'user',
-  	'expires' : undefined,
-  	'extra_token' : undefined,
-  	'token_creation' : now,
-  	'username' : 'TBoonX',
-  	'email' : 'tboonx@googlemail.com',
-  	'id' : '2839748234',
-  	'location' : 'Deutschland',
-  	'organization' : 'Institut für Angewandte Informatik e. V.',
-  	'description' : null,
-  	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
-  	'name' : 'Kurt Junghanns'
+    'provider': 'github',
+    'token': '47a629160532535502fff76f5b6e3513a2a2da9e',
+    'scope': 'user',
+    'expires': undefined,
+    'extra_token': undefined,
+    'token_creation': now,
+    'username': 'TBoonX',
+    'email': 'tboonx@googlemail.com',
+    'id': '2839748234',
+    'location': 'Deutschland',
+    'organization': 'Institut für Angewandte Informatik e. V.',
+    'description': null,
+    'picture': 'https://avatars.githubusercontent.com/u/3153545?v=3',
+    'name': 'Kurt Junghanns'
   };
   const correct_provider2 = {
-    'provider' : 'google',
-  	'token' : 'wercvrwe78nzc87 ncbr4btc67c7h7c',
-  	'scope' : 'user',
-  	'expires' : 3600,
-  	'extra_token' : undefined,
-  	'token_creation' : now,
-  	'username' : 'TBoonX',
-  	'email' : 'tboonx@googlemail.com',
-  	'id' : '453453534534534',
+    'provider': 'google',
+    'token': 'wercvrwe78nzc87 ncbr4btc67c7h7c',
+    'scope': 'user',
+    'expires': 3600,
+    'extra_token': undefined,
+    'token_creation': now,
+    'username': 'TBoonX',
+    'email': 'tboonx@googlemail.com',
+    'id': '453453534534534',
     identifier: '453453534534534',
-  	'location' : 'Deutschland',
-  	'organization' : 'Institut für Angewandte Informatik e. V.',
-  	'description' : null,
-  	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
-  	'name' : 'Kurt Junghanns'
+    'location': 'Deutschland',
+    'organization': 'Institut für Angewandte Informatik e. V.',
+    'description': null,
+    'picture': 'https://avatars.githubusercontent.com/u/3153545?v=3',
+    'name': 'Kurt Junghanns'
   };
   const wrong_provider = {
-    'provider' : 'socialface',
-  	'token' : 'wercvrwe78nzc87 ncbr4btc67c7h7c',
-  	'scope' : 'user',
-  	'expires' : 1,
-  	'extra_token' : undefined,
-  	'token_creation' : now,
-  	'username' : 'TBoonX',
-  	'email' : 'tboonx@googlemail.com',
-  	'id' : '453453534534534',
+    'provider': 'socialface',
+    'token': 'wercvrwe78nzc87 ncbr4btc67c7h7c',
+    'scope': 'user',
+    'expires': 1,
+    'extra_token': undefined,
+    'token_creation': now,
+    'username': 'TBoonX',
+    'email': 'tboonx@googlemail.com',
+    'id': '453453534534534',
     identifier: '453453534534534',
-  	'location' : 'Deutschland',
-  	'organization' : 'Institut für Angewandte Informatik e. V.',
-  	'description' : null,
-  	'picture' : 'https://avatars.githubusercontent.com/u/3153545?v=3',
-  	'name' : 'Kurt Junghanns'
+    'location': 'Deutschland',
+    'organization': 'Institut für Angewandte Informatik e. V.',
+    'description': null,
+    'picture': 'https://avatars.githubusercontent.com/u/3153545?v=3',
+    'name': 'Kurt Junghanns'
   };
   let correct_usergroup = {
     name: 'Testgroup',
@@ -157,7 +157,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log(Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Register a second user with same username - should not be possible', () => {
@@ -176,7 +175,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log(Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Register a second user with same username with upper case - should not be possible', () => {
@@ -196,7 +194,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log(Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Should not allow a user to register with username `system`', () => {
@@ -236,7 +233,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Should return public info for `system` static user', () => {
@@ -279,7 +275,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Update user profile', () => {
@@ -320,7 +315,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Get user detailed', () => {
@@ -345,7 +339,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Update user password', () => {
@@ -386,7 +379,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Check usernames', () => {
@@ -430,7 +422,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Should check `system` username and report it as taken', () => {
@@ -465,7 +456,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     }).timeout(60000);
     it('Update usergroup', () => {
@@ -489,7 +479,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     }).timeout(60000);
     it('Get user detailed and check groups', () => {
@@ -516,7 +505,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     }).timeout(60000);
     it('Get user as service', () => {
@@ -541,7 +529,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     }).timeout(60000);
     it('Get usergroup', () => {
@@ -561,7 +548,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     }).timeout(60000);
     it('Delete usergroup', () => {
@@ -585,7 +571,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     }).timeout(60000);
 
@@ -612,7 +597,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
 
@@ -634,7 +618,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Get deleted user as public', () => {
@@ -655,7 +638,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
 
@@ -689,7 +671,6 @@ describe('User service', () => {
           .catch((Error) => {
             console.log(Error);
             throw Error;
-            expect(1).to.equals(2);
           });
         });
     });
@@ -715,7 +696,6 @@ describe('User service', () => {
       .catch((Error) => {
         console.log('Error', Error);
         throw Error;
-        expect(1).to.equals(2);
       });
     });
     it('Add provider', () => {
@@ -744,7 +724,6 @@ describe('User service', () => {
           .catch((Error) => {
             console.log('Error', Error);
             throw Error;
-            expect(1).to.equals(2);
           });
         });
     });
