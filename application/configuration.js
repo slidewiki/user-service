@@ -56,12 +56,18 @@ if (!co.isEmpty(process.env.APIKEY)){
   APIKey = process.env.APIKEY;
 }
 
+let slidewikiDbName = 'slidewiki';
+if (process.env.NODE_ENV === 'test') {
+  slidewikiDbName = 'slidewiki_test';
+}
+
+
 module.exports = {
   MongoDB: {
     PORT: port,
     HOST: host,
     NS: 'local',
-    SLIDEWIKIDATABASE: 'slidewiki'
+    SLIDEWIKIDATABASE: slidewikiDbName
   },
   JWT: {
     SERIAL: JWTSerial,
