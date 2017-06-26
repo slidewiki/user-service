@@ -201,8 +201,11 @@ describe('User service', () => {
     });
     it('Should not allow a user to register with username `system`', () => {
       return handler.register({ payload: wrong_user1 }, (result) => {
+        // console.log('testresult', result);
         expect(result).to.be.an('error').that.has.property('isBoom', true);
-        expect(result).to.have.deep.property('output.statusCode', 409);
+        expect(result.output).to.not.equal(undefined);
+        expect(result.output.statusCode).to.equal(409);
+        // expect(result).to.have.deep.property('output.statusCode', 409);
       });
     });
     it('Get user public', () => {
