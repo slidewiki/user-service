@@ -2,6 +2,8 @@
 Handles the requests by executing stuff and replying to the client. Uses promises to get stuff done.
 */
 /* eslint promise/always-return: "off" */
+/*eslint no-case-declarations: "warn"*/
+/*eslint no-useless-escape: "warn"*/
 
 'use strict';
 
@@ -242,7 +244,6 @@ module.exports = {
                 console.log('Error while updating password of user with id '+user__id+':', error);
                 res(boom.badImplementation('Update password failed', error));
               });
-            break;
           default:
             //should not happen
             console.log('BIG PROBLEM: multiple users in the database have the same id and password!');
@@ -559,106 +560,106 @@ module.exports = {
     }
 
     return isEMailAlreadyTaken(email)
-    .then((isTaken) => {
-      console.log('resetPassword: email taken:', isTaken);
-      if (!isTaken) {
-        return res(boom.notFound('EMail adress is not taken.'));
-      }
-
-      const newPassword = require('crypto').randomBytes(9).toString('hex');
-      /* The password is hashed one time at the client site (inner hash and optional) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
-      let hashedPassword = co.hashPassword(newPassword, config.SALT);
-      if (salt && salt.length > 0)
-        hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt), config.SALT);
-
-      console.log('resetPassword: email is in use thus we connect to the SMTP server');
-
-      let connectionPromise = new Promise((resolve, reject) => {
-        //send email before changing data on MongoDB
-        let connection;
-        try {
-          connection = new SMTPConnection({
-            host: config.SMTP.host,
-            port: config.SMTP.port,
-            name: config.SMTP.clientName,
-            connectionTimeout: 4000
-          });
-        }
-        catch (e) {
-          console.log(e);
-          return reject(boom.badImplementation('Wrong SMTP configuration'));
+      .then((isTaken) => {
+        console.log('resetPassword: email taken:', isTaken);
+        if (!isTaken) {
+          return res(boom.notFound('EMail adress is not taken.'));
         }
 
-        connection.on('error', (err) => {
-          console.log('ERROR on SMTP Client:', err);
-          return reject(err);
-        });
+        const newPassword = require('crypto').randomBytes(9).toString('hex');
+        /* The password is hashed one time at the client site (inner hash and optional) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
+        let hashedPassword = co.hashPassword(newPassword, config.SALT);
+        if (salt && salt.length > 0)
+          hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt), config.SALT);
 
-        connection.connect((result) => {
-          //Result of connected event
-          console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
+        console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
-          //TODO handle different languages
-
-          connection.send({
-            from: config.SMTP.from,
-            to: email
-          },
-          'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
-          (err, info) => {
-            console.log('tried to send the email:', err, info);
-
-            try {
-              connection.quit();
-            }
-            catch (e) {
-              console.log('SMTP connection quit failed:', e);
-            }
-
-            if (err !== null) {
-              return reject(boom.badImplementation(err));
-            }
-
-            //handle info object
-            if (info.rejected.length > 0) {
-              return reject(boom.badImplementation('Email was rejected'));
-            }
-
-            resolve({email: email, message: info.response});
-          });
-        });
-      });
-
-      return connectionPromise
-      .then((data) => {
-        console.log('connectionPromise returned', data);
-
-        //change password in the database
-        const findQuery = {
-          email: email
-        };
-        const updateQuery = {
-          $set: {
-            password: hashedPassword
+        let connectionPromise = new Promise((resolve, reject) => {
+          //send email before changing data on MongoDB
+          let connection;
+          try {
+            connection = new SMTPConnection({
+              host: config.SMTP.host,
+              port: config.SMTP.port,
+              name: config.SMTP.clientName,
+              connectionTimeout: 4000
+            });
           }
-        };
-        return userCtrl.partlyUpdate(findQuery, updateQuery)
-          .then((result) => {
-            console.log('handler: resetPassword:',  result.result);
+          catch (e) {
+            console.log(e);
+            return reject(boom.badImplementation('Wrong SMTP configuration'));
+          }
 
-            if (result.result.ok === 1 && result.result.n === 1) {
-              //success
-              return res(data.message);
-            }
-
-            return res(boom.badImplementation());
-          })
-          .catch((error) => {
-            res(boom.notFound('Update of user password failed', error));
+          connection.on('error', (err) => {
+            console.log('ERROR on SMTP Client:', err);
+            return reject(err);
           });
-      })
-      .catch((error) => res(error));
-    });
+
+          connection.connect((result) => {
+            //Result of connected event
+            console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
+
+            //TODO handle different languages
+
+            connection.send({
+              from: config.SMTP.from,
+              to: email
+            },
+            'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
+            (err, info) => {
+              console.log('tried to send the email:', err, info);
+
+              try {
+                connection.quit();
+              }
+              catch (e) {
+                console.log('SMTP connection quit failed:', e);
+              }
+
+              if (err !== null) {
+                return reject(boom.badImplementation(err));
+              }
+
+              //handle info object
+              if (info.rejected.length > 0) {
+                return reject(boom.badImplementation('Email was rejected'));
+              }
+
+              resolve({email: email, message: info.response});
+            });
+          });
+        });
+
+        return connectionPromise
+          .then((data) => {
+            console.log('connectionPromise returned', data);
+
+            //change password in the database
+            const findQuery = {
+              email: email
+            };
+            const updateQuery = {
+              $set: {
+                password: hashedPassword
+              }
+            };
+            return userCtrl.partlyUpdate(findQuery, updateQuery)
+              .then((result) => {
+                console.log('handler: resetPassword:',  result.result);
+
+                if (result.result.ok === 1 && result.result.n === 1) {
+                  //success
+                  return res(data.message);
+                }
+
+                return res(boom.badImplementation());
+              })
+              .catch((error) => {
+                res(boom.notFound('Update of user password failed', error));
+              });
+          })
+          .catch((error) => res(error));
+      });
   },
 
   deleteUsergroup: (req, res) => {
@@ -930,16 +931,16 @@ module.exports = {
         }
       }
     }).
-    then((result) => {
-      console.log('leaveUsergroup: ', result.result);
-      if (result.result.ok !== 1)
-        return res(boom.notFound());
+      then((result) => {
+        console.log('leaveUsergroup: ', result.result);
+        if (result.result.ok !== 1)
+          return res(boom.notFound());
 
-      if (result.result.nModified !== 1)
-        return res(boom.unauthorized());
+        if (result.result.nModified !== 1)
+          return res(boom.unauthorized());
 
-      return res();
-    });
+        return res();
+      });
   },
 
   //

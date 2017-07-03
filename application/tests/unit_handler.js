@@ -154,10 +154,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log(Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log(Error);
+          throw Error;
+        });
     });
     it('Register a second user with same username - should not be possible', () => {
       let req = {
@@ -172,10 +172,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log(Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log(Error);
+          throw Error;
+        });
     });
     it('Register a second user with same username with upper case - should not be possible', () => {
       let req = {
@@ -191,10 +191,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log(Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log(Error);
+          throw Error;
+        });
     });
     it('Should not allow a user to register with username `system`', () => {
       return handler.register({ payload: wrong_user1 }, (result) => {
@@ -230,10 +230,10 @@ describe('User service', () => {
           return;
         });
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
     it('Should return public info for `system` static user', () => {
 
@@ -272,10 +272,10 @@ describe('User service', () => {
           }
         };
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
     it('Update user profile', () => {
       let req = {
@@ -312,10 +312,10 @@ describe('User service', () => {
           return;
         });
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
     it('Get user detailed', () => {
       let req = {
@@ -336,10 +336,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
     it('Update user password', () => {
       let req = {
@@ -376,10 +376,10 @@ describe('User service', () => {
           return;
         });
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
     it('Check usernames', () => {
       let req = {
@@ -419,10 +419,10 @@ describe('User service', () => {
           });
         });
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
     it('Should check `system` username and report it as taken', () => {
       return handler.checkUsername({ params: { username: 'system' } }, (result) => {
@@ -453,10 +453,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     }).timeout(60000);
     it('Update usergroup', () => {
       let group = correct_usergroup2;
@@ -476,10 +476,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     }).timeout(60000);
     it('Get user detailed and check groups', () => {
       let req = {
@@ -502,10 +502,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     }).timeout(60000);
     it('Get user as service', () => {
       let req = {
@@ -526,10 +526,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     }).timeout(60000);
     it('Get usergroup', () => {
       let req = {
@@ -545,10 +545,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     }).timeout(60000);
     it('Delete usergroup', () => {
       let req = {
@@ -568,10 +568,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     }).timeout(60000);
 
     //delete the user
@@ -594,10 +594,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
 
     it('Login with deleted user', () => {
@@ -615,10 +615,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
     it('Get deleted user as public', () => {
       //first with _id
@@ -635,10 +635,10 @@ describe('User service', () => {
 
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
 
     //Social login stuff
@@ -668,10 +668,10 @@ describe('User service', () => {
               }
             };
           })
-          .catch((Error) => {
-            console.log(Error);
-            throw Error;
-          });
+            .catch((Error) => {
+              console.log(Error);
+              throw Error;
+            });
         });
     });
     it('Login with oauth', () => {
@@ -693,10 +693,10 @@ describe('User service', () => {
           }
         };
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
     });
     it('Add provider', () => {
       //first create provider in db
@@ -721,10 +721,10 @@ describe('User service', () => {
 
             return;
           })
-          .catch((Error) => {
-            console.log('Error', Error);
-            throw Error;
-          });
+            .catch((Error) => {
+              console.log('Error', Error);
+              throw Error;
+            });
         });
     });
     it('Try add wrong provider', () => {
