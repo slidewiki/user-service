@@ -6,7 +6,7 @@ Each route implementes a basic parameter/payload validation and a swagger API do
 const Joi = require('joi'),
   handlers = require('./controllers/handler'),
   handlers_social = require('./controllers/handler_social'),
-  LANGUAGE_REGEX = /^\w{2,5}$/ ,
+  LANGUAGE_REGEX = /^\w{2,5}$/ , //better /^[a-z]{2}(?:-[A-Z]{2})?$/   ?
   USERNAME_REGEX = /^[\w\-.~_]*$/ ;
 
 module.exports = function (server) {
