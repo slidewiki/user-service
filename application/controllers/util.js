@@ -98,7 +98,11 @@ module.exports = {
           host: config.SMTP.host,
           port: config.SMTP.port,
           name: config.SMTP.clientName,
-          connectionTimeout: 4000
+          connectionTimeout: 4000,
+          opportunisticTLS: true,
+          tls: {
+            rejectUnauthorized: false
+          }
         });
       }
       catch (e) {
