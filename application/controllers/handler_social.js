@@ -278,7 +278,7 @@ module.exports = {
                 if (result.assigned === false) {
                   //Send email before creating the user
                   return util.sendEMail(user.email,
-                      'Dear '+user.forename+' '+user.surname+',\nHappy welcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to become familiar with the platform please follow the link to an information page: <a href="'+PLATFORM_INFORMATION_URL+'">SlideWiki</a>\nGreetings,\nThe SlideWiki team')
+                      'Dear '+user.forename+' '+user.surname+',\nHappy welcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to start using your account and learn about Getting Started with the platform please follow the link to the <a href="'+PLATFORM_INFORMATION_URL+'">SlideWiki welcome page</a>\nGreetings,\nThe SlideWiki team')
                     .then(() => {
                       return userCtrl.create(user)
                         .then((result) => {
