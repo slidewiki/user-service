@@ -52,13 +52,23 @@ describe('REST API', () => {
     organization: 'Test',
   };
 
+  const email = 'jdoe@test.test';
+  let secret = '';
+
   const options = {
-    method: 'POST',
-    url: '/register',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  };
+      method: 'POST',
+      url: '/register',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    },
+    authoriseOptions = {
+      method: 'GET',
+      url: '/user/activate/'+email+'/',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
 
   context('when registering a new user', () => {
     it('it should reply a userid for the minimal set of information', () => {
@@ -69,8 +79,10 @@ describe('REST API', () => {
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
-        payload.should.be.an('object').and.contain.keys('userid');
+        payload.should.be.an('object').and.contain.keys('userid', 'secret');
         payload.userid.should.be.a('number');
+        payload.secret.should.be.a('string');
+        secret = payload.secret;
       });
     });
 
@@ -130,6 +142,17 @@ describe('REST API', () => {
         let payload = JSON.parse(response.payload);
         payload.should.be.an('object').and.contain.keys('statusCode', 'error', 'message');
         payload.error.should.be.a('string').and.equal('Conflict');
+      });
+    });
+
+
+    it('it should return 302 when a user gets activated', () => {
+      let opt = JSON.parse(JSON.stringify(authoriseOptions));
+      opt.url += secret+'';
+      return server.inject(opt).then((response) => {
+        // console.log('testresult:', response.statusCode, response.payload, 'from', opt);
+        response.should.be.an('object').and.contain.keys('statusCode');
+        response.statusCode.should.equal(302);
       });
     });
 
