@@ -125,7 +125,7 @@ module.exports = {
           from: config.SMTP.from,
           to: email
         },
-        'Subject: ' + title + '\r\n\r\n' + text,
+        'From: <' + config.SMTP.from + '>\r\n' + 'To: <' + email + '>\r\n' + 'Subject: ' + title + '\r\nDate: ' + (new Date()).toGMTString() + '\r\n\r\n' + text,
         (err, info) => {
           console.log('tried to send the email:', err, info);
 
