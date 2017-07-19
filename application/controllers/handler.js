@@ -631,7 +631,7 @@ module.exports = {
 
       console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
-      let connectionPromise = util.sendEMail(email, 'Dear SlideWiki user, \nA request has been made to reset your password. Your new password is: ' + newPassword + '   Please login with this password and then go to My Settings>Accounts to change it. Passwords should have 8 characters or more and can contain letters, numbers or the following characters: _ , - ~ . \nThanks, The SlideWiki team');
+      let connectionPromise = util.sendEMail(email, 'Dear SlideWiki user, \nA request has been made to reset your password. Your new password is: ' + newPassword + '   Please login with this password and then go to My Settings>Accounts to change it. Passwords should have 8 characters or more. \nThanks, The SlideWiki team');
 
       return connectionPromise
       .then((data) => {
