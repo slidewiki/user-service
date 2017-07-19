@@ -87,7 +87,7 @@ module.exports = {
     return undefined;
   },
 
-  sendEMail: (email, text) => {
+  sendEMail: (email, title, text) => {
     console.log('trying to send an email:', email, text);
 
     return new Promise((resolve, reject) => {
@@ -125,7 +125,7 @@ module.exports = {
           from: config.SMTP.from,
           to: email
         },
-        text,
+        'Subject: ' + title + '\r\n\r\n' + text,
         (err, info) => {
           console.log('tried to send the email:', err, info);
 
