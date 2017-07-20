@@ -18,7 +18,7 @@ The docker container of this services uses supervisord in order to run the NodeJ
 
 ## Social login
 
-Using the SlideWiki platform to start social login, this service gets the tokens and manages them.
+Using the SlideWiki platform to start social login, this service gets the tokens (via the grant npm package) and manages them (stored in the MongoDB).
 These social logins are used to sign up or sign in a SlideWiki user.
 As this service communicates with the social providers in order to fulfill the OAuth2 workflow and request user information, the credentials for the providers are stored in the application/config.json file.
 application/config.tpl is a template of such a configuration file - there are just the identifiers and secrets missing.
@@ -34,13 +34,19 @@ Their structure is: http(s)://your.domain.ending/connect/providername/callback ,
 ## Mail
 
 This service tries to send emails after registration and password reset.
-The SMTP configuration for its is read from the environment variables of the container.
+The SMTP configuration for it is read from the environment variables of the container.
 See [docker-compose.yml](https://github.com/slidewiki/user-service/blob/master/docker-compose.yml) for all variables.
 
-The emails send follow the SMTP protocol and contain the headers From, To, Subject and Date.
+The emails send follow the SMTP protocol and contain the headers *From, To, Subject* and *Date*.
 The text of the emails have to be changed in the code.
 
-While executing unit/integration tests the env testing is set which disables sending emails.
+While executing unit/integration tests the env *testing* is set, which disables sending emails.
+
+## Scripts
+
+*All script are also available in the [migration](https://github.com/slidewiki/migration) repo.*
+* [db_migration_hashing.js](https://github.com/slidewiki/user-service/blob/master/application/db_migration_hashing.js): Is used for the migration of the old slidewiki.org to the new one. It hashes the passwords regarding our new hashing policies.
+* [db_migration_usernames.js](https://github.com/slidewiki/user-service/blob/master/application/db_migration_usernames.js): Is used for migration of the old slidewiki and combining multiple user datasets. It handles duplication of usernames and set all email addresses to lower case.
 
 ## Installation and running (in a container, works both on UNIX and Windows):
 
