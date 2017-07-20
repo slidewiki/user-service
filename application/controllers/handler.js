@@ -41,6 +41,7 @@ module.exports = {
         if (result.assigned === false) {
           //Send email before creating the user
           return util.sendEMail(user.email,
+              'Your new account on SlideWiki',
               'Dear '+user.forename+' '+user.surname+',\nHappy welcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link: <a href="https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'">Activate Account</a>\nGreetings,\nThe SlideWiki team')
             .then(() => {
               return userCtrl.create(user)
@@ -631,7 +632,9 @@ module.exports = {
 
       console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
-      let connectionPromise = util.sendEMail(email, 'Dear SlideWiki user, \nA request has been made to reset your password. Your new password is: ' + newPassword + '   Please login with this password and then go to My Settings>Accounts to change it. Passwords should have 8 characters or more. \nThanks, The SlideWiki team');
+      let connectionPromise = util.sendEMail(email,
+          'Password reset on SlideWiki',
+          'Dear SlideWiki user, \nA request has been made to reset your password. Your new password is: ' + newPassword + '   Please login with this password and then go to My Settings>Accounts to change it. Passwords should have 8 characters or more. \nThanks, The SlideWiki team');
 
       return connectionPromise
       .then((data) => {
