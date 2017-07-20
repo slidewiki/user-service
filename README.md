@@ -31,6 +31,17 @@ In order to get these identifiers and secrets, for each provider an application 
 In there the allowed callback URLs have to be defined.
 Their structure is: http(s)://your.domain.ending/connect/providername/callback , e.g. https://userservice.experimental.slidewiki.org/connect/github/callback
 
+## Mail
+
+This service tries to send emails after registration and password reset.
+The SMTP configuration for its is read from the environment variables of the container.
+See [docker-compose.yml](https://github.com/slidewiki/user-service/blob/master/docker-compose.yml) for all variables.
+
+The emails send follow the SMTP protocol and contain the headers From, To, Subject and Date.
+The text of the emails have to be changed in the code.
+
+While executing unit/integration tests the env testing is set which disables sending emails.
+
 ## Installation and running (in a container, works both on UNIX and Windows):
 
 1. git clone https://github.com/slidewiki/user-service
