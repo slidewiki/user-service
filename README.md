@@ -29,11 +29,11 @@ In order to get these identifiers and secrets, for each provider an application 
 * Google: https://console.developers.google.com
 
 In there the allowed callback URLs have to be defined.
-Their structure is: http(s)://your.domain.ending/connect/providername/callback , e.g. http://userservice.experimental.slidewiki.org/connect/github/callback
+Their structure is: http(s)://your.domain.ending/connect/providername/callback , e.g. https://userservice.experimental.slidewiki.org/connect/github/callback
 
-## Installation and running (in a container, works both on unix and Windows):
+## Installation and running (in a container, works both on UNIX and Windows):
 
-1. git clone http://github.com/slidewiki/user-service
+1. git clone https://github.com/slidewiki/user-service
 2. cd user-service/
 3. docker build -t test-user-service .
 4. docker run -d --name mongodb mongo
