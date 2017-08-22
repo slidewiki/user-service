@@ -842,5 +842,31 @@ describe('User service', () => {
         return;
       });
     });
+
+
+
+    // SPAM protection functions
+
+    it('Get reviewable users', () => {
+      let req = {
+        params: {
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.getReviewableUsers(req, (result) => {
+        console.log('result', result);
+
+        expect(result).to.not.equal(undefined);
+        expect(result.length).to.equal(1);
+        expect(result[0]).to.not.equal(undefined);
+        expect(result[0].userid).to.not.equal(undefined);
+        expect(result[0].username).to.not.equal(undefined);
+        return;
+      });
+    });
   });
 });

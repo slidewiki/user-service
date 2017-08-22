@@ -1076,4 +1076,34 @@ module.exports = function (server) {
       }
     }
   });
+
+  //Routes for SPAM protection
+
+  server.route({
+    method: 'GET',
+    path: '/getReviewableUsers',
+    handler: handlers.getReviewableUsers,
+    config: {
+      tags: ['api'],
+      description: 'Get a list of users which are not approached or suspended yet.',
+      // response: {
+      //   schema: Joi.array().items(Joi.object().keys({
+      //     userid: Joi.number(),
+      //     username: Joi.string(),
+      //     decks: Joi.number()
+      //   }).required('userid', 'username')).optional().allow([])
+      // },
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          },
+          payloadType: 'json'
+        }
+      }
+    }
+  });
 };

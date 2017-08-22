@@ -1002,6 +1002,77 @@ module.exports = {
         }, staticUsers);
         return res(publicUsers);
       });
+  },
+
+  getReviewableUsers: (req, res) => {
+    let query = {
+      authorised: true,
+      deactivated: {
+        $not: {
+          $eq: true
+        }
+      },
+      reviewed: {
+        $not: {
+          $eq: true
+        }
+      }
+    };
+
+    return userCtrl.find(query)
+      .then((cursor) => cursor.project({_id: 1, registered: 1, username: 1}))
+      .then((cursor2) => cursor2.toArray())
+      .then((array) => {
+        if (array.length < 1)
+          return res([]);
+
+        let startTime = (new Date('2017-07-19')).getTime();
+        let userids = array.reduce((arr, curr) => {
+          if ((new Date(curr.registered)).getTime() > startTime)
+            arr.push(curr._id);
+          return arr;
+        }, []);
+
+        if (userids.length < 1)
+          return res([]);
+
+        //now call service
+        const options = {
+          url: require('../configs/microservices').deck.uri + '/getDeckCountOfUsers',
+          method: 'POST',
+          json: true,
+          body: {
+            userids: userids
+          }
+        };
+
+        function callback(error, response, body) {
+          // console.log('getReviewableUsers: ', error, response.statusCode, body);
+
+          if (!error && (response.statusCode === 200)) {
+            let result = body.reduce((arr, curr) => {
+              curr.decks = curr.decks.length;
+              curr.username = array.find((u) => {return u._id === curr.userid;}).username;
+              arr.push(curr);
+              return arr;
+            }, []);
+            return res(result);
+          } else {
+            console.log('Error', error);
+            return res([]);
+          }
+        }
+
+        if (process.env.NODE_ENV === 'test') {
+          callback(null, {statusCode: 200}, userids.reduce((arr, curr) => {arr.push({userid: curr, decks: [1,2,3]}); return arr;}, []));
+        }
+        else
+          request(options, callback);
+      })
+      .catch((error) => {
+        console.log('Error', error);
+        res([]);
+      });
   }
 };
 

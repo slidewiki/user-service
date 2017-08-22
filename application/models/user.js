@@ -126,6 +126,9 @@ const user = {
     },
     authorised: {
       type: 'boolean'
+    },
+    reviewed: {
+      type: 'boolean'
     }
   },
   required: ['email', 'username', 'frontendLanguage']
