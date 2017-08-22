@@ -1076,4 +1076,44 @@ module.exports = function (server) {
       }
     }
   });
+
+  server.route({
+    method: 'GET',
+    path: '/user/{id}/suspend',
+    handler: handlers.suspendUser,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true})
+        },
+        query: {
+          secret: Joi.string()
+        }
+      },
+      tags: ['api'],
+      description: 'Checks if email is already in use',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to suspend a user',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token.'
+                }
+              }
+            }
+          },
+          payloadType: 'json'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
 };

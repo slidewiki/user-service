@@ -1002,6 +1002,18 @@ module.exports = {
         }, staticUsers);
         return res(publicUsers);
       });
+  },
+
+  suspendUser: (req, res) => {
+    const secret = req.query.secret;
+
+    if (secret !== process.env.SECRET_REVIEW_KEY)
+      return res(boom.unauthorized());
+
+    const userid = req.auth.credentials.userid;
+    const isReviewer = req.auth.credentials.isReviewer;
+    if (!isReviewer)
+      return res(boom.unauthorized());
   }
 };
 
