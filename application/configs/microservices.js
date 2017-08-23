@@ -10,6 +10,6 @@ module.exports = {
     uri: (!co.isEmpty(process.env.URL_PLATFORM)) ? process.env.URL_PLATFORM : 'http://platform'
   },
   'deck': {
-    uri: (!co.isEmpty(process.env.URL_PLATFORM)) ? process.env.SERVICE_URL_DECK : 'http://deckservice'
+    uri: (!co.isEmpty(process.env.SERVICE_URL_DECK)) ? process.env.SERVICE_URL_DECK : 'http://deckservice'
   }
 };

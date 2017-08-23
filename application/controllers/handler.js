@@ -1026,6 +1026,7 @@ module.exports = {
         if (array.length < 1)
           return res([]);
 
+        // console.log('filter users', array.length);
         let startTime = (new Date('2017-07-19')).getTime();
         let userids = array.reduce((arr, curr) => {
           if ((new Date(curr.registered)).getTime() > startTime)
@@ -1038,8 +1039,8 @@ module.exports = {
 
         //now call service
         const options = {
-          url: require('../configs/microservices').deck.uri + '/getDeckCountOfUsers',
-          method: 'POST',
+          url: require('../configs/microservices').deck.uri + '/deckOwners?user=' + userids.reduce((a, b) => {let r = a === '' ? b : a + ',' + b; return r;}, ''),
+          method: 'GET',
           json: true,
           body: {
             userids: userids
@@ -1051,20 +1052,23 @@ module.exports = {
 
           if (!error && (response.statusCode === 200)) {
             let result = body.reduce((arr, curr) => {
-              curr.decks = curr.decks.length;
+              curr.decks = curr.decksCount;
+              curr.userid = curr._id;
               curr.username = array.find((u) => {return u._id === curr.userid;}).username;
               arr.push(curr);
               return arr;
             }, []);
             return res(result);
           } else {
-            console.log('Error', error);
+            console.log('Error', response.statusCode, error, body);
             return res([]);
           }
         }
 
+        // console.log('now calling the service');
+
         if (process.env.NODE_ENV === 'test') {
-          callback(null, {statusCode: 200}, userids.reduce((arr, curr) => {arr.push({userid: curr, decks: [1,2,3]}); return arr;}, []));
+          callback(null, {statusCode: 200}, userids.reduce((arr, curr) => {arr.push({_id: curr, decksCount: 3}); return arr;}, []));
         }
         else
           request(options, callback);
