@@ -945,7 +945,7 @@ describe('User service', () => {
                       secret: 'test'
                     }
                   };
-                  process.env.SECRET_REVIEW_KEY = 'test'
+                  process.env.SECRET_REVIEW_KEY = 'test';
                   return handler.suspendUser(req, (result3) => {
                     console.log('result', result3);
 
