@@ -1006,49 +1006,57 @@ module.exports = {
   },
 
   suspendUser: (req, res) => {
-    let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
+    reviewUser(req, res, true);
+  },
 
-    if (secret === undefined || secret !== process.env.SECRET_REVIEW_KEY || !req.auth.credentials.isReviewer)
-      return res(boom.unauthorized());
-
-    const reviewerid = req.auth.credentials.userid;
-    const userid = req.params.id;
-
-    let query = {
-      _id: userid,
-      authorised: true,
-      deactivated: {
-        $not: {
-          $eq: true
-        }
-      },
-      reviewed: {
-        $not: {
-          $eq: true
-        }
-      }
-    };
-    let update = {
-      $set: {
-        reviewed: true,
-        suspended: true
-      }
-    };
-    return userCtrl.partlyUpdate(query, update)
-      .then((result) => {
-        if (result.result.ok === 1 && result.result.n === 1) {
-          //found user and got updated
-          return res();
-        }
-
-        return res(boom.notFound());
-      })
-      .catch((error) => {
-        console.log('Error', error);
-        res(boom.badImplementation());
-      });
+  approveUser: (req, res) => {
+    reviewUser(req, res, false);
   }
 };
+
+function reviewUser(req, res, suspended) {
+  let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
+
+  if (secret === undefined || secret !== process.env.SECRET_REVIEW_KEY || !req.auth.credentials.isReviewer)
+    return res(boom.unauthorized());
+
+  const reviewerid = req.auth.credentials.userid;
+  const userid = req.params.id;
+
+  let query = {
+    _id: userid,
+    authorised: true,
+    deactivated: {
+      $not: {
+        $eq: true
+      }
+    },
+    reviewed: {
+      $not: {
+        $eq: true
+      }
+    }
+  };
+  let update = {
+    $set: {
+      reviewed: true,
+      suspended: suspended
+    }
+  };
+  return userCtrl.partlyUpdate(query, update)
+    .then((result) => {
+      if (result.result.ok === 1 && result.result.n === 1) {
+        //found user and got updated
+        return res();
+      }
+
+      return res(boom.notFound());
+    })
+    .catch((error) => {
+      console.log('Error', error);
+      res(boom.badImplementation());
+    });
+}
 
 function isUsernameAlreadyTaken(username) {
   let myPromise = new Promise((resolve, reject) => {

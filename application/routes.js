@@ -1106,6 +1106,52 @@ module.exports = function (server) {
                   'description': 'Use your JWT token.'
                 }
               }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id and state of the user.'
+            }
+          },
+          payloadType: 'json'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/user/{id}/approve',
+    handler: handlers.approveUser,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true})
+        },
+        query: {
+          secret: Joi.string()
+        }
+      },
+      tags: ['api'],
+      description: 'Approves a user which is in review state',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to approve a user',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id and state of the user.'
             }
           },
           payloadType: 'json'
