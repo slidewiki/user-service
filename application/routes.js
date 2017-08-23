@@ -136,6 +136,9 @@ module.exports = function (server) {
                 username: Joi.string()
               }).required().description('Return schema')
             },
+            ' 403 ': {
+              'description': 'The user is marked as SPAM.',
+            },
             ' 404 ': {
               'description': 'No user for this credentials available.',
             },
