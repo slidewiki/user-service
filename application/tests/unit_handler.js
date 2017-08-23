@@ -136,6 +136,18 @@ describe('User service', () => {
     }]
   };
 
+  const reviewableUser = {
+    username: 'Spammer?',
+    forename: '2',
+    surname: '3',
+    email: 'yahoo@gmail.com',
+    password: '445435234554654645666456356',
+    language: 'en',
+    defaults: [{
+      language: 'en'
+    }]
+  };
+
   const newPassword = 'ua89nd7s8df7zsb78f';
   let userid = '',
     jwt = '',
@@ -840,6 +852,120 @@ describe('User service', () => {
 
         expect(result).to.equal(undefined);
         return;
+      });
+    });
+
+    it('Suspend a user without secret', () => {
+      let req = {
+        params: {
+          id: 1
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid,
+            isReviewer: true
+          }
+        }
+      };
+      return handler.suspendUser(req, (result) => {
+        // console.log('result', result);
+
+        expect(result).to.not.equal(undefined);
+        expect(result.isBoom).to.equal(true);
+        expect(result.output.statusCode).to.equal(401);
+        return;
+      });
+    });
+
+    it('Suspend a user without correct JWT', () => {
+      let req = {
+        params: {
+          id: 1
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        },
+        query: {
+          secret: 'test'
+        }
+      };
+      return handler.suspendUser(req, (result) => {
+        // console.log('result', result);
+
+        expect(result).to.not.equal(undefined);
+        expect(result.isBoom).to.equal(true);
+        expect(result.output.statusCode).to.equal(401);
+        return;
+      });
+    });
+
+    it('Suspend a user with secret and correct JWT', () => {
+      //First register a user
+      let req = {
+        payload: reviewableUser,
+        info: {
+          host: 'localhost'
+        }
+      };
+      return handler.register(req, (result) => {
+        expect(result.userid).to.not.equal(undefined);
+
+        let rU = result.userid;
+        console.log('user created', rU);
+        //Now activate the new user
+        req = {
+          params: {
+            email: reviewableUser.email,
+            secret: ''
+          }
+        };
+        return userCtrl.find({email: reviewableUser.email})
+          .then((cursor) => cursor.toArray())
+          .then((result) => {
+            req.params.secret = result[0].activate_secret;
+
+            return handler.activateUser(req, (result) => {
+              return {redirect: (url) => {
+                expect(url).to.not.equal(undefined);
+                console.log('User activated!');
+                return {temporary: () => {
+                  req = {
+                    params: {
+                      id: rU
+                    },
+                    auth: { //headers which will be set with JWT
+                      credentials: {
+                        userid: userid,
+                        isReviewer: true
+                      }
+                    },
+                    query: {
+                      secret: 'test'
+                    }
+                  };
+                  process.env.SECRET_REVIEW_KEY = 'test'
+                  return handler.suspendUser(req, (result3) => {
+                    console.log('result', result3);
+
+                    expect(result3).to.equal(undefined);
+                    return;
+                  });
+                }};
+              }};
+            })
+            .catch((Error) => {
+              console.log('Error', Error);
+              throw Error;
+              expect(1).to.equals(2);
+            });
+          });
+      })
+      .catch((Error) => {
+        console.log(Error);
+        throw Error;
+        expect(1).to.equals(2);
       });
     });
   });

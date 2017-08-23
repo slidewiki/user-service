@@ -126,6 +126,12 @@ const user = {
     },
     authorised: {
       type: 'boolean'
+    },
+    isReviewer: {
+      type: 'boolean'
+    },
+    suspended: {
+      type: 'boolean'
     }
   },
   required: ['email', 'username', 'frontendLanguage']

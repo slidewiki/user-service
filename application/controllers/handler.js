@@ -161,7 +161,8 @@ module.exports = {
             })
               .header(config.JWT.HEADER, jwt.createToken({
                 userid: result[0]._id,
-                username: result[0].username
+                username: result[0].username,
+                isReviewer: result[0].isReviewer
               }));
             break;
           default:
@@ -1005,15 +1006,47 @@ module.exports = {
   },
 
   suspendUser: (req, res) => {
-    const secret = req.query.secret;
+    let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
 
-    if (secret !== process.env.SECRET_REVIEW_KEY)
+    if (secret === undefined || secret !== process.env.SECRET_REVIEW_KEY || !req.auth.credentials.isReviewer)
       return res(boom.unauthorized());
 
-    const userid = req.auth.credentials.userid;
-    const isReviewer = req.auth.credentials.isReviewer;
-    if (!isReviewer)
-      return res(boom.unauthorized());
+    const reviewerid = req.auth.credentials.userid;
+    const userid = req.params.id;
+
+    let query = {
+      _id: userid,
+      authorised: true,
+      deactivated: {
+        $not: {
+          $eq: true
+        }
+      },
+      reviewed: {
+        $not: {
+          $eq: true
+        }
+      }
+    };
+    let update = {
+      $set: {
+        reviewed: true,
+        suspended: true
+      }
+    };
+    return userCtrl.partlyUpdate(query, update)
+      .then((result) => {
+        if (result.result.ok === 1 && result.result.n === 1) {
+          //found user and got updated
+          return res();
+        }
+
+        return res(boom.notFound());
+      })
+      .catch((error) => {
+        console.log('Error', error);
+        res(boom.badImplementation());
+      });
   }
 };
 

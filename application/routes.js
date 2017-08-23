@@ -1091,7 +1091,7 @@ module.exports = function (server) {
         }
       },
       tags: ['api'],
-      description: 'Checks if email is already in use',
+      description: 'Suspends a user which is in review state',
       auth: false,
       plugins: {
         'hapi-swagger': {
