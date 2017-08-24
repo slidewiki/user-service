@@ -379,6 +379,9 @@ module.exports = function (server) {
             ' 200 ': {
               'description': 'Successful',
             },
+            ' 403 ': {
+              'description': 'The user is marked as SPAM.',
+            },
             ' 404 ': {
               'description': 'User not found. Check the id.'
             },

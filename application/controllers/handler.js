@@ -456,6 +456,11 @@ module.exports = {
           return res(boom.locked('User is not authorised yet.'));
         }
 
+        //check if SPAM
+        if (array[0].suspended === true) {
+          return res(boom.forbidden('The user is marked as SPAM.'));
+        }
+
         res(preparePublicUserData(array[0]));
       })
       .catch((error) => {
@@ -545,6 +550,11 @@ module.exports = {
     const query = {
       username: new RegExp(username, 'i'),
       deactivated: {
+        $not: {
+          $eq: true
+        }
+      },
+      suspended: {
         $not: {
           $eq: true
         }
@@ -1012,11 +1022,11 @@ module.exports = {
   },
 
   suspendUser: (req, res) => {
-    reviewUser(req, res, true);
+    return reviewUser(req, res, true);
   },
 
   approveUser: (req, res) => {
-    reviewUser(req, res, false);
+    return reviewUser(req, res, false);
   }
 };
 
