@@ -21,5 +21,6 @@ userservice:
     - SERVICE_URL_ACTIVITIES=https://activitiesservice.experimental.slidewiki.org
     - SERVICE_URL_Deck=https://deckservice.experimental.slidewiki.org
     - DATABASE_URL=mongodb # use a url or the name, defined in the docker-compose file
+    - SECRET_REVIEW_KEY=
   volumes:
     - /data/slidewiki-deployment/docker-compose/providerConfig.json:/nodeApp/config.json:ro

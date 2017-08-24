@@ -152,6 +152,12 @@ module.exports = {
               break;
             }
 
+            //check if SPAM
+            if (result[0].suspended === true) {
+              res(boom.forbidden('The user is marked as SPAM.'));
+              break;
+            }
+
             res({
               userid: result[0]._id,
               username: result[0].username,
@@ -161,7 +167,8 @@ module.exports = {
             })
               .header(config.JWT.HEADER, jwt.createToken({
                 userid: result[0]._id,
-                username: result[0].username
+                username: result[0].username,
+                isReviewer: result[0].isReviewer
               }));
             break;
           default:
@@ -449,6 +456,11 @@ module.exports = {
           return res(boom.locked('User is not authorised yet.'));
         }
 
+        //check if SPAM
+        if (array[0].suspended === true) {
+          return res(boom.forbidden('The user is marked as SPAM.'));
+        }
+
         res(preparePublicUserData(array[0]));
       })
       .catch((error) => {
@@ -538,6 +550,11 @@ module.exports = {
     const query = {
       username: new RegExp(username, 'i'),
       deactivated: {
+        $not: {
+          $eq: true
+        }
+      },
+      suspended: {
         $not: {
           $eq: true
         }
@@ -1077,8 +1094,60 @@ module.exports = {
         console.log('Error', error);
         res([]);
       });
+  },
+
+  suspendUser: (req, res) => {
+    return reviewUser(req, res, true);
+  },
+
+  approveUser: (req, res) => {
+    return reviewUser(req, res, false);
   }
 };
+
+function reviewUser(req, res, suspended) {
+  let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
+
+  if (secret === undefined || secret !== process.env.SECRET_REVIEW_KEY || !req.auth.credentials.isReviewer)
+    return res(boom.unauthorized());
+
+  const reviewerid = req.auth.credentials.userid;
+  const userid = req.params.id;
+
+  let query = {
+    _id: userid,
+    authorised: true,
+    deactivated: {
+      $not: {
+        $eq: true
+      }
+    },
+    reviewed: {
+      $not: {
+        $eq: true
+      }
+    }
+  };
+  let update = {
+    $set: {
+      reviewed: true,
+      suspended: suspended
+    }
+  };
+  return userCtrl.partlyUpdate(query, update)
+    .then((result) => {
+      if (result.result.ok === 1 && result.result.n === 1) {
+        //found user and got updated
+        return res();
+      }
+
+      return res(boom.notFound());
+    })
+    .catch((error) => {
+      console.log('Error', error);
+      res(boom.badImplementation());
+    });
+}
 
 function isUsernameAlreadyTaken(username) {
   let myPromise = new Promise((resolve, reject) => {
