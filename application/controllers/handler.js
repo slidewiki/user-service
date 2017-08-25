@@ -13,7 +13,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   Joi = require('joi'),
   util = require('./util'),
   request = require('request'),
-  PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '';
+  PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '',
+  queueAPI = require('../queue/api.js');
 
 module.exports = {
   register: (req, res) => {
@@ -1102,6 +1103,17 @@ module.exports = {
 
   approveUser: (req, res) => {
     return reviewUser(req, res, false);
+  },
+
+  getNextReviewableUser: (req, res) => {
+    console.log('getNextReviewableUser');
+    return queueAPI.get()
+      then((user) => {
+        console.log('got user', user);
+        return res()
+          .redirect(PLATFORM_INFORMATION_URL + '/Sfn87Pfew9Af09aM/user/' + user.username)
+          .temporary(true);
+      });
   }
 };
 

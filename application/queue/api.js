@@ -29,7 +29,7 @@ module.exports = {
       .then((collection) => collection.findAndModify({query:{}, sort: {i: -1}, remove: true}))
       .then((result) => {
         console.log('Got element from FIFO:', result);
-        return result.value;
+        return result ? result.value : undefined;
       });
   },
   init: () => {
