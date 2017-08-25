@@ -1084,7 +1084,7 @@ module.exports = function (server) {
   });
 
   //Routes for SPAM protection
-
+/*
   server.route({
     method: 'GET',
     path: '/getReviewableUsers',
@@ -1117,6 +1117,7 @@ module.exports = function (server) {
       }
     }
   });
+  */
 
   server.route({
     method: 'GET',
@@ -1218,7 +1219,10 @@ module.exports = function (server) {
       validate: {
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
-        }).unknown()
+        }).unknown(),
+        query: {
+          secret: Joi.string()
+        },
       },
       tags: ['api'],
       description: 'Get the next reviewable user.',

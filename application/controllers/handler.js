@@ -1106,13 +1106,22 @@ module.exports = {
   },
 
   getNextReviewableUser: (req, res) => {
+    let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
+
+    if (secret === undefined || secret !== process.env.SECRET_REVIEW_KEY || !req.auth.credentials.isReviewer)
+      return res(boom.unauthorized());
+
     console.log('getNextReviewableUser');
     return queueAPI.get()
-      then((user) => {
+      .then((user) => {
         console.log('got user', user);
         return res()
           .redirect(PLATFORM_INFORMATION_URL + '/Sfn87Pfew9Af09aM/user/' + user.username)
           .temporary(true);
+      })
+      .catch((error) => {
+        console.log('Error', error);
+        res(boom.badImplementation());
       });
   }
 };
