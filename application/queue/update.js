@@ -27,9 +27,9 @@ return handler.getReviewableUsers(null, (array) => {
 
       //filter in a way that just the new reviewable users are there
       let newReviewableUserObjects = reviewableUserObjects.filter((o) => {
-        return -1 === array2.findIndex((x) => {
+        return array2.findIndex((x) => {
           return x.userid === o.userid;
-        });
+        }) === -1;
       });
 
       if (newReviewableUserObjects.length < 1) {
