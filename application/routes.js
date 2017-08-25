@@ -1090,6 +1090,11 @@ module.exports = function (server) {
     path: '/getReviewableUsers',
     handler: handlers.getReviewableUsers,
     config: {
+      validate: {
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
       tags: ['api'],
       description: 'Get a list of users which are not approached or suspended yet.',
       // response: {
@@ -1099,7 +1104,7 @@ module.exports = function (server) {
       //     decks: Joi.number()
       //   }).required('userid', 'username')).optional().allow([])
       // },
-      auth: false,
+      auth: 'jwt',
       plugins: {
         'hapi-swagger': {
           responses: {
@@ -1124,11 +1129,14 @@ module.exports = function (server) {
         },
         query: {
           secret: Joi.string()
-        }
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
       },
       tags: ['api'],
       description: 'Suspends a user which is in review state',
-      auth: false,
+      auth: 'jwt',
       plugins: {
         'hapi-swagger': {
           responses: {
@@ -1167,11 +1175,14 @@ module.exports = function (server) {
         },
         query: {
           secret: Joi.string()
-        }
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
       },
       tags: ['api'],
       description: 'Approves a user which is in review state',
-      auth: false,
+      auth: 'jwt',
       plugins: {
         'hapi-swagger': {
           responses: {
