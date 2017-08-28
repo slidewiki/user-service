@@ -70,6 +70,9 @@ Most of them are obligatory to be changed on deployment, especially keys and sec
 * URL_PLATFORM - URL of the platform of the used domain/stage
 * SERVICE_URL_ACTIVITIES - URL of the activities-service of the used domain/stage
 
+New secret could be created with the command:
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'));"
+
 ### How to
 
 1. git clone https://github.com/slidewiki/user-service
