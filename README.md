@@ -50,6 +50,28 @@ While executing unit/integration tests the env *testing* is set, which disables 
 
 ## Installation and running (in a container, works both on UNIX and Windows):
 
+### ENV
+
+There are multiple environment variables which have to be changed for deployment.
+Most of them are obligatory to be changed on deployment, especially keys and secrets (serial named here - sorry for the fault).
+
+* APPLICATION_PORT
+* DATABASE_PORT
+* DATABASE_URL
+* VIRTUAL_HOST - needed by NodeJS
+* LETSENCRYPT_HOST - needed by JWilder nginx proxy
+* LETSENCRYPT_EMAIL - needed by JWilder nginx proxy
+* SMTP_PORT
+* SMTP_HOST
+* SMTP_FROM
+* SMTP_CLIENTNAME - optional
+* APIKey - secret between platform and user-service (for resetting users passwords)
+* JWT_SERIAL - secret used for encrypt and decrypt JWTs
+* URL_PLATFORM - URL of the platform of the used domain/stage
+* SERVICE_URL_ACTIVITIES - URL of the activities-service of the used domain/stage
+
+### How to
+
 1. git clone https://github.com/slidewiki/user-service
 2. cd user-service/
 3. docker build -t test-user-service .
