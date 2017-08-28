@@ -64,7 +64,8 @@ module.exports = {
     return {
       userid: 0,
       username: '',
-      decks: 0
+      decks: 0,
+      addedByReviewer: 0
     };
   }
 };

@@ -1239,4 +1239,57 @@ module.exports = function (server) {
       }
     }
   });
+
+  server.route({
+    method: 'GET',
+    path: '/user/{id}/addToQueue',
+    handler: handlers.addToQueue,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true})
+        },
+        query: {
+          secret: Joi.string(),
+          decks: Joi.number().optional()
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Adds a user to the queue (have to be a user which was already there).',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to add a user',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token.'
+                }
+              }
+            },
+            ' 403 ': {
+              'description': 'The user was already reviewed.'
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id and state of the user.'
+            },
+            ' 423 ': {
+              'description': 'The user is deactivated not already activated.',
+            }
+          },
+          payloadType: 'json'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
 };

@@ -1123,6 +1123,56 @@ module.exports = {
         console.log('Error', error);
         res(boom.badImplementation());
       });
+  },
+
+  addToQueue: (req, res) => {
+    let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
+
+    if (secret === undefined || secret !== process.env.SECRET_REVIEW_KEY || !req.auth.credentials.isReviewer)
+      return res(boom.unauthorized());
+
+    const reviewerid = req.auth.credentials.userid;
+    const userid = req.params.id;
+
+    return userCtrl.read(userid)
+      .then((user) => {
+        if (!user)
+          return res(boom.notFound());
+        if (user.deactivated || !user.authorised)
+          return res(boom.locked());
+        if (user.reviewed || user.suspended)
+          return res(boom.forbidden());
+
+        return queueAPI.getAll()
+          .then((users) => {
+            if (users.findIndex((u) => {return u.userid === user._id;}) !== -1)
+              return res();//user is already in queue
+
+            let queueUser = queueAPI.getEmptyElement();
+            queueUser.userid = user._id;
+            queueUser.username = user.username;
+            queueUser.decks = req.query.decks || 0;
+            queueUser.addedByReviewer = reviewerid;
+
+            return queueAPI.add(queueUser)
+              .then((success) => {
+                success ? res() : res(boom.badImplementation());
+                return;
+              })
+              .catch((error) => {
+                console.log('Error', error);
+                res(boom.badImplementation(error));
+              });
+          })
+          .catch((error) => {
+            console.log('Error', error);
+            res(boom.badImplementation(error));
+          });
+      })
+      .catch((error) => {
+        console.log('Error', error);
+        res(boom.badImplementation(error));
+      });
   }
 };
 
