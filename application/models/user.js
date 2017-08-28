@@ -135,6 +135,9 @@ const user = {
     },
     suspended: {
       type: 'boolean'
+    },
+    lastReviewDoneBy: {
+      type: 'integer'
     }
   },
   required: ['email', 'username', 'frontendLanguage']

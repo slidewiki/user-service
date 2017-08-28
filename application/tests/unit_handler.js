@@ -148,11 +148,24 @@ describe('User service', () => {
     }]
   };
 
+  const addableUser = {
+    username: 'Korrekt',
+    forename: '4',
+    surname: '5',
+    email: 'yahoo2@gmail.com',
+    password: '44543523feffff4554654645666456356',
+    language: 'en',
+    defaults: [{
+      language: 'en'
+    }]
+  };
+
   const newPassword = 'ua89nd7s8df7zsb78f';
   let userid = '',
     jwt = '',
     groupid = 0,
-    suspendedUserId = 0;
+    suspendedUserId = 0,
+    addableUserId = 0;
 
   context('Using all exported functions - ', () => {
     it('Register user', () => {
@@ -880,7 +893,7 @@ describe('User service', () => {
       });
     });
 
-    it('Suspend a user without secret', () => {
+    it('try to suspend a user without secret', () => {
       let req = {
         params: {
           id: 1
@@ -902,7 +915,7 @@ describe('User service', () => {
       });
     });
 
-    it('Suspend a user without correct JWT', () => {
+    it('try to suspend a user without correct JWT', () => {
       let req = {
         params: {
           id: 1
@@ -1019,6 +1032,81 @@ describe('User service', () => {
           expect(1).to.equals(2);
         });
         return;
+      });
+    });
+
+    it('Prepare addable user', () => {
+      //First register a user
+      let req = {
+        payload: addableUser,
+        info: {
+          host: 'localhost'
+        }
+      };
+      return handler.register(req, (result) => {
+        expect(result.userid).to.not.equal(undefined);
+
+        let rU = result.userid;
+        addableUserId = rU;
+        console.log('user created', rU);
+        //Now activate the new user
+        req = {
+          params: {
+            email: addableUser.email,
+            secret: ''
+          }
+        };
+        return userCtrl.find({email: addableUser.email})
+          .then((cursor) => cursor.toArray())
+          .then((result) => {
+            req.params.secret = result[0].activate_secret;
+
+            return handler.activateUser(req, (result) => {
+              return {redirect: (url) => {
+                expect(url).to.not.equal(undefined);
+                console.log('User activated!');
+                return {temporary: (bool) => {
+                  expect(bool).to.equal(true);
+                  return;
+                }};
+              }};
+            })
+            .catch((Error) => {
+              console.log('Error', Error);
+              throw Error;
+              expect(1).to.equals(2);
+            });
+          });
+      })
+      .catch((Error) => {
+        console.log(Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
+
+    it('Add user to queue', () => {
+      let req = {
+        params: {
+          id: addableUserId
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid,
+            isReviewer: true
+          }
+        },
+        query: {
+          secret: 'test',
+          decks: 12
+        }
+      };
+      process.env.SECRET_REVIEW_KEY = 'test';
+      console.log('now adding user to queue ...');
+      return handler.addToQueue(req, (result) => {
+        console.log('testresult', result);
+
+        expect(result).to.equal(undefined);
       });
     });
   });

@@ -1024,7 +1024,11 @@ module.exports = {
 
   getReviewableUsers: (req, res) => {
     let query = {
-      authorised: true,
+      authorised: {
+        $not: {
+          $eq: false
+        }
+      },
       deactivated: {
         $not: {
           $eq: true
@@ -1078,7 +1082,7 @@ module.exports = {
             }, []);
             return res(result);
           } else {
-            console.log('Error', response.statusCode, error, body);
+            console.log('Error', (response) ? response.statusCode : undefined, error, body);
             return res([]);
           }
         }
@@ -1138,7 +1142,7 @@ module.exports = {
       .then((user) => {
         if (!user)
           return res(boom.notFound());
-        if (user.deactivated || !user.authorised)
+        if (user.deactivated || user.authorised === false)
           return res(boom.locked());
         if (user.reviewed || user.suspended)
           return res(boom.forbidden());
@@ -1187,7 +1191,11 @@ function reviewUser(req, res, suspended) {
 
   let query = {
     _id: userid,
-    authorised: true,
+    authorised: {
+      $not: {
+        $eq: false
+      }
+    },
     deactivated: {
       $not: {
         $eq: true
@@ -1202,7 +1210,8 @@ function reviewUser(req, res, suspended) {
   let update = {
     $set: {
       reviewed: true,
-      suspended: suspended
+      suspended: suspended,
+      lastReviewDoneBy: reviewerid
     }
   };
   return userCtrl.partlyUpdate(query, update)
