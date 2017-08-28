@@ -1084,40 +1084,6 @@ module.exports = function (server) {
   });
 
   //Routes for SPAM protection
-/*
-  server.route({
-    method: 'GET',
-    path: '/getReviewableUsers',
-    handler: handlers.getReviewableUsers,
-    config: {
-      validate: {
-        headers: Joi.object({
-          '----jwt----': Joi.string().required().description('JWT header provided by /login')
-        }).unknown()
-      },
-      tags: ['api'],
-      description: 'Get a list of users which are not approached or suspended yet.',
-      // response: {
-      //   schema: Joi.array().items(Joi.object().keys({
-      //     userid: Joi.number(),
-      //     username: Joi.string(),
-      //     decks: Joi.number()
-      //   }).required('userid', 'username')).optional().allow([])
-      // },
-      auth: 'jwt',
-      plugins: {
-        'hapi-swagger': {
-          responses: {
-            ' 200 ': {
-              'description': 'Successful',
-            }
-          },
-          payloadType: 'json'
-        }
-      }
-    }
-  });
-  */
 
   server.route({
     method: 'GET',
