@@ -8,9 +8,18 @@
 This service manages the user accounts in terms of CRUD operations with their credentials, information and groups.
 Also there are routes for handling social login with facebook, google and github, via OAuth2.
 
-## API:
+## API
 
 See https://userservice.experimental.slidewiki.org/documentation
+
+## JWT
+
+This service creates JWTs which are used for authentication and authorization on specific routes of this and also other services, like deck- and file-service.
+Inside JWT is the creation date and other metadata plus the following JSON: {userid, username}
+This data is read by the services on each route on which jwt is activated.
+The environment variable JWT_SERIAL sets the hash which is used to encrypt data with HS512 as JWT.
+All services which want to use these JWTs have to use the same key and algorithm.
+This will be replaced with OAuth2 in the future.
 
 ## Side effects
 
