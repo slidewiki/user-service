@@ -1192,6 +1192,14 @@ module.exports = function (server) {
       },
       tags: ['api'],
       description: 'Get the next reviewable user.',
+      response: {
+        schema: Joi.object().keys({
+          userid: Joi.number().required(),
+          username: Joi.string().alphanum().required(),
+          decks: Joi.number().required(),
+          addedByReviewer: Joi.number().required()
+        }).required()
+      },
       auth: 'jwt',
       plugins: {
         'hapi-swagger': {

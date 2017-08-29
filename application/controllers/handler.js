@@ -1119,9 +1119,7 @@ module.exports = {
     return queueAPI.get()
       .then((user) => {
         console.log('got user', user);
-        return res()
-          .redirect(PLATFORM_INFORMATION_URL + '/Sfn87Pfew9Af09aM/user/' + user.username)
-          .temporary(true);
+        return res(user);
       })
       .catch((error) => {
         console.log('Error', error);
