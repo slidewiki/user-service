@@ -1206,6 +1206,9 @@ module.exports = function (server) {
           responses: {
             ' 200 ': {
               'description': 'Successful',
+            },
+            ' 404 ': {
+              'description': 'There is no more user left in the queue.'
             }
           },
           payloadType: 'json'

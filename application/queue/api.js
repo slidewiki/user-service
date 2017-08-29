@@ -29,7 +29,7 @@ module.exports = {
       .then((collection) => collection.findAndModify({}, {i: -1}, null, {remove: true}))
       .then((result) => {
         console.log('Got element from FIFO:', result);
-        return result ? result.value : undefined;
+        return (result && result.value) ? result.value : undefined;
       })
       .catch((error) => {
         console.log('Error', error);

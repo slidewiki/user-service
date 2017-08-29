@@ -1119,6 +1119,9 @@ module.exports = {
     return queueAPI.get()
       .then((user) => {
         console.log('got user', user);
+        if (user === undefined) {
+          return res(boom.notFound());
+        }
         return res(user);
       })
       .catch((error) => {
