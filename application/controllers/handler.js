@@ -1218,15 +1218,85 @@ function reviewUser(req, res, suspended) {
     .then((result) => {
       if (result.result.ok === 1 && result.result.n === 1) {
         //found user and got updated
-        return res();
-      }
 
-      return res(boom.notFound());
+        if (!suspended)
+          return res();
+
+        //now archive all the decks of the user
+        const options = {
+          url: require('../configs/microservices').deck.uri + '/alldecks/'+userid,
+          method: 'GET',
+          json: true
+        };
+
+        function callback(error, response, body) {
+          console.log('alldecks: ', (response) ? response.statusCode : undefined, error, body);
+
+          if (!error && (response.statusCode === 200)) {
+            //now archive all decks (one request per deck)
+            let promises = body.reduce((arr, curr) => {
+              arr.push(archiveDeck(userid, curr._id));
+              return arr;
+            }, []);
+
+            return Promise.all(promises)
+              .then(() => {
+                return res();
+              })
+              .catch((error) => {
+                console.log('Error', error);
+                return res();
+              });
+          } else {
+            console.log('Error', (response) ? response.statusCode : undefined, error, body);
+            return res();
+          }
+        }
+
+        if (process.env.NODE_ENV === 'test') {
+          callback(null, {statusCode: 200}, []);
+        }
+        else
+          request(options, callback);
+      }
+      else
+        return res(boom.notFound());
     })
     .catch((error) => {
       console.log('Error', error);
       res(boom.badImplementation());
     });
+}
+
+function archiveDeck(userid, deckid) {
+  let myPromise = new Promise((resolve, reject) => {
+    const options = {
+      url: require('../configs/microservices').deck.uri + '/decktree/'+deckid+'/archive',
+      method: 'POST',
+      json: true,
+      body: {
+        user: userid
+      }
+    };
+
+    function callback(error, response, body) {
+      console.log('archiveDeck: ', (response) ? response.statusCode : undefined, error, body);
+
+      if (!error && (response.statusCode === 200)) {
+        resolve();
+      } else {
+        console.log('Error', (response) ? response.statusCode : undefined, error, body);
+        return reject(error);
+      }
+    }
+
+    if (process.env.NODE_ENV === 'test') {
+      callback(null, {statusCode: 200}, null);
+    }
+    else
+      request(options, callback);
+  });
+  return myPromise;
 }
 
 function isUsernameAlreadyTaken(username) {
