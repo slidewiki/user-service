@@ -1234,18 +1234,25 @@ function reviewUser(req, res, suspended) {
 
         //now archive all the decks of the user
         const options = {
-          url: require('../configs/microservices').deck.uri + '/alldecks/'+userid,
+          url: require('../configs/microservices').deck.uri + '/decks',
           method: 'GET',
+          qs: {
+            user: userid,
+            // only get the root decks, subdecks cannot be directly archived
+            rootsOnly: true,
+            // only return the _id attribute,
+            idOnly: true,
+          },
           json: true
         };
 
         function callback(error, response, body) {
-          console.log('alldecks: ', (response) ? response.statusCode : undefined, error, body);
+          console.log('root decks: ', (response) ? response.statusCode : undefined, error, body);
 
           if (!error && (response.statusCode === 200)) {
             //now archive all decks (one request per deck)
             let promises = body.reduce((arr, curr) => {
-              arr.push(archiveDeck(userid, curr._id));
+              arr.push(archiveDeck(curr._id, req.auth.token, 'spam'));
               return arr;
             }, []);
 
@@ -1278,15 +1285,21 @@ function reviewUser(req, res, suspended) {
     });
 }
 
-function archiveDeck(userid, deckid) {
+function archiveDeck(deckid, authToken, reason='spam', comment) {
   let myPromise = new Promise((resolve, reject) => {
+    const headers = {};
+    headers[config.JWT.HEADER] = authToken;
+
     const options = {
       url: require('../configs/microservices').deck.uri + '/decktree/'+deckid+'/archive',
       method: 'POST',
       json: true,
       body: {
-        user: userid
-      }
+        secret: process.env.SECRET_REVIEW_KEY,
+        reason: reason,
+        comment: comment,
+      },
+      headers: headers,
     };
 
     function callback(error, response, body) {
