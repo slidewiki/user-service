@@ -1086,7 +1086,7 @@ module.exports = function (server) {
   //Routes for SPAM protection
 
   server.route({
-    method: 'GET',
+    method: 'POST',
     path: '/user/{id}/suspend',
     handler: handlers.suspendUser,
     config: {
@@ -1102,7 +1102,7 @@ module.exports = function (server) {
         }).unknown()
       },
       tags: ['api'],
-      description: 'Suspends a user which is in review state',
+      description: 'Suspends a user which is in review state. Side effect is that all the decks of the user also gets suspended',
       auth: 'jwt',
       plugins: {
         'hapi-swagger': {
@@ -1111,12 +1111,15 @@ module.exports = function (server) {
               'description': 'Successful',
             },
             ' 401 ': {
-              'description': 'Not authorized to suspend a user',
+              'description': 'No authentification given.',
               'headers': {
                 'WWW-Authenticate': {
-                  'description': 'Use your JWT token.'
+                  'description': 'Use your JWT token and secret.'
                 }
               }
+            },
+            ' 403 ': {
+              'description': 'Not authorized to suspend a user - no reviewer or wrong secret.'
             },
             ' 404 ': {
               'description': 'User not found. Check the id and state of the user.'
@@ -1132,7 +1135,7 @@ module.exports = function (server) {
   });
 
   server.route({
-    method: 'GET',
+    method: 'PATCH',
     path: '/user/{id}/approve',
     handler: handlers.approveUser,
     config: {
@@ -1157,12 +1160,15 @@ module.exports = function (server) {
               'description': 'Successful',
             },
             ' 401 ': {
-              'description': 'Not authorized to approve a user',
+              'description': 'No authentification given.',
               'headers': {
                 'WWW-Authenticate': {
-                  'description': 'Use your JWT token.'
+                  'description': 'Use your JWT token and secret.'
                 }
               }
+            },
+            ' 403 ': {
+              'description': 'Not authorized to approve a user - no reviewer or wrong secret.'
             },
             ' 404 ': {
               'description': 'User not found. Check the id and state of the user.'
@@ -1179,7 +1185,7 @@ module.exports = function (server) {
 
   server.route({
     method: 'GET',
-    path: '/getNextReviewableUser',
+    path: '/reviewqueue',
     handler: handlers.getNextReviewableUser,
     config: {
       validate: {
@@ -1191,7 +1197,7 @@ module.exports = function (server) {
         },
       },
       tags: ['api'],
-      description: 'Get the next reviewable user.',
+      description: 'Get the next reviewable user. As side effect the used queue gets narrowed by one',
       response: {
         schema: Joi.object().keys({
           userid: Joi.number().required(),
@@ -1207,6 +1213,17 @@ module.exports = function (server) {
             ' 200 ': {
               'description': 'Successful',
             },
+            ' 401 ': {
+              'description': 'No authentification given.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and secret.'
+                }
+              }
+            },
+            ' 403 ': {
+              'description': 'Not authorized to get the next rewiewable user - no reviewer or wrong secret.'
+            },
             ' 404 ': {
               'description': 'There is no more user left in the queue.'
             }
@@ -1218,8 +1235,8 @@ module.exports = function (server) {
   });
 
   server.route({
-    method: 'GET',
-    path: '/user/{id}/addToQueue',
+    method: 'POST',
+    path: '/reviewqueue/{id}',
     handler: handlers.addToQueue,
     config: {
       validate: {
@@ -1235,7 +1252,7 @@ module.exports = function (server) {
         }).unknown()
       },
       tags: ['api'],
-      description: 'Adds a user to the queue (have to be a user which was already there).',
+      description: 'Adds a user to the queue (have to be a user which was already there)',
       auth: 'jwt',
       plugins: {
         'hapi-swagger': {
@@ -1244,21 +1261,24 @@ module.exports = function (server) {
               'description': 'Successful',
             },
             ' 401 ': {
-              'description': 'Not authorized to add a user',
+              'description': 'No authentification given.',
               'headers': {
                 'WWW-Authenticate': {
-                  'description': 'Use your JWT token.'
+                  'description': 'Use your JWT token and secret.'
                 }
               }
             },
             ' 403 ': {
-              'description': 'The user was already reviewed.'
+              'description': 'Not authorized to add a user to the queue - no reviewer or wrong secret.'
             },
             ' 404 ': {
               'description': 'User not found. Check the id and state of the user.'
             },
+            ' 409 ': {
+              'description': 'The user was already reviewed.'
+            },
             ' 423 ': {
-              'description': 'The user is deactivated not already activated.',
+              'description': 'The user is deactivated or not already activated.',
             }
           },
           payloadType: 'json'

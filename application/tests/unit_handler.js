@@ -915,7 +915,7 @@ describe('User service', () => {
       });
     });
 
-    it('try to suspend a user without correct JWT', () => {
+    it('try to suspend a user without isReviewer=true in JWT', () => {
       let req = {
         params: {
           id: 1
@@ -934,7 +934,7 @@ describe('User service', () => {
 
         expect(result).to.not.equal(undefined);
         expect(result.isBoom).to.equal(true);
-        expect(result.output.statusCode).to.equal(401);
+        expect(result.output.statusCode).to.equal(403);
         return;
       });
     });

@@ -1112,8 +1112,11 @@ module.exports = {
   getNextReviewableUser: (req, res) => {
     let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
 
-    if (secret === undefined || secret !== process.env.SECRET_REVIEW_KEY || !req.auth.credentials.isReviewer)
+    if (secret === undefined)
       return res(boom.unauthorized());
+
+    if (!req.auth.credentials.isReviewer || secret !== process.env.SECRET_REVIEW_KEY)
+      return res(boom.forbidden());
 
     console.log('getNextReviewableUser');
     return queueAPI.get()
@@ -1133,8 +1136,11 @@ module.exports = {
   addToQueue: (req, res) => {
     let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
 
-    if (secret === undefined || secret !== process.env.SECRET_REVIEW_KEY || !req.auth.credentials.isReviewer)
+    if (secret === undefined)
       return res(boom.unauthorized());
+
+    if (!req.auth.credentials.isReviewer || secret !== process.env.SECRET_REVIEW_KEY)
+      return res(boom.forbidden());
 
     const reviewerid = req.auth.credentials.userid;
     const userid = req.params.id;
@@ -1146,7 +1152,7 @@ module.exports = {
         if (user.deactivated || user.authorised === false)
           return res(boom.locked());
         if (user.reviewed || user.suspended)
-          return res(boom.forbidden());
+          return res(boom.conflict());
 
         return queueAPI.getAll()
           .then((users) => {
@@ -1184,8 +1190,11 @@ module.exports = {
 function reviewUser(req, res, suspended) {
   let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
 
-  if (secret === undefined || secret !== process.env.SECRET_REVIEW_KEY || !req.auth.credentials.isReviewer)
+  if (secret === undefined)
     return res(boom.unauthorized());
+
+  if (!req.auth.credentials.isReviewer || secret !== process.env.SECRET_REVIEW_KEY)
+    return res(boom.forbidden());
 
   const reviewerid = req.auth.credentials.userid;
   const userid = req.params.id;
