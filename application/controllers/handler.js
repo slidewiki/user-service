@@ -1111,7 +1111,7 @@ module.exports = {
 
   getNextReviewableUser: (req, res) => {
     let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
-
+    // console.log('secret:', secret, 'correct secret:', process.env.SECRET_REVIEW_KEY, 'isreviewer:', req.auth.credentials.isReviewer);
     if (secret === undefined)
       return res(boom.unauthorized());
 
@@ -1125,6 +1125,7 @@ module.exports = {
         if (user === undefined) {
           return res(boom.notFound());
         }
+        delete user._id;
         return res(user);
       })
       .catch((error) => {
@@ -1156,8 +1157,10 @@ module.exports = {
 
         return queueAPI.getAll()
           .then((users) => {
-            if (users.findIndex((u) => {return u.userid === user._id;}) !== -1)
+            if (users.findIndex((u) => {return u.userid === user._id;}) !== -1) {
+              console.log('user is already in the queue');
               return res();//user is already in queue
+            }
 
             let queueUser = queueAPI.getEmptyElement();
             queueUser.userid = user._id;
