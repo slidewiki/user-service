@@ -42,7 +42,7 @@ module.exports = {
           //Send email before creating the user
           return util.sendEMail(user.email,
               'Your new account on SlideWiki',
-              'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'"\n\nGreetings,\nthe SlideWiki Team')
+              'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'\n\nGreetings,\nthe SlideWiki Team')
             .then(() => {
               return userCtrl.create(user)
                 .then((result) => {
