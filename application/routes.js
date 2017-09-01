@@ -1201,7 +1201,7 @@ module.exports = function (server) {
       response: {
         schema: Joi.object().keys({
           userid: Joi.number().required(),
-          username: Joi.string().alphanum().required(),
+          username: Joi.string().required(),
           decks: Joi.number().required(),
           addedByReviewer: Joi.number().required()
         }).required()
