@@ -1074,6 +1074,8 @@ module.exports = {
 
           if (!error && (response.statusCode === 200)) {
             let result = body.reduce((arr, curr) => {
+              if (curr.decksCount < 2)
+                return arr;
               curr.decks = curr.decksCount;
               curr.userid = curr._id;
               curr.username = array.find((u) => {return u._id === curr.userid;}).username;
