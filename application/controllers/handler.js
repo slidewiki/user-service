@@ -384,6 +384,7 @@ module.exports = {
         }
       })
       .catch((error1) => {
+        delete user.picture;
         console.log('handler: updateUserProfile: Error while getting user', error1, 'the user is:', user);
 
         const error = boom.badImplementation('Unknown error');
@@ -433,7 +434,7 @@ module.exports = {
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((array) => {
-        console.log('handler: getPublicUser: ', query, array);
+        console.log('handler: getPublicUser: ', query, array.length);
 
         if (array.length === 0)
           return res(boom.notFound());
@@ -553,7 +554,7 @@ module.exports = {
       query.username = new RegExp('\w*', 'i');
     }
 
-    console.log('query:', query);
+    // console.log('query:', query);
 
     return userCtrl.find(query)
       .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1}))
