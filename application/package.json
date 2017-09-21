@@ -36,6 +36,7 @@
     "hapi": "^16.1.0",
     "hapi-auth-jwt2": "7.x",
     "hapi-swagger": "^7.6.0",
+    "ims-lti": "^3.0.2",
     "inert": "^4.1.0",
     "joi": "^10.2.0",
     "js-sha512": "^0.2.2",

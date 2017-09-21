@@ -129,6 +129,13 @@ module.exports = {
     };
     console.log('try logging in with email', query.email);
 
+    return getLoginUser(query, req, res);
+
+  },
+
+
+
+  getLoginUser: (query, res) => {
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((result) => {
@@ -173,7 +180,7 @@ module.exports = {
         console.log('Error: ', error);
         res(boom.badImplementation(error));
       });
-  },
+  }
 
   getUser: (req, res) => {
     //check if the request comes from the right user (have the right JWT data)

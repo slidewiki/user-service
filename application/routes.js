@@ -1,11 +1,58 @@
 /*
+
+"ext_lms": "moodle-2",
+"lis_result_sourcedid": "{\"data\":{\"instanceid\":\"1\",\"userid\":\"2\",\"typeid\":null,\"launchid\":58130667},\"hash\":\"a60e4a31acdbec7a5c20af19b32bd4f2570e8a7dc61a0e4a513d02d0b160a0aa\"}",
+"context_id": "2",
+"tool_consumer_info_version": "2017051502",
+"tool_consumer_instance_guid": "localhost",
+"oauth_signature": "YYEPkmbWTpHIogwSTHNe69VxNF8=",
+"context_label": "Web security",
+"lti_message_type": "basic-lti-launch-request",
+"ext_user_username": "user",
+"lis_person_name_full": "Admin User",
+"context_title": "Web security",
+"user_id": "2",
+"tool_consumer_instance_description": "\"New Site\"",
+"oauth_consumer_key": "CHANGEME",
+"launch_presentation_locale": "en",
+"resource_link_description": "",
+"lis_outcome_service_url": "http://localhost/mod/lti/service.php",
+"tool_consumer_info_product_family_code": "moodle",
+"oauth_callback": "about:blank",
+"lis_person_name_family": "User",
+"oauth_nonce": "583592f9c272be2006e7a8727e73ce1e",
+"oauth_timestamp": "1506028792",
+"oauth_signature_method": "HMAC-SHA1",
+"oauth_version": "1.0",
+"lis_person_contact_email_primary": "user@example.com",
+"lis_course_section_sourcedid": "",
+"lis_person_sourcedid": "",
+"tool_consumer_instance_name": "\"New Site\"",
+"resource_link_id": "1",
+"resource_link_title": "Penetration test",
+"roles": "Instructor,urn:lti:sysrole:ims/lis/Administrator,urn:lti:instrole:ims/lis/Administrator",
+"context_type": "CourseSection",
+"lti_version": "LTI-1p0",
+"lis_person_name_given": "Admin",
+"launch_presentation_return_url": "http://localhost/mod/lti/return.php?course=2&launch_container=4&instanceid=1&sesskey=8AuZ9pBC4t",
+"launch_presentation_document_target": "window"
+
+ext_user_username
+oauth_consumer_key
+oauth_signature
+launch_presentation_locale
+lis_person_contact_email_primary
+*/
+
+/*
 Each route implementes a basic parameter/payload validation and a swagger API documentation description
 */
 'use strict';
 
 const Joi = require('joi'),
   handlers = require('./controllers/handler'),
-  handlers_social = require('./controllers/handler_social');
+  handlers_social = require('./controllers/handler_social'),
+  handlesr_lti = require('./controllers/handler_lti');
 
 module.exports = function (server) {
   //Register new user with credentials
@@ -846,6 +893,83 @@ module.exports = function (server) {
       }
     }
   });
+
+  //LTI
+  server.route({
+    method: 'POST',
+    path: '/lti/register',
+    handler: handlers_lti.registerWithOAuth,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+
+          ext_user_username: Joi.string(),
+          oauth_consumer_key: Joi.string(),
+          oauth_signature: Joi.string(),
+          oauth_nonce: Joi.string(),
+          launch_presentation_locale: Joi.string(),
+          lis_person_contact_email_primary: Joi.string().email(),
+          oauth_signature_method: Joi.string(),
+          lis_person_name_given: Joi.string(),
+          lis_person_name_family: Joi.string(),
+          launch_presentation_return_url: Joi.string()
+        }).requiredKeys('ext_user_username', 'email', 'oauth_consumer_key', 'oauth_signature'),
+      },
+      tags: ['api'],
+      description: 'Register a new user via LTI',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.number().integer(),
+                username: Joi.string()
+              }).required().description('Return schema')
+            },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'OAuth data is wrong or expired'
+                }
+              }
+            },
+            ' 406 ': {
+              'description': 'Provider is not available.'
+            },
+            ' 409 ': {
+              'description': 'Provider data is already in use by another user.'
+            },
+            ' 422 ': {
+              'description': 'Wrong user data - see error message',
+              schema: Joi.object().keys({
+                statusCode: Joi.number().integer(),
+                error: Joi.string(),
+                message: Joi.string()
+              }).required().description('Return schema')
+            },
+            ' 423 ': {
+              'description': 'The user with this provider assigned is deactivated.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
 
   //groups
 
