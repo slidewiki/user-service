@@ -1,58 +1,10 @@
-/*
 
-"ext_lms": "moodle-2",
-"lis_result_sourcedid": "{\"data\":{\"instanceid\":\"1\",\"userid\":\"2\",\"typeid\":null,\"launchid\":58130667},\"hash\":\"a60e4a31acdbec7a5c20af19b32bd4f2570e8a7dc61a0e4a513d02d0b160a0aa\"}",
-"context_id": "2",
-"tool_consumer_info_version": "2017051502",
-"tool_consumer_instance_guid": "localhost",
-"oauth_signature": "YYEPkmbWTpHIogwSTHNe69VxNF8=",
-"context_label": "Web security",
-"lti_message_type": "basic-lti-launch-request",
-"ext_user_username": "user",
-"lis_person_name_full": "Admin User",
-"context_title": "Web security",
-"user_id": "2",
-"tool_consumer_instance_description": "\"New Site\"",
-"oauth_consumer_key": "CHANGEME",
-"launch_presentation_locale": "en",
-"resource_link_description": "",
-"lis_outcome_service_url": "http://localhost/mod/lti/service.php",
-"tool_consumer_info_product_family_code": "moodle",
-"oauth_callback": "about:blank",
-"lis_person_name_family": "User",
-"oauth_nonce": "583592f9c272be2006e7a8727e73ce1e",
-"oauth_timestamp": "1506028792",
-"oauth_signature_method": "HMAC-SHA1",
-"oauth_version": "1.0",
-"lis_person_contact_email_primary": "user@example.com",
-"lis_course_section_sourcedid": "",
-"lis_person_sourcedid": "",
-"tool_consumer_instance_name": "\"New Site\"",
-"resource_link_id": "1",
-"resource_link_title": "Penetration test",
-"roles": "Instructor,urn:lti:sysrole:ims/lis/Administrator,urn:lti:instrole:ims/lis/Administrator",
-"context_type": "CourseSection",
-"lti_version": "LTI-1p0",
-"lis_person_name_given": "Admin",
-"launch_presentation_return_url": "http://localhost/mod/lti/return.php?course=2&launch_container=4&instanceid=1&sesskey=8AuZ9pBC4t",
-"launch_presentation_document_target": "window"
-
-ext_user_username
-oauth_consumer_key
-oauth_signature
-launch_presentation_locale
-lis_person_contact_email_primary
-*/
-
-/*
-Each route implementes a basic parameter/payload validation and a swagger API documentation description
-*/
 'use strict';
 
 const Joi = require('joi'),
   handlers = require('./controllers/handler'),
   handlers_social = require('./controllers/handler_social'),
-  handlesr_lti = require('./controllers/handler_lti');
+  handlers_lti = require('./controllers/handler_lti');
 
 module.exports = function (server) {
   //Register new user with credentials
@@ -897,23 +849,48 @@ module.exports = function (server) {
   //LTI
   server.route({
     method: 'POST',
-    path: '/lti/register',
-    handler: handlers_lti.registerWithOAuth,
+    path: '/lti/handle',
+    handler: handlers_lti.handleLTI,
     config: {
       validate: {
         payload: Joi.object().keys({
-
-          ext_user_username: Joi.string(),
           oauth_consumer_key: Joi.string(),
-          oauth_signature: Joi.string(),
-          oauth_nonce: Joi.string(),
-          launch_presentation_locale: Joi.string(),
-          lis_person_contact_email_primary: Joi.string().email(),
+          oauth_timestamp: Joi.string(),
           oauth_signature_method: Joi.string(),
-          lis_person_name_given: Joi.string(),
-          lis_person_name_family: Joi.string(),
-          launch_presentation_return_url: Joi.string()
-        }).requiredKeys('ext_user_username', 'email', 'oauth_consumer_key', 'oauth_signature'),
+          oauth_signature: Joi.string(),
+          oauth_version: Joi.string(),
+          ext_user_username: Joi.string(),
+          lis_person_contact_email_primary: Joi.string().email(),
+          lis_person_name_given: Joi.string().allow(''),
+          lis_person_name_family: Joi.string().allow(''),
+          oauth_nonce: Joi.string().allow(''),
+          ext_lms: Joi.string().allow(''),
+          lis_result_sourcedid: Joi.string().allow(''),
+          context_id: Joi.string().allow(''),
+          tool_consumer_info_version: Joi.string().allow(''),
+          tool_consumer_instance_guid: Joi.string().allow(''),
+          context_label: Joi.string().allow(''),
+          lti_message_type: Joi.string().allow(''),
+          lis_person_name_full: Joi.string().allow(''),
+          context_title: Joi.string().allow(''),
+          user_id: Joi.string().allow(''),
+          tool_consumer_instance_description: Joi.string().allow(''),
+          launch_presentation_locale: Joi.string().allow(''),
+          resource_link_description: Joi.string().allow(''),
+          lis_outcome_service_url: Joi.string().allow(''),
+          tool_consumer_info_product_family_code: Joi.string().allow(''),
+          oauth_callback: Joi.string().allow(''),          
+          lis_course_section_sourcedid: Joi.string().allow(''),
+          lis_person_sourcedid: Joi.string().allow(''),
+          tool_consumer_instance_name: Joi.string().allow(''),
+          resource_link_id: Joi.string().allow(''),
+          resource_link_title:Joi.string().allow(''),
+          roles: Joi.string().allow(''),
+          context_type: Joi.string().allow(''),
+          lti_version: Joi.string().allow(''),
+          launch_presentation_return_url: Joi.string().allow(''),
+          launch_presentation_document_target: Joi.string().allow('')
+        }).requiredKeys('ext_user_username', 'oauth_consumer_key', 'oauth_signature', 'oauth_timestamp', 'oauth_signature_method', 'oauth_version'),
       },
       tags: ['api'],
       description: 'Register a new user via LTI',
@@ -943,12 +920,6 @@ module.exports = function (server) {
                 }
               }
             },
-            ' 406 ': {
-              'description': 'Provider is not available.'
-            },
-            ' 409 ': {
-              'description': 'Provider data is already in use by another user.'
-            },
             ' 422 ': {
               'description': 'Wrong user data - see error message',
               schema: Joi.object().keys({
@@ -958,7 +929,7 @@ module.exports = function (server) {
               }).required().description('Return schema')
             },
             ' 423 ': {
-              'description': 'The user with this provider assigned is deactivated.'
+              'description': 'This LTI user is deactivated'
             }
           },
           payloadType: 'form'

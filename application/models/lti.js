@@ -14,7 +14,7 @@ const objectid = {
   maxLength: 24,
   minLength: 24
 };
-const ltikeys = {
+const ltiKeys = {
   type: 'object',
   properties: {
     _id: {

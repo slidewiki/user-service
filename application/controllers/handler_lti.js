@@ -6,12 +6,14 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   ltiCtrl = require('../database/lti'),
   config = require('../configuration'),
   jwt = require('./jwt'),
-  util = require('./util');
-  lti = require('ims-lti');
+  util = require('./util'),
+  lti = require('ims-lti'),
   handler = require('./handler');
-//Use provider data and additionally user data to create an account - checks db if OAuth is correct
-registerWithLTI: (req, res) => {
 
+module.exports = {
+
+handleLTI: (req, res) => {
+  console.log('handleLTI');
   //TODO: Implement as promise
   // let ltiKeySecret = ltiCtrl.read(util.parseAPIParameter(req.payload.oauth_consumer_key))
   //   .then(() => {
@@ -28,17 +30,18 @@ registerWithLTI: (req, res) => {
   let ltiProvider = new lti.Provider(ltiKeySecret.key, ltiKeySecret.secret);
   ltiProvider.valid_request(req, function(err, isValid){
       if(err){
-          console.log('There was an error in the LTI request');
+          console.log('There was an error in the LTI request', err);
+          res(boom.badImplementation());
       }
       else{
-
+        let user = getUser(req);
         //check if username already exists
         return util.isIdentityAssigned(user.email, user.username)
           .then((result) => {
 
             if (result.assigned === false) {
                   // If the user doesn't exist, we must create them
-                  let user = this.getUser(req);
+
                   console.log('Registration with LTI: ', user.username, user.email);
 
                   return userCtrl.create(user)
@@ -70,10 +73,12 @@ registerWithLTI: (req, res) => {
 
             } else {
               // We login instead of register
+              //TODO: Add a consistent means of generating username
+              //depending on application, user, etc.
               let query = {
-                email: req.payload.email.toLowerCase()
+                username: req.payload.ext_user_username
               };
-              return handler.getLoginUser()
+              return handler.getLoginUser(query, res);
             }
           })
           .catch((error) => {
@@ -84,8 +89,11 @@ registerWithLTI: (req, res) => {
 
       }
   });
+},
 
-getUser(req){
+};
+
+function getUser(req){
   return {
     username:         util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'') || document.username.replace(/\s/g,''),
     email:            util.parseAPIParameter(req.payload.lis_person_contact_email_primary).toLowerCase(),
@@ -102,6 +110,3 @@ getUser(req){
     authorised: true
   };
 }
-
-
-},
