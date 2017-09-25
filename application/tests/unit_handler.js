@@ -5,7 +5,7 @@
 
 describe('User service', () => {
 
-  let handler, handler_social, providerCtrl, expect;
+  let handler, handler_social, providerCtrl, userCtrl, expect;
 
   beforeEach((done) => {
     //Clean everything up before doing new tests
@@ -18,6 +18,7 @@ describe('User service', () => {
     handler = require('../controllers/handler.js');
     handler_social = require('../controllers/handler_social.js');
     providerCtrl = require('../database/provider.js');
+    userCtrl = require('../database/user.js');
     done();
   });
 
@@ -143,7 +144,10 @@ describe('User service', () => {
   context('Using all exported functions - ', () => {
     it('Register user', () => {
       let req = {
-        payload: correct_user1
+        payload: correct_user1,
+        info: {
+          host: 'localhost'
+        }
       };
       return handler.register(req, (result) => {
         console.log(result);
@@ -204,6 +208,35 @@ describe('User service', () => {
         expect(result.output.statusCode).to.equal(409);
         // expect(result).to.have.deep.property('output.statusCode', 409);
       });
+    });
+    it('Activate user', () => {
+      let req = {
+        params: {
+          email: correct_user1.email,
+          secret: ''
+        }
+      };
+      return userCtrl.find({email: correct_user1.email})
+        .then((cursor) => cursor.toArray())
+        .then((result) => {
+          req.params.secret = result[0].activate_secret;
+
+          return handler.activateUser(req, (result) => {
+            return {redirect: (url) => {
+              console.log(url);
+              expect(url).to.not.equal(undefined);
+              return {temporary: () => {
+                console.log('redirect did');
+                return;
+              }};
+            }};
+          })
+          .catch((Error) => {
+            console.log('Error', Error);
+            throw Error;
+            expect(1).to.equals(2);
+          });
+        });
     });
     it('Get user public', () => {
       //first with _id

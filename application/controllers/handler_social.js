@@ -15,7 +15,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   util = require('./util');
 
 const PROVIDERS = ['github', 'google', 'facebook'],
-  PLATFORM_SOCIAL_URL = require('../configs/microservices').platform.uri + '/socialLogin';
+  PLATFORM_SOCIAL_URL = require('../configs/microservices').platform.uri + '/socialLogin',
+  PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '';
 
 module.exports = {
   //Uses provided token to get user data and stores plus response the userdata
@@ -244,7 +245,7 @@ module.exports = {
             let user = {
               username:         util.parseAPIParameter(req.payload.username).replace(/\s/g,'') || document.username.replace(/\s/g,''),
               email:            util.parseAPIParameter(req.payload.email).toLowerCase(),
-              frontendLanguage: 'en_EN',
+              frontendLanguage: 'en',
               spokenLanguages: [util.parseAPIParameter(req.payload.language)],
               country:          document.location || '',
               picture:          document.picture || '',
@@ -265,7 +266,8 @@ module.exports = {
                   email:          document.email,
                   identifier:     document.identifier
                 }
-              ]
+              ],
+              authorised: true
             };
             console.log('Registration with OAuth data: ', user.username, user.email, user.providers[0].identifier);
 
@@ -274,37 +276,47 @@ module.exports = {
               .then((result) => {
                 console.log('identity already taken: ', user.email, user.username, result);
                 if (result.assigned === false) {
-                  return userCtrl.create(user)
-                    .then((result) => {
-                      // console.log('register: user create result: ', result);
+                  //Send email before creating the user
+                  return util.sendEMail(user.email,
+                      'Your new account on SlideWiki',
+                      'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to start using your account and learn how get started with the platform please navigate to the following link:\n\n'+PLATFORM_INFORMATION_URL+'/welcome\n\nGreetings,\nthe SlideWiki Team')
+                    .then(() => {
+                      return userCtrl.create(user)
+                        .then((result) => {
+                          // console.log('social register: user create result: ', result);
 
-                      if (result[0] !== undefined && result[0] !== null) {
-                        //Error
-                        console.log('ajv error', result, co.parseAjvValidationErrors(result));
-                        return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-                      }
+                          if (result[0] !== undefined && result[0] !== null) {
+                            //Error
+                            console.log('ajv error', result, co.parseAjvValidationErrors(result));
+                            return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+                          }
 
-                      if (result.insertedCount === 1) {
-                        //success
-                        return res({
-                          userid: result.insertedId,
-                          username: user.username,
-                          access_token: 'dummy',
-                          expires_in: 0
+                          if (result.insertedCount === 1) {
+                            //success
+                            return res({
+                              userid: result.insertedId,
+                              username: user.username,
+                              access_token: 'dummy',
+                              expires_in: 0
+                            })
+                            .header(config.JWT.HEADER, jwt.createToken({
+                              userid: result.insertedId,
+                              username: user.username
+                            }));
+                          }
+
+                          res(boom.badImplementation());
                         })
-                          .header(config.JWT.HEADER, jwt.createToken({
-                            userid: result.insertedId,
-                            username: user.username
-                          }));
-                      }
-
-                      res(boom.badImplementation());
+                        .catch((error) => {
+                          delete user.providers[0].token;
+                          delete user.providers[0].extra_token;
+                          console.log('Error - create user failed:', error, 'used user object:', user);
+                          res(boom.badImplementation('Error', error));
+                        });
                     })
                     .catch((error) => {
-                      delete user.providers[0].token;
-                      delete user.providers[0].extra_token;
-                      console.log('Error - create user failed:', error, 'used user object:', user);
-                      res(boom.badImplementation('Error', error));
+                      console.log('Error sending the email:', error);
+                      return res(boom.badImplementation('Error', error));
                     });
                 } else {
                   let message = 'The username and email is already taken';

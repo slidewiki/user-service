@@ -31,7 +31,8 @@ module.exports = function (server) {
       description: 'Register a new user with unique username and email',
       response: {
         schema: Joi.object().keys({
-          userid: Joi.number().integer()
+          userid: Joi.number().integer(),
+          secret: Joi.string().description('Used for the route /user/activate/{eail/{secret}}')
         })
       },
       auth: false,
@@ -53,6 +54,47 @@ module.exports = function (server) {
                 error: Joi.string(),
                 message: Joi.string()
               }).required().description('Return schema')
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/user/activate/{email}/{secret}',
+    handler: handlers.activateUser,
+    config: {
+      validate: {
+        params: {
+          secret: Joi.string(),
+          email: Joi.string().email()
+        }
+      },
+      tags: ['api'],
+      description: 'Activate a user after registration',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 403 ': {
+              'description': 'Wrong credentials were used.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use the correct email plus secret and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id.'
             }
           },
           payloadType: 'form'

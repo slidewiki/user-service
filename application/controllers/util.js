@@ -1,6 +1,8 @@
 'use strict';
 
 const userCtrl = require('../database/user'),
+  SMTPConnection = require('smtp-connection'),
+  config = require('../configuration'),
   Joi = require('joi');
 
 module.exports = {
@@ -83,5 +85,69 @@ module.exports = {
       return validationResult.value;
     }
     return undefined;
+  },
+
+  sendEMail: (email, title, text) => {
+    console.log('trying to send an email:', email, text);
+
+    return new Promise((resolve, reject) => {
+      //send email before changing data on MongoDB
+      let connection;
+      try {
+        connection = new SMTPConnection({
+          host: config.SMTP.host,
+          port: config.SMTP.port,
+          name: config.SMTP.clientName,
+          connectionTimeout: 4000,
+          opportunisticTLS: true,
+          tls: {
+            rejectUnauthorized: false
+          }
+        });
+      }
+      catch (e) {
+        console.log(e);
+        return reject('Wrong SMTP configuration');
+      }
+
+      connection.on('error', (err) => {
+        console.log('ERROR on SMTP Client:', err);
+        if (process.env.NODE_ENV === 'test')
+          return resolve({email: email, message:  'dummy'});//DEBUG
+        return reject(err);
+      });
+
+      connection.connect((result) => {
+        //Result of connected event
+        console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
+
+        connection.send({
+          from: config.SMTP.from,
+          to: email
+        },
+        'From: <' + config.SMTP.from + '>\r\n' + 'To: <' + email + '>\r\n' + 'Subject: ' + title + '\r\nDate: ' + (new Date()).toGMTString() + '\r\n\r\n' + text,
+        (err, info) => {
+          console.log('tried to send the email:', err, info);
+
+          try {
+            connection.quit();
+          }
+          catch (e) {
+            console.log('SMTP connection quit failed:', e);
+          }
+
+          if (err !== null) {
+            return reject(err);
+          }
+
+          //handle info object
+          if (info.rejected.length > 0) {
+            return reject('Email was rejected');
+          }
+
+          resolve({email: email, message: info.response});
+        });
+      });
+    });
   }
 };

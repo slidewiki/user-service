@@ -14,10 +14,9 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   config = require('../configuration'),
   jwt = require('./jwt'),
   Joi = require('joi'),
-  JSSHA = require('js-sha512'),
-  SMTPConnection = require('smtp-connection'),
   util = require('./util'),
-  request = require('request');
+  request = require('request'),
+  PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '';
 
 module.exports = {
   register: (req, res) => {
@@ -33,7 +32,9 @@ module.exports = {
       description: '',
       organization: util.parseAPIParameter(req.payload.organization),
       registered: (new Date()).toISOString(),
-      providers: []
+      providers: [],
+      activate_secret: require('crypto').randomBytes(64).toString('hex'),
+      authorised: false
     };
 
     //check if username already exists
@@ -41,29 +42,38 @@ module.exports = {
       .then((result) => {
         console.log('identity already taken: ', user.email, user.username, result);
         if (result.assigned === false) {
-          //TODO: check email
+          //Send email before creating the user
+          return util.sendEMail(user.email,
+              'Your new account on SlideWiki',
+              'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'\n\nGreetings,\nthe SlideWiki Team')
+            .then(() => {
+              return userCtrl.create(user)
+                .then((result) => {
+                  // console.log('register: user create result: ', result);
 
-          return userCtrl.create(user)
-            .then((result) => {
-              // console.log('register: user create result: ', result);
+                  if (result[0] !== undefined && result[0] !== null) {
+                    //Error
+                    return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+                  }
 
-              if (result[0] !== undefined && result[0] !== null) {
-                //Error
-                return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-              }
+                  if (result.insertedCount === 1) {
+                    //success
+                    return res({
+                      userid: result.insertedId,
+                      secret: user.activate_secret
+                    });
+                  }
 
-              if (result.insertedCount === 1) {
-                //success
-                return res({
-                  userid: result.insertedId
+                  res(boom.badImplementation());
+                })
+                .catch((error) => {
+                  console.log('Error on creating a user:', error);
+                  res(boom.badImplementation('Error', error));
                 });
-              }
-
-              res(boom.badImplementation());
             })
             .catch((error) => {
-              console.log('Error on creating a user:', error);
-              res(boom.badImplementation('Error', error));
+              console.log('Error sending the email:', error);
+              return res(boom.badImplementation('Error', error));
             });
         } else {
           let message = 'The username and email is already taken';
@@ -79,6 +89,40 @@ module.exports = {
         console.log('Error:', error, 'with user:', user);
         res(boom.badImplementation('Error', error));
       });
+  },
+
+  activateUser: (req, res) => {
+    const email = util.parseAPIParameter(req.params.email),
+      secret = util.parseAPIParameter(req.params.secret);
+
+    const query = {
+      email: email,
+      activate_secret: secret,
+      authorised: false
+    };
+
+    console.log('trying to activate ', email);
+
+    return userCtrl.partlyUpdate(query, {
+      $set: {
+        authorised: true
+      }
+    })
+    .then((result) => {
+      // console.log(result.result);
+      if (result.result.ok === 1 && result.result.n === 1) {
+        //success
+        return res()
+          .redirect(PLATFORM_INFORMATION_URL)
+          .temporary(true);
+      }
+
+      return res(boom.forbidden('Wrong credentials were used'));
+    })
+    .catch((error) => {
+      console.log('Error:', error);
+      return res(boom.badImplementation());
+    });
   },
 
   login: (req, res) => {
@@ -102,6 +146,12 @@ module.exports = {
 
             if (result[0].deactivated === true) {
               res(boom.locked('This user is deactivated.'));
+              break;
+            }
+
+            //check if authorised
+            if (result[0].authorised === false) {
+              res(boom.locked('User is not authorised yet.'));
               break;
             }
 
@@ -336,6 +386,7 @@ module.exports = {
         }
       })
       .catch((error1) => {
+        delete user.picture;
         console.log('handler: updateUserProfile: Error while getting user', error1, 'the user is:', user);
 
         const error = boom.badImplementation('Unknown error');
@@ -380,12 +431,12 @@ module.exports = {
     if (query.username)
       query.username = new RegExp('^' + query.username + '$', 'i');
 
-    // console.log(query);
+    console.log(query);
 
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((array) => {
-        // console.log('handler: getPublicUser: ', query, array);
+        console.log('handler: getPublicUser: ', query, array.length);
 
         if (array.length === 0)
           return res(boom.notFound());
@@ -394,6 +445,11 @@ module.exports = {
 
         if (array[0].deactivated === true) {
           return res(boom.locked('This user is deactivated.'));
+        }
+
+        //check if authorised
+        if (array[0].authorised === false) {
+          return res(boom.locked('User is not authorised yet.'));
         }
 
         res(preparePublicUserData(array[0]));
@@ -488,6 +544,11 @@ module.exports = {
         $not: {
           $eq: true
         }
+      },
+      authorised: {
+        $not: {
+          $eq: false
+        }
       }
     };
 
@@ -495,7 +556,7 @@ module.exports = {
       query.username = new RegExp('\w*', 'i');
     }
 
-    console.log('query:', query);
+    // console.log('query:', query);
 
     return userCtrl.find(query)
       .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1}))
@@ -560,106 +621,58 @@ module.exports = {
     }
 
     return isEMailAlreadyTaken(email)
-      .then((isTaken) => {
-        console.log('resetPassword: email taken:', isTaken);
-        if (!isTaken) {
-          return res(boom.notFound('EMail adress is not taken.'));
-        }
+    .then((isTaken) => {
+      console.log('resetPassword: email taken:', isTaken);
+      if (!isTaken) {
+        return res(boom.notFound('EMail adress is not taken.'));
+      }
 
-        const newPassword = require('crypto').randomBytes(9).toString('hex');
-        /* The password is hashed one time at the client site (inner hash and optional) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
-        let hashedPassword = co.hashPassword(newPassword, config.SALT);
-        if (salt && salt.length > 0)
-          hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt), config.SALT);
+      const newPassword = require('crypto').randomBytes(9).toString('hex');
+      /* The password is hashed one time at the client site (inner hash and optional) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
+      let hashedPassword = co.hashPassword(newPassword, config.SALT);
+      if (salt && salt.length > 0)
+        hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt), config.SALT);
 
-        console.log('resetPassword: email is in use thus we connect to the SMTP server');
+      console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
-        let connectionPromise = new Promise((resolve, reject) => {
-          //send email before changing data on MongoDB
-          let connection;
-          try {
-            connection = new SMTPConnection({
-              host: config.SMTP.host,
-              port: config.SMTP.port,
-              name: config.SMTP.clientName,
-              connectionTimeout: 4000
+      let connectionPromise = util.sendEMail(email,
+          'Password reset on SlideWiki',
+          'Dear SlideWiki user,\n\na request has been made to reset your password.\n\nYour new password is: ' + newPassword + '\n\nPlease login with this password and then go to My Settings > Account to change it. Passwords should have 8 characters or more.\n\nThanks,\nthe SlideWiki Team');
+
+      return connectionPromise
+        .then((data) => {
+          console.log('connectionPromise returned', data);
+
+          //change password in the database
+          const findQuery = {
+            email: email
+          };
+          const updateQuery = {
+            $set: {
+              password: hashedPassword
+            }
+          };
+          return userCtrl.partlyUpdate(findQuery, updateQuery)
+            .then((result) => {
+              console.log('handler: resetPassword:',  result.result);
+
+              if (result.result.ok === 1 && result.result.n === 1) {
+                //success
+                return res(data.message);
+              }
+
+              return res(boom.badImplementation());
+            })
+            .catch((error) => {
+              res(boom.notFound('Update of user password failed', error));
             });
-          }
-          catch (e) {
-            console.log(e);
-            return reject(boom.badImplementation('Wrong SMTP configuration'));
-          }
-
-          connection.on('error', (err) => {
-            console.log('ERROR on SMTP Client:', err);
-            return reject(err);
-          });
-
-          connection.connect((result) => {
-            //Result of connected event
-            console.log('Connection established with result', result, 'and connection details (options, secureConnection, alreadySecured, authenticated)', connection.options, connection.secureConnection, connection.alreadySecured, connection.authenticated);
-
-            //TODO handle different languages
-
-            connection.send({
-              from: config.SMTP.from,
-              to: email
-            },
-            'Dear SlideWiki user, We changed your password because someone did a request in order to do this. The new password is: ' + newPassword + '   Please login with this password. Thanks SlideWiki team',
-            (err, info) => {
-              console.log('tried to send the email:', err, info);
-
-              try {
-                connection.quit();
-              }
-              catch (e) {
-                console.log('SMTP connection quit failed:', e);
-              }
-
-              if (err !== null) {
-                return reject(boom.badImplementation(err));
-              }
-
-              //handle info object
-              if (info.rejected.length > 0) {
-                return reject(boom.badImplementation('Email was rejected'));
-              }
-
-              resolve({email: email, message: info.response});
-            });
-          });
+        })
+        .catch((error) => {
+          console.log('Error:', error);
+          return res(boom.badImplementation(error));
         });
-
-        return connectionPromise
-          .then((data) => {
-            console.log('connectionPromise returned', data);
-
-            //change password in the database
-            const findQuery = {
-              email: email
-            };
-            const updateQuery = {
-              $set: {
-                password: hashedPassword
-              }
-            };
-            return userCtrl.partlyUpdate(findQuery, updateQuery)
-              .then((result) => {
-                console.log('handler: resetPassword:',  result.result);
-
-                if (result.result.ok === 1 && result.result.n === 1) {
-                  //success
-                  return res(data.message);
-                }
-
-                return res(boom.badImplementation());
-              })
-              .catch((error) => {
-                res(boom.notFound('Update of user password failed', error));
-              });
-          })
-          .catch((error) => res(error));
       });
+    });
   },
 
   deleteUsergroup: (req, res) => {
