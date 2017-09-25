@@ -48,8 +48,8 @@ module.exports = {
             user.authorised = true;
           }
           return util.sendEMail(user.email,
-              'Your new account on SlideWiki',
-              message)
+            'Your new account on SlideWiki',
+            message)
             .then(() => {
               return userCtrl.create(user)
                 .then((result) => {
