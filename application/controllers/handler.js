@@ -659,6 +659,10 @@ module.exports = {
           .then((result) => {
             console.log('handler: resetPassword:',  result.result);
 
+            if (!config.SMTP.enabled) {
+              console.log('Changed password of user with email ' + email + ' to ' + newPassword);
+            }
+
             if (result.result.ok === 1 && result.result.n === 1) {
               //success
               return res(data.message);
