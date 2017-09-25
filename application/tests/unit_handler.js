@@ -234,7 +234,6 @@ describe('User service', () => {
           .catch((Error) => {
             console.log('Error', Error);
             throw Error;
-            expect(1).to.equals(2);
           });
         });
     });
