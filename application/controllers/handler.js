@@ -1,6 +1,9 @@
 /*
 Handles the requests by executing stuff and replying to the client. Uses promises to get stuff done.
 */
+/* eslint promise/always-return: "off" */
+/*eslint no-case-declarations: "warn"*/
+/*eslint no-useless-escape: "warn"*/
 
 'use strict';
 
@@ -109,21 +112,21 @@ module.exports = {
         authorised: true
       }
     })
-    .then((result) => {
-      // console.log(result.result);
-      if (result.result.ok === 1 && result.result.n === 1) {
-        //success
-        return res()
-          .redirect(PLATFORM_INFORMATION_URL)
-          .temporary(true);
-      }
+      .then((result) => {
+        // console.log(result.result);
+        if (result.result.ok === 1 && result.result.n === 1) {
+          //success
+          return res()
+            .redirect(PLATFORM_INFORMATION_URL)
+            .temporary(true);
+        }
 
-      return res(boom.forbidden('Wrong credentials were used'));
-    })
-    .catch((error) => {
-      console.log('Error:', error);
-      return res(boom.badImplementation());
-    });
+        return res(boom.forbidden('Wrong credentials were used'));
+      })
+      .catch((error) => {
+        console.log('Error:', error);
+        return res(boom.badImplementation());
+      });
   },
 
   login: (req, res) => {
@@ -295,7 +298,6 @@ module.exports = {
                 console.log('Error while updating password of user with id '+user__id+':', error);
                 res(boom.badImplementation('Update password failed', error));
               });
-            break;
           default:
             //should not happen
             console.log('BIG PROBLEM: multiple users in the database have the same id and password!');
@@ -623,61 +625,65 @@ module.exports = {
     }
 
     return isEMailAlreadyTaken(email)
-    .then((isTaken) => {
-      console.log('resetPassword: email taken:', isTaken);
-      if (!isTaken) {
-        return res(boom.notFound('EMail adress is not taken.'));
-      }
+      .then((isTaken) => {
+        console.log('resetPassword: email taken:', isTaken);
+        if (!isTaken) {
+          return res(boom.notFound('EMail adress is not taken.'));
+        }
 
-      const newPassword = require('crypto').randomBytes(9).toString('hex');
-      /* The password is hashed one time at the client site (inner hash and optional) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
-      let hashedPassword = co.hashPassword(newPassword, config.SALT);
-      if (salt && salt.length > 0)
-        hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt), config.SALT);
+        const newPassword = require('crypto').randomBytes(9).toString('hex');
+        /* The password is hashed one time at the client site (inner hash and optional) and one time at server-side. As we currently only have one salt, it must be the same for slidewiki-platform and the user-service. In case this is splitted, the user-service must know both salts in order to be able to generate a valid password for resetPassword.*/
+        let hashedPassword = co.hashPassword(newPassword, config.SALT);
+        if (salt && salt.length > 0)
+          hashedPassword = co.hashPassword(co.hashPassword(newPassword, salt), config.SALT);
 
-      console.log('resetPassword: email is in use thus we connect to the SMTP server');
+        console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
-      let connectionPromise = util.sendEMail(email,
+        let connectionPromise = util.sendEMail(email,
           'Password reset on SlideWiki',
           'Dear SlideWiki user,\n\na request has been made to reset your password.\n\nYour new password is: ' + newPassword + '\n\nPlease login with this password and then go to My Settings > Account to change it. Passwords should have 8 characters or more.\n\nThanks,\nthe SlideWiki Team');
 
-      return connectionPromise
-      .then((data) => {
-        console.log('connectionPromise returned', data);
+        return connectionPromise
+          .then((data) => {
+            console.log('connectionPromise returned', data);
 
-        //change password in the database
-        const findQuery = {
-          email: email
-        };
-        const updateQuery = {
-          $set: {
-            password: hashedPassword
-          }
-        };
-        return userCtrl.partlyUpdate(findQuery, updateQuery)
-          .then((result) => {
-            console.log('handler: resetPassword:',  result.result);
+            //change password in the database
+            const findQuery = {
+              email: email
+            };
+            const updateQuery = {
+              $set: {
+                password: hashedPassword
+              }
+            };
+            return userCtrl.partlyUpdate(findQuery, updateQuery)
+              .then((result) => {
+                console.log('handler: resetPassword:',  result.result);
 
-            if (!config.SMTP.enabled) {
-              console.log('Changed password of user with email ' + email + ' to ' + newPassword);
-            }
+                if (!config.SMTP.enabled) {
+                  console.log('Changed password of user with email ' + email + ' to ' + newPassword);
+                }
 
-            if (result.result.ok === 1 && result.result.n === 1) {
-              //success
-              return res(data.message);
-            }
+                if (result.result.ok === 1 && result.result.n === 1) {
+                  //success
+                  return res(data.message);
+                }
 
-            return res(boom.badImplementation());
+                return res(boom.badImplementation());
+              })
+              .catch((error) => {
+                res(boom.notFound('Update of user password failed', error));
+              });
           })
           .catch((error) => {
-            res(boom.notFound('Update of user password failed', error));
+            console.log('Error:', error);
+            return res(boom.badImplementation(error));
           });
       })
       .catch((error) => {
         console.log('Error:', error);
         return res(boom.badImplementation(error));
       });
-    });
   },
 
   deleteUsergroup: (req, res) => {
@@ -949,16 +955,16 @@ module.exports = {
         }
       }
     }).
-    then((result) => {
-      console.log('leaveUsergroup: ', result.result);
-      if (result.result.ok !== 1)
-        return res(boom.notFound());
+      then((result) => {
+        console.log('leaveUsergroup: ', result.result);
+        if (result.result.ok !== 1)
+          return res(boom.notFound());
 
-      if (result.result.nModified !== 1)
-        return res(boom.unauthorized());
+        if (result.result.nModified !== 1)
+          return res(boom.unauthorized());
 
-      return res();
-    });
+        return res();
+      });
   },
 
   //
