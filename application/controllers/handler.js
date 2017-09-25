@@ -43,9 +43,13 @@ module.exports = {
         console.log('identity already taken: ', user.email, user.username, result);
         if (result.assigned === false) {
           //Send email before creating the user
+          let message = 'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'\n\nGreetings,\nthe SlideWiki Team';
+          if (!config.SMTP.enabled) {
+            user.authorised = true;
+          }
           return util.sendEMail(user.email,
             'Your new account on SlideWiki',
-            'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'\n\nGreetings,\nthe SlideWiki Team')
+            message)
             .then(() => {
               return userCtrl.create(user)
                 .then((result) => {
@@ -655,6 +659,10 @@ module.exports = {
             return userCtrl.partlyUpdate(findQuery, updateQuery)
               .then((result) => {
                 console.log('handler: resetPassword:',  result.result);
+
+                if (!config.SMTP.enabled) {
+                  console.log('Changed password of user with email ' + email + ' to ' + newPassword);
+                }
 
                 if (result.result.ok === 1 && result.result.n === 1) {
                   //success
