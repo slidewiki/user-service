@@ -57,23 +57,23 @@ module.exports = {
         // console.log('handleOAuth2Token: created data', data);
 
         return providerCtrl.create(data)
-        .then((result) => {
-          console.log('handleOAuth2Token: provider create result: ', result.result, result.insertedCount);
+          .then((result) => {
+            console.log('handleOAuth2Token: provider create result: ', result.result, result.insertedCount);
 
-          if (result[0] !== undefined && result[0] !== null) {
-            //Error
-            return res(boom.badImplementation('Implementation error - data model error:', co.parseAjvValidationErrors(result)));
-          }
+            if (result[0] !== undefined && result[0] !== null) {
+              //Error
+              return res(boom.badImplementation('Implementation error - data model error:', co.parseAjvValidationErrors(result)));
+            }
 
-          if (result.insertedCount === 1) {
-            //success
-            return res()
-              .redirect(PLATFORM_SOCIAL_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
-              .temporary(true);
-          }
+            if (result.insertedCount === 1) {
+              //success
+              return res()
+                .redirect(PLATFORM_SOCIAL_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
+                .temporary(true);
+            }
 
-          res(boom.badImplementation());
-        });
+            res(boom.badImplementation());
+          });
       })
       .catch((error) => {
         console.log('Error', error);
@@ -392,8 +392,6 @@ module.exports = {
                     userid: result[0]._id,
                     username: result[0].username
                   }));
-
-                break;
               default:
                 res(boom.badImplementation('Found multiple users'));
                 break;

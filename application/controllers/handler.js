@@ -1,6 +1,9 @@
 /*
 Handles the requests by executing stuff and replying to the client. Uses promises to get stuff done.
 */
+/* eslint promise/always-return: "off" */
+/*eslint no-case-declarations: "warn"*/
+/*eslint no-useless-escape: "warn"*/
 
 'use strict';
 
@@ -291,7 +294,6 @@ module.exports = {
                 console.log('Error while updating password of user with id '+user__id+':', error);
                 res(boom.badImplementation('Update password failed', error));
               });
-            break;
           default:
             //should not happen
             console.log('BIG PROBLEM: multiple users in the database have the same id and password!');
@@ -638,36 +640,37 @@ module.exports = {
           'Dear SlideWiki user,\n\na request has been made to reset your password.\n\nYour new password is: ' + newPassword + '\n\nPlease login with this password and then go to My Settings > Account to change it. Passwords should have 8 characters or more.\n\nThanks,\nthe SlideWiki Team');
 
       return connectionPromise
-      .then((data) => {
-        console.log('connectionPromise returned', data);
+        .then((data) => {
+          console.log('connectionPromise returned', data);
 
-        //change password in the database
-        const findQuery = {
-          email: email
-        };
-        const updateQuery = {
-          $set: {
-            password: hashedPassword
-          }
-        };
-        return userCtrl.partlyUpdate(findQuery, updateQuery)
-          .then((result) => {
-            console.log('handler: resetPassword:',  result.result);
-
-            if (result.result.ok === 1 && result.result.n === 1) {
-              //success
-              return res(data.message);
+          //change password in the database
+          const findQuery = {
+            email: email
+          };
+          const updateQuery = {
+            $set: {
+              password: hashedPassword
             }
+          };
+          return userCtrl.partlyUpdate(findQuery, updateQuery)
+            .then((result) => {
+              console.log('handler: resetPassword:',  result.result);
 
-            return res(boom.badImplementation());
-          })
-          .catch((error) => {
-            res(boom.notFound('Update of user password failed', error));
-          });
-      })
-      .catch((error) => {
-        console.log('Error:', error);
-        return res(boom.badImplementation(error));
+              if (result.result.ok === 1 && result.result.n === 1) {
+                //success
+                return res(data.message);
+              }
+
+              return res(boom.badImplementation());
+            })
+            .catch((error) => {
+              res(boom.notFound('Update of user password failed', error));
+            });
+        })
+        .catch((error) => {
+          console.log('Error:', error);
+          return res(boom.badImplementation(error));
+        });
       });
     });
   },
@@ -941,16 +944,16 @@ module.exports = {
         }
       }
     }).
-    then((result) => {
-      console.log('leaveUsergroup: ', result.result);
-      if (result.result.ok !== 1)
-        return res(boom.notFound());
+      then((result) => {
+        console.log('leaveUsergroup: ', result.result);
+        if (result.result.ok !== 1)
+          return res(boom.notFound());
 
-      if (result.result.nModified !== 1)
-        return res(boom.unauthorized());
+        if (result.result.nModified !== 1)
+          return res(boom.unauthorized());
 
-      return res();
-    });
+        return res();
+      });
   },
 
   //

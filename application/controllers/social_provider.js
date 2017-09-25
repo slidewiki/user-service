@@ -147,7 +147,7 @@ function getUserFromGoogleResponse(body) {
   };
   try {
     user.nickname = body.email.substring(0, body.email.indexOf('@'));
-  } catch (e) {}
+  } catch (e) {/**/}
 
   return user;
 }
