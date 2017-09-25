@@ -40,9 +40,14 @@ module.exports = {
         console.log('identity already taken: ', user.email, user.username, result);
         if (result.assigned === false) {
           //Send email before creating the user
+          let message = 'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'\n\nGreetings,\nthe SlideWiki Team';
+          if (!config.SMTP.enabled) {
+            user.authorised = true;
+            message = 'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. Your account is ready to use.\n\nGreetings,\nthe SlideWiki Team';
+          }
           return util.sendEMail(user.email,
               'Your new account on SlideWiki',
-              'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'\n\nGreetings,\nthe SlideWiki Team')
+              message)
             .then(() => {
               return userCtrl.create(user)
                 .then((result) => {

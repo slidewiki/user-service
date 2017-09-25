@@ -91,6 +91,10 @@ module.exports = {
     console.log('trying to send an email:', email, text);
 
     return new Promise((resolve, reject) => {
+      if (!config.SMTP.enabled) {
+        return resolve({email: email, message:  'SMTP is disabled by deployment.'});
+      }
+
       //send email before changing data on MongoDB
       let connection;
       try {

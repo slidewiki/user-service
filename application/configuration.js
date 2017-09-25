@@ -34,10 +34,12 @@ if (!co.isEmpty(process.env.JWT_SERIAL)){
   JWTSerial = process.env.JWT_SERIAL;
 }
 
+//STMP variables
 let SMTP_port = 25,
   SMTP_host = 'localhost',
   SMTP_from = 'kjunghanns@informatik.uni-leipzig.de',
-  SMTP_clientName = undefined;
+  SMTP_clientName = undefined,
+  SMTP_enabled = true;
 if (!co.isEmpty(process.env.SMTP_PORT)){
   SMTP_port = process.env.SMTP_PORT;
 }
@@ -49,6 +51,9 @@ if (!co.isEmpty(process.env.SMTP_FROM)){
 }
 if (!co.isEmpty(process.env.SMTP_CLIENTNAME)){
   SMTP_clientName = process.env.SMTP_CLIENTNAME;
+}
+if (!co.isEmpty(process.env.SMTP_ENABLED)){
+  SMTP_enabled = process.env.SMTP_ENABLED === true || process.env.SMTP_ENABLED === 'true';
 }
 
 let APIKey = '2cbc621f86e97189239ee8c4c80b10b3a935b8a9f5db3def7b6a3ae7c4b75cb5';
@@ -73,7 +78,8 @@ module.exports = {
     host: SMTP_host,
     port: SMTP_port,
     clientName: SMTP_clientName,
-    from: SMTP_from
+    from: SMTP_from,
+    enabled: SMTP_enabled
   },
   SALT: '6cee6c6a420e0573d1a4ad8ecb44f2113d010a0c3aadd3c1251b9aa1406ba6a3' //must be the same as in slidewiki-platform, see handler.js resetPassword
 };
