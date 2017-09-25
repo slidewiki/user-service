@@ -231,10 +231,10 @@ describe('User service', () => {
               }};
             }};
           })
-          .catch((Error) => {
-            console.log('Error', Error);
-            throw Error;
-          });
+            .catch((Error) => {
+              console.log('Error', Error);
+              throw Error;
+            });
         });
     });
     it('Get user public', () => {

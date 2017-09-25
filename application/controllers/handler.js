@@ -44,8 +44,8 @@ module.exports = {
         if (result.assigned === false) {
           //Send email before creating the user
           return util.sendEMail(user.email,
-              'Your new account on SlideWiki',
-              'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'\n\nGreetings,\nthe SlideWiki Team')
+            'Your new account on SlideWiki',
+            'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'\n\nGreetings,\nthe SlideWiki Team')
             .then(() => {
               return userCtrl.create(user)
                 .then((result) => {
@@ -108,21 +108,21 @@ module.exports = {
         authorised: true
       }
     })
-    .then((result) => {
-      // console.log(result.result);
-      if (result.result.ok === 1 && result.result.n === 1) {
-        //success
-        return res()
-          .redirect(PLATFORM_INFORMATION_URL)
-          .temporary(true);
-      }
+      .then((result) => {
+        // console.log(result.result);
+        if (result.result.ok === 1 && result.result.n === 1) {
+          //success
+          return res()
+            .redirect(PLATFORM_INFORMATION_URL)
+            .temporary(true);
+        }
 
-      return res(boom.forbidden('Wrong credentials were used'));
-    })
-    .catch((error) => {
-      console.log('Error:', error);
-      return res(boom.badImplementation());
-    });
+        return res(boom.forbidden('Wrong credentials were used'));
+      })
+      .catch((error) => {
+        console.log('Error:', error);
+        return res(boom.badImplementation());
+      });
   },
 
   login: (req, res) => {
@@ -636,8 +636,8 @@ module.exports = {
         console.log('resetPassword: email is in use thus we connect to the SMTP server');
 
         let connectionPromise = util.sendEMail(email,
-            'Password reset on SlideWiki',
-            'Dear SlideWiki user,\n\na request has been made to reset your password.\n\nYour new password is: ' + newPassword + '\n\nPlease login with this password and then go to My Settings > Account to change it. Passwords should have 8 characters or more.\n\nThanks,\nthe SlideWiki Team');
+          'Password reset on SlideWiki',
+          'Dear SlideWiki user,\n\na request has been made to reset your password.\n\nYour new password is: ' + newPassword + '\n\nPlease login with this password and then go to My Settings > Account to change it. Passwords should have 8 characters or more.\n\nThanks,\nthe SlideWiki Team');
 
         return connectionPromise
           .then((data) => {

@@ -278,8 +278,8 @@ module.exports = {
                 if (result.assigned === false) {
                   //Send email before creating the user
                   return util.sendEMail(user.email,
-                      'Your new account on SlideWiki',
-                      'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to start using your account and learn how get started with the platform please navigate to the following link:\n\n'+PLATFORM_INFORMATION_URL+'/welcome\n\nGreetings,\nthe SlideWiki Team')
+                    'Your new account on SlideWiki',
+                    'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to start using your account and learn how get started with the platform please navigate to the following link:\n\n'+PLATFORM_INFORMATION_URL+'/welcome\n\nGreetings,\nthe SlideWiki Team')
                     .then(() => {
                       return userCtrl.create(user)
                         .then((result) => {
@@ -299,10 +299,10 @@ module.exports = {
                               access_token: 'dummy',
                               expires_in: 0
                             })
-                            .header(config.JWT.HEADER, jwt.createToken({
-                              userid: result.insertedId,
-                              username: user.username
-                            }));
+                              .header(config.JWT.HEADER, jwt.createToken({
+                                userid: result.insertedId,
+                                username: user.username
+                              }));
                           }
 
                           res(boom.badImplementation());
