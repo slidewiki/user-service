@@ -2,8 +2,8 @@
 [![Build Status](https://travis-ci.org/slidewiki/user-service.svg?branch=master)](https://travis-ci.org/slidewiki/user-service)
 [![License](https://img.shields.io/badge/License-MPL%202.0-green.svg)](https://github.com/slidewiki/microservice-template/blob/master/LICENSE)
 [![Language](https://img.shields.io/badge/Language-Javascript%20ECMA2015-lightgrey.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![Framework](https://img.shields.io/badge/Framework-NodeJS%206.9-blue.svg)](https://nodejs.org/)
-[![Webserver](https://img.shields.io/badge/Webserver-Hapi%2016.4.3-blue.svg)](http://hapijs.com/)
+[![Framework](https://img.shields.io/badge/Framework-NodeJS%206.11.0-blue.svg)](https://nodejs.org/)
+[![Webserver](https://img.shields.io/badge/Webserver-Hapi%2016.4.0-blue.svg)](http://hapijs.com/)
 
 This service manages the user accounts in terms of CRUD operations with their credentials, information and groups.
 Also there are routes for handling social login with facebook, google and github, via OAuth2.
@@ -74,6 +74,7 @@ Most of them are obligatory to be changed on deployment, especially keys and sec
 * SMTP_HOST
 * SMTP_FROM
 * SMTP_CLIENTNAME - optional
+* SMTP_ENABLED - have to be *true* to be enabled or something else to be disabled; it deactivates sending of emails
 * APIKEY - secret between platform and user-service (for resetting users passwords)
 * JWT_SERIAL - secret used for encrypt and decrypt JWTs
 * SECRET_REVIEW_KEY - used for internal user review process only

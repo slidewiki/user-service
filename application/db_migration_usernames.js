@@ -1,3 +1,7 @@
+/*global emit*/
+/*eslint no-undef: "error"*/
+/*eslint no-useless-escape: "warn"*/
+
 'use strict';
 
 const helper = require('./database/helper');
@@ -19,34 +23,34 @@ return helper.connectToDatabase()
               return;
 
             this.email = this.email.toLowerCase();
-            emit(this.username.toLowerCase().replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\-._~\=\*\+\#\;\\/]/g, ''), this);
+            emit(this.username.toLowerCase().replace(/[|\s&;$%&§\{\[\]\}@"<>()+,!?\=\*\+\#\;\\/]/g, ''), this);
           },
-            function(key, values) {
-              if (values.length === undefined || values.length === null || values.length < 1)
-                values = [values];
-              let o = {
-                count: 1,
-                username: key,
-                users: values.reduce(function(prev, curr) {
-                  if (curr.count === undefined || curr.count === null || curr.count < 1)
-                    prev.push(curr);
-                  else {
-                    let result = [];
-                    prev.forEach((e) => {
-                      result.push(e);
-                    });
-                    curr.users.forEach((e) => {
-                      result.push(e);
-                    });
-                    prev = result;
-                  }
-                  return prev;
-                }, [])
-              };
-              o.count = o.users.length;
-              return o;
-            },
-            {out: 'users_duplications'}
+          function(key, values) {
+            if (values.length === undefined || values.length === null || values.length < 1)
+              values = [values];
+            let o = {
+              count: 1,
+              username: key,
+              users: values.reduce(function(prev, curr) {
+                if (curr.count === undefined || curr.count === null || curr.count < 1)
+                  prev.push(curr);
+                else {
+                  let result = [];
+                  prev.forEach((e) => {
+                    result.push(e);
+                  });
+                  curr.users.forEach((e) => {
+                    result.push(e);
+                  });
+                  prev = result;
+                }
+                return prev;
+              }, [])
+            };
+            o.count = o.users.length;
+            return o;
+          },
+          {out: 'users_duplications'}
           ))
           .then((collection) => collection.count())
           .then((result) => {
@@ -76,10 +80,10 @@ return helper.connectToDatabase()
                   });
                 }
               },
-                function(key, values) {
-                  return values[0];
-                },
-                {out: 'users_migrated'}
+              function(key, values) {
+                return values[0];
+              },
+              {out: 'users_migrated'}
               ))
               .then((collection) => collection.count())
               .then((result) => {

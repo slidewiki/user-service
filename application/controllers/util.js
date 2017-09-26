@@ -10,7 +10,7 @@ module.exports = {
     let jwt_userid = '';
     try {
       jwt_userid = req.auth.credentials.userid;
-    } catch (e) {}
+    } catch (e) {/**/}
     //console.log(decodeURI(req.params.id), 'vs', jwt_data);
     if (decodeURI(req.params.id).toString() !== jwt_userid.toString()) {
       return false;
@@ -91,6 +91,10 @@ module.exports = {
     console.log('trying to send an email:', email, text);
 
     return new Promise((resolve, reject) => {
+      if (!config.SMTP.enabled) {
+        return resolve({email: email, message:  'SMTP is disabled by deployment.'});
+      }
+
       //send email before changing data on MongoDB
       let connection;
       try {
