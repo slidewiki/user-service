@@ -1082,6 +1082,8 @@ describe('User service', () => {
         console.log('testresult', result);
 
         expect(result).to.equal(undefined);
+
+        return true;
       });
     });
   });
