@@ -956,18 +956,16 @@ describe('User service', () => {
                 }};
               }};
             })
-            .catch((Error) => {
-              console.log('Error', Error);
-              throw Error;
-              expect(1).to.equals(2);
-            });
+              .catch((Error) => {
+                console.log('Error', Error);
+                throw Error;
+              });
           });
       })
-      .catch((Error) => {
-        console.log(Error);
-        throw Error;
-        expect(1).to.equals(2);
-      });
+        .catch((Error) => {
+          console.log(Error);
+          throw Error;
+        });
     });
 
     it('Suspend a user with secret and correct JWT', () => {
@@ -1007,12 +1005,10 @@ describe('User service', () => {
 
           return;
         })
-        .catch((Error) => {
-          console.log('Error', Error);
-          throw Error;
-          expect(1).to.equals(2);
-        });
-        return;
+          .catch((Error) => {
+            console.log('Error', Error);
+            throw Error;
+          });
       });
     });
 
@@ -1052,18 +1048,16 @@ describe('User service', () => {
                 }};
               }};
             })
-            .catch((Error) => {
-              console.log('Error', Error);
-              throw Error;
-              expect(1).to.equals(2);
-            });
+              .catch((Error) => {
+                console.log('Error', Error);
+                throw Error;
+              });
           });
       })
-      .catch((Error) => {
-        console.log(Error);
-        throw Error;
-        expect(1).to.equals(2);
-      });
+        .catch((Error) => {
+          console.log(Error);
+          throw Error;
+        });
     });
 
     it('Add user to queue', () => {

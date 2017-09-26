@@ -4,6 +4,7 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 /* eslint promise/always-return: "off" */
 /*eslint no-case-declarations: "warn"*/
 /*eslint no-useless-escape: "warn"*/
+/*eslint no-inner-declarations: "warn"*/
 
 'use strict';
 
