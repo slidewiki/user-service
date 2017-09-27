@@ -34,7 +34,6 @@
     "no-unexpected-multiline": 2,
     "no-var": 1,
     "no-warning-comments": 0,
-    "promise/always-return": "warn",
     "promise/no-return-wrap": "error",
     "promise/param-names": "error",
     "promise/catch-or-return": "warn",
