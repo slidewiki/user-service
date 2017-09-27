@@ -16,7 +16,7 @@ RUN apt-get install -y cron supervisor
 # ----------------------- #
 
 ADD ./application/ ./
-RUN npm prune --production
+RUN npm install --production
 
 # ---------------------- #
 #   Configuration Cron   #
