@@ -15,8 +15,8 @@ RUN apt-get install -y cron supervisor
 #   Installation NodeJS   #
 # ----------------------- #
 
-ADD ./application/ ./
-RUN npm prune --production
+ADD ./application/package.json ./
+RUN npm install --production
 
 # ---------------------- #
 #   Configuration Cron   #
