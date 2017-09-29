@@ -136,10 +136,36 @@ describe('User service', () => {
     }]
   };
 
+  const reviewableUser = {
+    username: 'Spammer?',
+    forename: '2',
+    surname: '3',
+    email: 'yahoo@gmail.com',
+    password: '445435234554654645666456356',
+    language: 'en',
+    defaults: [{
+      language: 'en'
+    }]
+  };
+
+  const addableUser = {
+    username: 'Korrekt',
+    forename: '4',
+    surname: '5',
+    email: 'yahoo2@gmail.com',
+    password: '44543523feffff4554654645666456356',
+    language: 'en',
+    defaults: [{
+      language: 'en'
+    }]
+  };
+
   const newPassword = 'ua89nd7s8df7zsb78f';
   let userid = '',
     jwt = '',
-    groupid = 0;
+    groupid = 0,
+    suspendedUserId = 0,
+    addableUserId = 0;
 
   context('Using all exported functions - ', () => {
     it('Register user', () => {
@@ -821,6 +847,243 @@ describe('User service', () => {
 
         expect(result).to.equal(undefined);
         return;
+      });
+    });
+
+    // SPAM protection functions
+
+    it('Get reviewable users', () => {
+      let req = {
+        params: {
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      return handler.getReviewableUsers(req, (result) => {
+        console.log('result', result);
+
+        expect(result).to.not.equal(undefined);
+        expect(result.length).to.equal(1);
+        expect(result[0]).to.not.equal(undefined);
+        expect(result[0].userid).to.not.equal(undefined);
+        expect(result[0].username).to.not.equal(undefined);
+        return;
+      });
+    });
+
+    it('try to suspend a user without secret', () => {
+      let req = {
+        params: {
+          id: 1
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid,
+            isReviewer: true
+          }
+        }
+      };
+      return handler.suspendUser(req, (result) => {
+        // console.log('result', result);
+
+        expect(result).to.not.equal(undefined);
+        expect(result.isBoom).to.equal(true);
+        expect(result.output.statusCode).to.equal(401);
+        return;
+      });
+    });
+
+    it('try to suspend a user without isReviewer=true in JWT', () => {
+      let req = {
+        params: {
+          id: 1
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        },
+        query: {
+          secret: 'test'
+        }
+      };
+      return handler.suspendUser(req, (result) => {
+        // console.log('result', result);
+
+        expect(result).to.not.equal(undefined);
+        expect(result.isBoom).to.equal(true);
+        expect(result.output.statusCode).to.equal(403);
+        return;
+      });
+    });
+
+    it('Prepare suspendabe user', () => {
+      //First register a user
+      let req = {
+        payload: reviewableUser,
+        info: {
+          host: 'localhost'
+        }
+      };
+      return handler.register(req, (result) => {
+        expect(result.userid).to.not.equal(undefined);
+
+        let rU = result.userid;
+        suspendedUserId = rU;
+        console.log('user created', rU);
+        //Now activate the new user
+        req = {
+          params: {
+            email: reviewableUser.email,
+            secret: ''
+          }
+        };
+        return userCtrl.find({email: reviewableUser.email})
+          .then((cursor) => cursor.toArray())
+          .then((result) => {
+            req.params.secret = result[0].activate_secret;
+
+            return handler.activateUser(req, (result) => {
+              return {redirect: (url) => {
+                expect(url).to.not.equal(undefined);
+                console.log('User activated!');
+                return {temporary: (bool) => {
+                  expect(bool).to.equal(true);
+                  return;
+                }};
+              }};
+            })
+              .catch((Error) => {
+                console.log('Error', Error);
+                throw Error;
+              });
+          });
+      })
+        .catch((Error) => {
+          console.log(Error);
+          throw Error;
+        });
+    });
+
+    it('Suspend a user with secret and correct JWT', () => {
+      let req = {
+        params: {
+          id: suspendedUserId
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid,
+            isReviewer: true
+          }
+        },
+        query: {
+          secret: 'test'
+        }
+      };
+      process.env.SECRET_REVIEW_KEY = 'test';
+      console.log('now suspending ...');
+      return handler.suspendUser(req, (result3) => {
+        // console.log('result', result3);
+
+        expect(result3).to.equal(undefined);
+        console.log('Finished');
+        // now check if public user profile couldnt get
+        req = {
+          params: {
+            identifier: suspendedUserId
+          }
+        };
+        return handler.getPublicUser(req, (result) => {
+          console.log('public user', result);
+
+          expect(result).to.not.equal(undefined);
+          expect(result.isBoom).to.equal(true);
+          expect(result.output.statusCode).to.equal(403);
+
+          return;
+        })
+          .catch((Error) => {
+            console.log('Error', Error);
+            throw Error;
+          });
+      });
+    });
+
+    it('Prepare addable user', () => {
+      //First register a user
+      let req = {
+        payload: addableUser,
+        info: {
+          host: 'localhost'
+        }
+      };
+      return handler.register(req, (result) => {
+        expect(result.userid).to.not.equal(undefined);
+
+        let rU = result.userid;
+        addableUserId = rU;
+        console.log('user created', rU);
+        //Now activate the new user
+        req = {
+          params: {
+            email: addableUser.email,
+            secret: ''
+          }
+        };
+        return userCtrl.find({email: addableUser.email})
+          .then((cursor) => cursor.toArray())
+          .then((result) => {
+            req.params.secret = result[0].activate_secret;
+
+            return handler.activateUser(req, (result) => {
+              return {redirect: (url) => {
+                expect(url).to.not.equal(undefined);
+                console.log('User activated!');
+                return {temporary: (bool) => {
+                  expect(bool).to.equal(true);
+                  return;
+                }};
+              }};
+            })
+              .catch((Error) => {
+                console.log('Error', Error);
+                throw Error;
+              });
+          });
+      })
+        .catch((Error) => {
+          console.log(Error);
+          throw Error;
+        });
+    });
+
+    it('Add user to queue', () => {
+      let req = {
+        params: {
+          id: addableUserId
+        },
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid,
+            isReviewer: true
+          }
+        },
+        query: {
+          secret: 'test',
+          decks: 12
+        }
+      };
+      process.env.SECRET_REVIEW_KEY = 'test';
+      console.log('now adding user to queue ...');
+      return handler.addToQueue(req, (result) => {
+        console.log('testresult', result);
+
+        expect(result).to.equal(undefined);
+
+        return true;
       });
     });
   });

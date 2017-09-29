@@ -4,6 +4,7 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 /* eslint promise/always-return: "off" */
 /*eslint no-case-declarations: "warn"*/
 /*eslint no-useless-escape: "warn"*/
+/*eslint no-inner-declarations: "warn"*/
 
 'use strict';
 
@@ -16,7 +17,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   Joi = require('joi'),
   util = require('./util'),
   request = require('request'),
-  PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '';
+  PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '',
+  queueAPI = require('../queue/api.js');
 
 module.exports = {
   register: (req, res) => {
@@ -159,6 +161,12 @@ module.exports = {
               break;
             }
 
+            //check if SPAM
+            if (result[0].suspended === true) {
+              res(boom.forbidden('The user is marked as SPAM.'));
+              break;
+            }
+
             res({
               userid: result[0]._id,
               username: result[0].username,
@@ -168,7 +176,8 @@ module.exports = {
             })
               .header(config.JWT.HEADER, jwt.createToken({
                 userid: result[0]._id,
-                username: result[0].username
+                username: result[0].username,
+                isReviewer: result[0].isReviewer
               }));
             break;
           default:
@@ -456,6 +465,11 @@ module.exports = {
           return res(boom.locked('User is not authorised yet.'));
         }
 
+        //check if SPAM
+        if (array[0].suspended === true) {
+          return res(boom.forbidden('The user is marked as SPAM.'));
+        }
+
         res(preparePublicUserData(array[0]));
       })
       .catch((error) => {
@@ -545,6 +559,11 @@ module.exports = {
     const query = {
       username: new RegExp(username, 'i'),
       deactivated: {
+        $not: {
+          $eq: true
+        }
+      },
+      suspended: {
         $not: {
           $eq: true
         }
@@ -1017,8 +1036,312 @@ module.exports = {
         }, staticUsers);
         return res(publicUsers);
       });
+  },
+
+  getReviewableUsers: (req, res) => {
+    let query = {
+      authorised: {
+        $not: {
+          $eq: false
+        }
+      },
+      deactivated: {
+        $not: {
+          $eq: true
+        }
+      },
+      reviewed: {
+        $not: {
+          $eq: true
+        }
+      }
+    };
+
+    return userCtrl.find(query)
+      .then((cursor) => cursor.project({_id: 1, registered: 1, username: 1}))
+      .then((cursor2) => cursor2.toArray())
+      .then((array) => {
+        if (array.length < 1)
+          return res([]);
+
+        // console.log('filter users', array.length);
+        let startTime = (new Date('2017-07-19')).getTime();
+        let userids = array.reduce((arr, curr) => {
+          if ((new Date(curr.registered)).getTime() > startTime)
+            arr.push(curr._id);
+          return arr;
+        }, []);
+
+        if (userids.length < 1)
+          return res([]);
+
+        //now call service
+        const options = {
+          url: require('../configs/microservices').deck.uri + '/deckOwners?user=' + userids.reduce((a, b) => {let r = a === '' ? b : a + ',' + b; return r;}, ''),
+          method: 'GET',
+          json: true,
+          body: {
+            userids: userids
+          }
+        };
+
+        function callback(error, response, body) {
+          // console.log('getReviewableUsers: ', error, response.statusCode, body);
+
+          if (!error && (response.statusCode === 200)) {
+            let result = body.reduce((arr, curr) => {
+              if (curr.decksCount < 2)
+                return arr;
+              curr.decks = curr.decksCount;
+              curr.userid = curr._id;
+              curr.username = array.find((u) => {return u._id === curr.userid;}).username;
+              arr.push(curr);
+              return arr;
+            }, []);
+            return res(result);
+          } else {
+            console.log('Error', (response) ? response.statusCode : undefined, error, body);
+            return res([]);
+          }
+        }
+
+        // console.log('now calling the service');
+
+        if (process.env.NODE_ENV === 'test') {
+          callback(null, {statusCode: 200}, userids.reduce((arr, curr) => {arr.push({_id: curr, decksCount: 3}); return arr;}, []));
+        }
+        else
+          request(options, callback);
+      })
+      .catch((error) => {
+        console.log('Error', error);
+        res([]);
+      });
+  },
+
+  suspendUser: (req, res) => {
+    return reviewUser(req, res, true);
+  },
+
+  approveUser: (req, res) => {
+    return reviewUser(req, res, false);
+  },
+
+  getNextReviewableUser: (req, res) => {
+    let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
+    // console.log('secret:', secret, 'correct secret:', process.env.SECRET_REVIEW_KEY, 'isreviewer:', req.auth.credentials.isReviewer);
+    if (secret === undefined)
+      return res(boom.unauthorized());
+
+    if (!req.auth.credentials.isReviewer || secret !== process.env.SECRET_REVIEW_KEY)
+      return res(boom.forbidden());
+
+    console.log('getNextReviewableUser');
+    return queueAPI.get()
+      .then((user) => {
+        console.log('got user', user);
+        if (user === undefined) {
+          return res(boom.notFound());
+        }
+        delete user._id;
+        return res(user);
+      })
+      .catch((error) => {
+        console.log('Error', error);
+        res(boom.badImplementation());
+      });
+  },
+
+  addToQueue: (req, res) => {
+    let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
+
+    if (secret === undefined)
+      return res(boom.unauthorized());
+
+    if (!req.auth.credentials.isReviewer || secret !== process.env.SECRET_REVIEW_KEY)
+      return res(boom.forbidden());
+
+    const reviewerid = req.auth.credentials.userid;
+    const userid = req.params.id;
+
+    return userCtrl.read(userid)
+      .then((user) => {
+        if (!user)
+          return res(boom.notFound());
+        if (user.deactivated || user.authorised === false)
+          return res(boom.locked());
+        if (user.reviewed || user.suspended)
+          return res(boom.conflict());
+
+        return queueAPI.getAll()
+          .then((users) => {
+            if (users.findIndex((u) => {return u.userid === user._id;}) !== -1) {
+              console.log('user is already in the queue');
+              return res();//user is already in queue
+            }
+
+            let queueUser = queueAPI.getEmptyElement();
+            queueUser.userid = user._id;
+            queueUser.username = user.username;
+            queueUser.decks = req.query.decks || 0;
+            queueUser.addedByReviewer = reviewerid;
+
+            return queueAPI.add(queueUser)
+              .then((success) => {
+                success ? res() : res(boom.badImplementation());
+                return;
+              })
+              .catch((error) => {
+                console.log('Error', error);
+                res(boom.badImplementation(error));
+              });
+          })
+          .catch((error) => {
+            console.log('Error', error);
+            res(boom.badImplementation(error));
+          });
+      })
+      .catch((error) => {
+        console.log('Error', error);
+        res(boom.badImplementation(error));
+      });
   }
 };
+
+function reviewUser(req, res, suspended) {
+  let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
+
+  if (secret === undefined)
+    return res(boom.unauthorized());
+
+  if (!req.auth.credentials.isReviewer || secret !== process.env.SECRET_REVIEW_KEY)
+    return res(boom.forbidden());
+
+  const reviewerid = req.auth.credentials.userid;
+  const userid = req.params.id;
+
+  let query = {
+    _id: userid,
+    authorised: {
+      $not: {
+        $eq: false
+      }
+    },
+    deactivated: {
+      $not: {
+        $eq: true
+      }
+    },
+    reviewed: {
+      $not: {
+        $eq: true
+      }
+    }
+  };
+  let update = {
+    $set: {
+      reviewed: true,
+      suspended: suspended,
+      lastReviewDoneBy: reviewerid
+    }
+  };
+  return userCtrl.partlyUpdate(query, update)
+    .then((result) => {
+      if (result.result.ok === 1 && result.result.n === 1) {
+        //found user and got updated
+
+        if (!suspended)
+          return res();
+
+        //now archive all the decks of the user
+        const options = {
+          url: require('../configs/microservices').deck.uri + '/decks',
+          method: 'GET',
+          qs: {
+            user: userid,
+            // only get the root decks, subdecks cannot be directly archived
+            rootsOnly: true,
+            // only return the _id attribute,
+            idOnly: true,
+          },
+          json: true
+        };
+
+        function callback(error, response, body) {
+          console.log('root decks: ', (response) ? response.statusCode : undefined, error, body);
+
+          if (!error && (response.statusCode === 200)) {
+            //now archive all decks (one request per deck)
+            let promises = body.reduce((arr, curr) => {
+              arr.push(archiveDeck(curr._id, req.auth.token, 'spam'));
+              return arr;
+            }, []);
+
+            return Promise.all(promises)
+              .then(() => {
+                return res();
+              })
+              .catch((error) => {
+                console.log('Error', error);
+                return res();
+              });
+          } else {
+            console.log('Error', (response) ? response.statusCode : undefined, error, body);
+            return res();
+          }
+        }
+
+        if (process.env.NODE_ENV === 'test') {
+          callback(null, {statusCode: 200}, []);
+        }
+        else
+          request(options, callback);
+      }
+      else
+        return res(boom.notFound());
+    })
+    .catch((error) => {
+      console.log('Error', error);
+      res(boom.badImplementation());
+    });
+}
+
+function archiveDeck(deckid, authToken, reason='spam', comment) {
+  let myPromise = new Promise((resolve, reject) => {
+    const headers = {};
+    headers[config.JWT.HEADER] = authToken;
+
+    const options = {
+      url: require('../configs/microservices').deck.uri + '/decktree/'+deckid+'/archive',
+      method: 'POST',
+      json: true,
+      body: {
+        secret: process.env.SECRET_REVIEW_KEY,
+        reason: reason,
+        comment: comment,
+      },
+      headers: headers,
+    };
+
+    function callback(error, response, body) {
+      console.log('archiveDeck: ', (response) ? response.statusCode : undefined, error, body);
+
+      if (!error && (response.statusCode === 200)) {
+        resolve();
+      } else {
+        console.log('Error', (response) ? response.statusCode : undefined, error, body);
+        return reject(error);
+      }
+    }
+
+    if (process.env.NODE_ENV === 'test') {
+      callback(null, {statusCode: 200}, null);
+    }
+    else
+      request(options, callback);
+  });
+  return myPromise;
+}
 
 function isUsernameAlreadyTaken(username) {
   let myPromise = new Promise((resolve, reject) => {

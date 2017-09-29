@@ -77,6 +77,7 @@ Most of them are obligatory to be changed on deployment, especially keys and sec
 * SMTP_ENABLED - have to be *true* to be enabled or something else to be disabled; it deactivates sending of emails
 * APIKEY - secret between platform and user-service (for resetting users passwords)
 * JWT_SERIAL - secret used for encrypt and decrypt JWTs
+* SECRET_REVIEW_KEY - used for internal user review process only
 * URL_PLATFORM - URL of the platform of the used domain/stage
 * SERVICE_URL_ACTIVITIES - URL of the activities-service of the used domain/stage
 
