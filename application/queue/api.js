@@ -1,7 +1,7 @@
 'use strict';
 
 const helper = require('../database/helper'),
-  collectionName = 'queue';
+  collectionName = 'reviewable_users';
 
 module.exports = {
   add: (data) => {
