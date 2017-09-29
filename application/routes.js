@@ -138,6 +138,9 @@ module.exports = function (server) {
                 username: Joi.string()
               }).required().description('Return schema')
             },
+            ' 403 ': {
+              'description': 'The user is marked as SPAM.',
+            },
             ' 404 ': {
               'description': 'No user for this credentials available.',
             },
@@ -377,6 +380,9 @@ module.exports = function (server) {
           responses: {
             ' 200 ': {
               'description': 'Successful',
+            },
+            ' 403 ': {
+              'description': 'The user is marked as SPAM.',
             },
             ' 404 ': {
               'description': 'User not found. Check the id.'
@@ -1074,6 +1080,213 @@ module.exports = function (server) {
             }
           },
           payloadType: 'json'
+        }
+      }
+    }
+  });
+
+  //Routes for SPAM protection
+
+  server.route({
+    method: 'POST',
+    path: '/user/{id}/suspend',
+    handler: handlers.suspendUser,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true})
+        },
+        query: {
+          secret: Joi.string()
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Suspends a user which is in review state. Side effect is that all the decks of the user also gets suspended',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'No authentification given.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and secret.'
+                }
+              }
+            },
+            ' 403 ': {
+              'description': 'Not authorized to suspend a user - no reviewer or wrong secret.'
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id and state of the user.'
+            }
+          },
+          payloadType: 'json'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'PATCH',
+    path: '/user/{id}/approve',
+    handler: handlers.approveUser,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true})
+        },
+        query: {
+          secret: Joi.string()
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Approves a user which is in review state',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'No authentification given.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and secret.'
+                }
+              }
+            },
+            ' 403 ': {
+              'description': 'Not authorized to approve a user - no reviewer or wrong secret.'
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id and state of the user.'
+            }
+          },
+          payloadType: 'json'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'GET',
+    path: '/reviewqueue',
+    handler: handlers.getNextReviewableUser,
+    config: {
+      validate: {
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown(),
+        query: {
+          secret: Joi.string()
+        },
+      },
+      tags: ['api'],
+      description: 'Get the next reviewable user. As side effect the used queue gets narrowed by one',
+      response: {
+        schema: Joi.object().keys({
+          userid: Joi.number().required(),
+          username: Joi.string().required(),
+          decks: Joi.number().required(),
+          addedByReviewer: Joi.number().required()
+        }).required()
+      },
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'No authentification given.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and secret.'
+                }
+              }
+            },
+            ' 403 ': {
+              'description': 'Not authorized to get the next rewiewable user - no reviewer or wrong secret.'
+            },
+            ' 404 ': {
+              'description': 'There is no more user left in the queue.'
+            }
+          },
+          payloadType: 'json'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/reviewqueue/{id}',
+    handler: handlers.addToQueue,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true})
+        },
+        query: {
+          secret: Joi.string(),
+          decks: Joi.number().optional()
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Adds a user to the queue (have to be a user which was already there)',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'No authentification given.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and secret.'
+                }
+              }
+            },
+            ' 403 ': {
+              'description': 'Not authorized to add a user to the queue - no reviewer or wrong secret.'
+            },
+            ' 404 ': {
+              'description': 'User not found. Check the id and state of the user.'
+            },
+            ' 409 ': {
+              'description': 'The user was already reviewed.'
+            },
+            ' 423 ': {
+              'description': 'The user is deactivated or not already activated.',
+            }
+          },
+          payloadType: 'json'
+        },
+        yar: {
+          skip: true
         }
       }
     }
