@@ -465,11 +465,6 @@ module.exports = {
           return res(boom.locked('User is not authorised yet.'));
         }
 
-        //check if SPAM
-        if (array[0].suspended === true) {
-          return res(boom.forbidden('The user is marked as SPAM.'));
-        }
-
         res(preparePublicUserData(array[0]));
       })
       .catch((error) => {
@@ -1424,7 +1419,7 @@ function prepareDetailedUserData(user) {
 
 //Remove attributes of the user data object which should not be transmitted for the user profile
 function preparePublicUserData(user) {
-  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description', 'country'];
+  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description', 'country', 'suspended'];
   let minimizedUser = {};
 
   let key;
