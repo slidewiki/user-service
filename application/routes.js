@@ -799,6 +799,9 @@ module.exports = function (server) {
                 }
               }
             },
+            ' 403 ': {
+              'description': 'The user is marked as SPAM.',
+            },
             ' 406 ': {
               'description': 'Provider is not available.'
             }
