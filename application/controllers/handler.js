@@ -568,10 +568,10 @@ module.exports = {
       }
     };
 
-    console.log('query:', query);
+    // console.log('query:', query);
 
     return userCtrl.find(query)
-      .then((cursor1) => cursor1.project({username: 1, _id: 1, country: 1, organization: 1}))
+      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1}))
       .then((cursor2) => cursor2.limit(8))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
