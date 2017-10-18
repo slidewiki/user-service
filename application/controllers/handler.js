@@ -174,11 +174,7 @@ module.exports = {
               access_token: 'dummy',
               expires_in: 0
             })
-              .header(config.JWT.HEADER, jwt.createToken({
-                userid: result[0]._id,
-                username: result[0].username,
-                isReviewer: result[0].isReviewer
-              }));
+              .header(config.JWT.HEADER, jwt.createTokenForUser(result[0]));
             break;
           default:
             res(boom.badImplementation('Found multiple users'));
