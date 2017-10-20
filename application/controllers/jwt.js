@@ -30,7 +30,7 @@ const self = module.exports = {
       userid: user._id,
       username: user.username,
       email: user.email,
-      isReviewer: user.isReviewer,
+      isReviewer: user.isReviewer || false,
     };
 
     return self.createToken(data);
