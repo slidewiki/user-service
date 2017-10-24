@@ -7,7 +7,7 @@ Atm we save the userid because just the delete operation for a user is restricte
 const jwt = require('jsonwebtoken'),
   config = require('../configuration');
 
-const self = module.exports = {
+module.exports = {
 
   validate: (decoded, request, callback) => {
     let isValid = false;
@@ -18,14 +18,7 @@ const self = module.exports = {
     callback(null, isValid);
   },
 
-  createToken: (data) => {
-    return jwt.sign(data, config.JWT.SERIAL, {
-      algorithm: config.JWT.ALGORITHM,
-      // expiresIn: 60 * 60 * 24 * 2 //two days
-    });
-  },
-
-  createTokenForUser: (user) => {
+  createToken: (user) => {
     let data = {
       userid: user._id,
       username: user.username,
@@ -33,7 +26,11 @@ const self = module.exports = {
       isReviewer: user.isReviewer || false,
     };
 
-    return self.createToken(data);
+    return jwt.sign(data, config.JWT.SERIAL, {
+      algorithm: config.JWT.ALGORITHM,
+      // expiresIn: 60 * 60 * 24 * 2 //two days
+    });
+
   },
 
 };

@@ -301,7 +301,7 @@ module.exports = {
                               access_token: 'dummy',
                               expires_in: 0
                             })
-                              .header(config.JWT.HEADER, jwt.createTokenForUser(user));
+                              .header(config.JWT.HEADER, jwt.createToken(user));
                           }
 
                           res(boom.badImplementation());
@@ -387,7 +387,7 @@ module.exports = {
                   access_token: 'dummy',
                   expires_in: 0
                 })
-                  .header(config.JWT.HEADER, jwt.createTokenForUser(result[0]));
+                  .header(config.JWT.HEADER, jwt.createToken(result[0]));
               default:
                 res(boom.badImplementation('Found multiple users'));
                 break;
