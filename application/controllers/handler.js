@@ -207,7 +207,7 @@ module.exports = {
             .then((array) => {
               user.groups = array;
 
-              return res(prepareDetailedUserData(user));
+              return res(prepareDetailedUserData(user)).header(config.JWT.HEADER, jwt.createToken(user));
             });
         }
         else {
