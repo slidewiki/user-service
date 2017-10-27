@@ -7,7 +7,7 @@ const readline = require('readline'),
   config = require('../configuration'),
   userCtrl = require('../database/user'),
   async = require('async'),
-  request = require('request'),
+  request = require('request-promise-native'),
   helper = require('../database/helper');
 
 let deckidsToUserids = {};
@@ -40,8 +40,48 @@ rl.on('line', function (line) {
   }
 
   deckidsToUserids[userid] = [];
+});
 
-  let linePromise = new Promise((resolve, reject) => {
+function archiveDeck(deckid, authToken, reason='spam', comment) {
+  console.log('archiveDeck(', deckid);
+  const headers = {};
+  headers[config.JWT.HEADER] = authToken;
+
+  const options = {
+    url: require('../configs/microservices').deck.uri + '/decktree/'+parseInt(deckid)+'/archive',
+    method: 'POST',
+    json: true,
+    body: {
+      secret: process.env.SECRET_REVIEW_KEY,
+      reason: reason,
+      comment: comment,
+    },
+    headers: headers,
+  };
+
+  if (process.env.NODE_ENV === 'test') {
+    return Promise.resolve(deckid);
+  }
+  else
+    return request(options)
+      .then((response) => {
+        console.log('archiveDeck '+deckid+':', response);
+        return deckid;
+      })
+      .catch((error) => {
+        console.log('archiveDeck Error '+deckid+':', error.statusCode, error.message);
+        console.log(options);
+        return;
+      });
+}
+
+rl.on('close', function () {
+  console.log('Finished reading userids.');
+  console.log('Count of correct userids read: ', Object.keys(deckidsToUserids).length);
+
+  console.log("\nNow suspending users and decks");
+  async.eachOfSeries(Object.keys(deckidsToUserids), (ui, key, callback) => {
+    let userid = parseInt(ui);
     let query = {
       _id: userid,
       suspended: {
@@ -75,108 +115,50 @@ rl.on('line', function (line) {
             json: true
           };
 
-          function callback(error, response, body) {
-            console.log('userid '+userid+', root decks: ', (response) ? response.statusCode : undefined, error, body);
-
-            if (!error && (response.statusCode === 200)) {
-              //now archive all decks (one request per deck)
-              let promises = body.reduce((arr, curr) => {
-                arr.push(archiveDeck(curr._id, process.argv[3], 'spam'));
-                return arr;
-              }, []);
-
-              async.eachOfSeries(promises, (promise, key, callback2) => {
-                promise.then((deckid) => {
-                  deckidsToUserids[userid].push(deckid);
-                  callback2();
-                })
-                .catch((error) => {
-                  console.log('Error:', error);
-                  callback2();
-                });
-              },  (error) => {
-                if (error)
-                  console.log('async Error:', error);
-                resolve();
-              });
-            } else {
-              console.log('response Error', (response) ? response.statusCode : undefined, error, body);
-              resolve();
-            }
-          }
-
           if (process.env.NODE_ENV === 'test') {
-            callback(null, {statusCode: 200}, []);
+            return callback();
           }
           else
-            request(options, callback);
+            request(options)
+              .then((response) => {
+                console.log('userid '+userid+', root decks: ', response);
+
+                async.eachOfSeries(response, (deck, key, callback2) => {
+                  archiveDeck(deck._id, process.argv[3], 'spam')
+                    .then((deckid2) => {
+                      deckidsToUserids[userid].push(deckid2);
+                      callback2();
+                    })
+                    .catch((error) => {
+                      console.log('Error:', error);
+                      callback2();
+                    });
+                },  (error) => {
+                  if (error)
+                    console.log('async Error:', error);
+                  callback();
+                });
+                console.log('async.eachOfSeries finished for user', userid, ' - decks');
+              })
+              .catch((error) => {
+                console.log('response Error', error.statusCode, error.message);
+                callback();
+              });
         }
         else {
           console.log('Problem with user query:', query, result.result);
-          resolve();
+          callback();
           return;
         }
       })
       .catch((error) => {
         console.log('Error', error);
-        resolve();
+        callback();
       });
-  });
-  linePromises.push(linePromise);
-});
-
-function archiveDeck(deckid, authToken, reason='spam', comment) {
-  let myPromise = new Promise((resolve, reject) => {
-    const headers = {};
-    headers[config.JWT.HEADER] = authToken;
-
-    const options = {
-      url: require('../configs/microservices').deck.uri + '/decktree/'+deckid+'/archive',
-      method: 'POST',
-      json: true,
-      body: {
-        secret: process.env.SECRET_REVIEW_KEY,
-        reason: reason,
-        comment: comment,
-      },
-      headers: headers,
-    };
-
-    function callback(error, response, body) {
-      console.log('archiveDeck '+deckid+': ', (response) ? response.statusCode : undefined, error, body);
-
-      if (!error && (response.statusCode === 200)) {
-        resolve(deckid);
-      } else {
-        return reject(error);
-      }
-    }
-
-    if (process.env.NODE_ENV === 'test') {
-      callback(null, {statusCode: 200}, null);
-    }
-    else
-      request(options, callback);
-  });
-  return myPromise;
-}
-
-rl.on('close', function () {
-  console.log('Finished reading userids.');
-  console.log('Count of correct userids read: ', Object.keys(deckidsToUserids).length);
-
-  console.log("\nNow suspending users and decks");
-  async.eachOfSeries(linePromises, (promise, key, callback2) => {
-    promise.then(() => {
-      callback2();
-    })
-    .catch((error) => {
-      console.log('linePromise Error:', error);
-      callback2();
-    });
   },  (error) => {
     if (error)
       console.log('async Error:', error);
+
     let message = '';
     for (let k in deckidsToUserids) {
       let deckids = deckidsToUserids[k].reduce((s, c) => {return s + ', ' + c;}, '');
@@ -203,4 +185,5 @@ rl.on('close', function () {
         process.exit(0);
       });
   });
+  console.log('async.eachOfSeries finished for users');
 });
