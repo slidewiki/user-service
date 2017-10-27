@@ -45,7 +45,7 @@ rl.on('line', function (line) {
 });
 
 function archiveDeck(deckid, authToken, reason='spam', comment) {
-  console.log('archiveDeck(', deckid);
+  // console.log('archiveDeck(', deckid);
   const headers = {};
   headers[config.JWT.HEADER] = authToken;
 
@@ -140,7 +140,6 @@ rl.on('close', function () {
                     console.log('async Error:', error);
                   callback();
                 });
-                console.log('async.eachOfSeries finished for user', userid, ' - decks');
               })
               .catch((error) => {
                 console.log('response Error', error.statusCode, error.message);
@@ -167,14 +166,14 @@ rl.on('close', function () {
       message += k + ' [' + deckids + "], \n";
     }
 
-    console.log("\nHere are all the userids with their suspended decks:\n", message);
+    console.log("\nHere are all the userids of the suspended users with their suspended decks:\n", message);
 
     console.log("\n\nAt the end, suspended users have to be removed from the queue if they are already there.");
     let query = {$or: Object.keys(deckidsToUserids).reduce((arr, curr) => {
       arr.push({userid: parseInt(curr)});
       return arr;
     }, [])};
-    console.log(query);
+    // console.log(query);
     helper.connectToDatabase()
       .then((dbconn) => dbconn.collection('reviewable_users'))
       .then((collection) => collection.remove(query))
@@ -187,5 +186,4 @@ rl.on('close', function () {
         process.exit(0);
       });
   });
-  console.log('async.eachOfSeries finished for users');
 });
