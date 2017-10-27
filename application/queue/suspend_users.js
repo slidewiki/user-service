@@ -1,3 +1,5 @@
+/*global emit*/
+/*eslint quotes: "warn"*/
 'use strict';
 
 console.log('This script will read userids from the given file and suspend them one after another.');
