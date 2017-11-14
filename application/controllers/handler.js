@@ -174,11 +174,7 @@ module.exports = {
               access_token: 'dummy',
               expires_in: 0
             })
-              .header(config.JWT.HEADER, jwt.createToken({
-                userid: result[0]._id,
-                username: result[0].username,
-                isReviewer: result[0].isReviewer
-              }));
+              .header(config.JWT.HEADER, jwt.createToken(result[0]));
             break;
           default:
             res(boom.badImplementation('Found multiple users'));
@@ -211,7 +207,7 @@ module.exports = {
             .then((array) => {
               user.groups = array;
 
-              return res(prepareDetailedUserData(user));
+              return res(prepareDetailedUserData(user)).header(config.JWT.HEADER, jwt.createToken(user));
             });
         }
         else {
@@ -463,11 +459,6 @@ module.exports = {
         //check if authorised
         if (array[0].authorised === false) {
           return res(boom.locked('User is not authorised yet.'));
-        }
-
-        //check if SPAM
-        if (array[0].suspended === true) {
-          return res(boom.forbidden('The user is marked as SPAM.'));
         }
 
         res(preparePublicUserData(array[0]));
@@ -1413,7 +1404,7 @@ function prepareDetailedUserData(user) {
 
 //Remove attributes of the user data object which should not be transmitted for the user profile
 function preparePublicUserData(user) {
-  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description', 'country'];
+  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description', 'country', 'suspended'];
   let minimizedUser = {};
 
   let key;

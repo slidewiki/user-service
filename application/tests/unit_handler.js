@@ -392,7 +392,11 @@ describe('User service', () => {
         expect(result._id).to.equal(userid);
         expect(result.password).to.equal(undefined);
 
-        return;
+        return {
+          header: (name, data) => {
+            jwt = data;
+          }
+        };
       })
         .catch((Error) => {
           console.log('Error', Error);
@@ -558,7 +562,11 @@ describe('User service', () => {
         expect(result.groups.length).to.equal(1);
         expect(result.groups[0].id).to.equal(groupid);
 
-        return;
+        return {
+          header: (name, data) => {
+            jwt = data;
+          }
+        };
       })
         .catch((Error) => {
           console.log('Error', Error);

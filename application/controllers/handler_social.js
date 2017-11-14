@@ -293,16 +293,15 @@ module.exports = {
 
                           if (result.insertedCount === 1) {
                             //success
+                            user._id = result.insertedId;
+
                             return res({
                               userid: result.insertedId,
                               username: user.username,
                               access_token: 'dummy',
                               expires_in: 0
                             })
-                              .header(config.JWT.HEADER, jwt.createToken({
-                                userid: result.insertedId,
-                                username: user.username
-                              }));
+                              .header(config.JWT.HEADER, jwt.createToken(user));
                           }
 
                           res(boom.badImplementation());
@@ -382,16 +381,18 @@ module.exports = {
                   break;
                 }
 
+                if (result[0].suspended === true) {
+                  res(boom.forbidden('The user is marked as SPAM.'));
+                  break;
+                }
+
                 return res({
                   userid: result[0]._id,
                   username: result[0].username,
                   access_token: 'dummy',
                   expires_in: 0
                 })
-                  .header(config.JWT.HEADER, jwt.createToken({
-                    userid: result[0]._id,
-                    username: result[0].username
-                  }));
+                  .header(config.JWT.HEADER, jwt.createToken(result[0]));
               default:
                 res(boom.badImplementation('Found multiple users'));
                 break;

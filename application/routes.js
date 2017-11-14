@@ -381,9 +381,6 @@ module.exports = function (server) {
             ' 200 ': {
               'description': 'Successful',
             },
-            ' 403 ': {
-              'description': 'The user is marked as SPAM.',
-            },
             ' 404 ': {
               'description': 'User not found. Check the id.'
             },
@@ -798,6 +795,9 @@ module.exports = function (server) {
                   'description': 'Wrong userdata or oauth data. Either you have to register or you check the request parameters.'
                 }
               }
+            },
+            ' 403 ': {
+              'description': 'The user is marked as SPAM.',
             },
             ' 406 ': {
               'description': 'Provider is not available.'
