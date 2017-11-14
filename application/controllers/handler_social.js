@@ -381,6 +381,11 @@ module.exports = {
                   break;
                 }
 
+                if (result[0].suspended === true) {
+                  res(boom.forbidden('The user is marked as SPAM.'));
+                  break;
+                }
+
                 return res({
                   userid: result[0]._id,
                   username: result[0].username,
