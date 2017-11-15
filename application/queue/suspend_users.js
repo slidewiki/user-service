@@ -98,7 +98,7 @@ function suspendUsers() {
         if (result.result.ok !== 1)
           console.log('Could not remove user from the groups:', result);
 
-          console.log('Updated usergroups:', result.result);
+        console.log('Updated usergroups:', result.result);
       })
       .catch((error) => {
         console.log('Error while updating usergroups:', error);
