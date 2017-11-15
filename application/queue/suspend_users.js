@@ -82,6 +82,49 @@ function suspendUsers() {
   console.log("\nNow suspending users and decks");
   async.eachOfSeries(Object.keys(deckidsToUserids), (ui, key, callback) => {
     let userid = parseInt(ui);
+
+    //remove user from usergroups
+    helper.connectToDatabase()
+      .then((dbconn) => dbconn.collection('usergroups'))
+      .then((collection) => collection.update({"members.userid": userid}, {
+        $pull: {
+          members: {
+            userid: userid
+          }
+        }}))
+      .then((result) => {
+        if (result.result.ok !== 1)
+          console.log('Could not remove user from the groups:', result);
+
+        if (result.result.nModified !== 1)
+          console.log('Could not remove user from the groups:', result);
+      })
+      .catch((error) => {
+        console.log('Error while updating usergroups:', error);
+      });
+    //delete usergroups where user is creator
+    helper.connectToDatabase()
+      .then((dbconn) => dbconn.collection('usergroups'))
+      .then((collection) => collection.deleteMany({$or: [{"creator.userid": userid}, {creator: userid}]}))
+      .then((result) => {
+        if (result.result.ok !== 1) {
+          console.log('Could not remove usergroup:', result);
+          return;
+        }
+
+        console.log('Deleted usergroups:', result.result.n);
+
+        if (result.result.n !== 1) {
+          console.log('Could not remove usergroup:', result);
+          return;
+        }
+      })
+      .catch((error) => {
+        console.log('Error while deleting usergroups:', error);
+      });
+
+
+    //suspend user and decks
     let query = {
       _id: userid,
       suspended: {
