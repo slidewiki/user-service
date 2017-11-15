@@ -19,7 +19,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   request = require('request'),
   PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '',
   queueAPI = require('../queue/api.js'),
-  COLLECTION_SUSPENDEDUSERIDS = 'useridsforsuspension';
+  COLLECTION_SUSPENDEDUSERIDS = 'useridsforsuspension',
+  helper = require('../database/helper');
 
 module.exports = {
   register: (req, res) => {

@@ -32,7 +32,7 @@ helper.connectToDatabase()
     }
 
     array.forEach((user) => {
-      let userid = user._id
+      let userid = user._id;
 
       console.log('Got userid:', userid);
 
@@ -184,4 +184,4 @@ function suspendUsers() {
         process.exit(0);
       });
   });
-};
+}
