@@ -83,6 +83,8 @@ function suspendUsers() {
   async.eachOfSeries(Object.keys(deckidsToUserids), (ui, key, callback) => {
     let userid = parseInt(ui);
 
+    console.log("\nNow its userid ", userid);
+
     //remove user from usergroups
     helper.connectToDatabase()
       .then((dbconn) => dbconn.collection('usergroups'))
@@ -96,8 +98,7 @@ function suspendUsers() {
         if (result.result.ok !== 1)
           console.log('Could not remove user from the groups:', result);
 
-        if (result.result.nModified !== 1)
-          console.log('Could not remove user from the groups:', result);
+          console.log('Updated usergroups:', result.result);
       })
       .catch((error) => {
         console.log('Error while updating usergroups:', error);
@@ -114,8 +115,8 @@ function suspendUsers() {
 
         console.log('Deleted usergroups:', result.result.n);
 
-        if (result.result.n !== 1) {
-          console.log('Could not remove usergroup:', result);
+        if (result.result.n < 1) {
+          console.log('Could not remove usergroup:', result.result);
           return;
         }
       })
@@ -167,7 +168,7 @@ function suspendUsers() {
                 console.log('userid '+userid+', root decks: ', response);
 
                 async.eachOfSeries(response, (deck, key, callback2) => {
-                  archiveDeck(deck._id, process.argv[3], 'spam')
+                  archiveDeck(deck._id, process.argv[2], 'spam')
                     .then((deckid2) => {
                       deckidsToUserids[userid].push(deckid2);
                       callback2();
@@ -189,6 +190,7 @@ function suspendUsers() {
         }
         else {
           console.log('Problem with user query:', query, result.result);
+
           callback();
           return;
         }
@@ -220,7 +222,18 @@ function suspendUsers() {
       .then((collection) => collection.remove(query))
       .then((result) => {
         console.log('deleted from queue', result.result);
-        process.exit(0);
+
+        return helper.connectToDatabase()
+          .then((dbconn) => dbconn.collection(COLLECTION_SUSPENDEDUSERIDS))
+          .then((collection) => collection.drop())
+          .then((result) => {
+            console.log('Also dropped '+COLLECTION_SUSPENDEDUSERIDS);
+            process.exit(0);
+          })
+          .catch((err) => {
+            console.log('Error while droppping '+COLLECTION_SUSPENDEDUSERIDS, err);
+            process.exit(0);
+          });
       })
       .catch((err) => {
         console.log('Error', err);
