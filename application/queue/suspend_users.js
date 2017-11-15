@@ -4,45 +4,43 @@
 
 console.log('This script will read userids from the given file and suspend them one after another.');
 
-const readline = require('readline'),
-  fs = require('fs'),
-  config = require('../configuration'),
+const config = require('../configuration'),
   userCtrl = require('../database/user'),
   async = require('async'),
   request = require('request-promise-native'),
-  helper = require('../database/helper');
+  helper = require('../database/helper'),
+  COLLECTION_SUSPENDEDUSERIDS = 'useridsforsuspension';
 
 let deckidsToUserids = {};
 
-if (process.argv[3] === undefined) {
+if (process.argv[2] === undefined) {
   console.log('Please provide a JWT!');
   return;
 }
 
-const rl = readline.createInterface({
-  input: fs.createReadStream(process.argv[2])
-});
-
 console.log('First the userids are read.');
 let linePromises = [];
 
-rl.on('line', function (line) {
-  console.log('Got userid:', line);
+helper.connectToDatabase()
+  .then((dbconn) => dbconn.collection(COLLECTION_SUSPENDEDUSERIDS))
+  .then((collection) => collection.find())
+  .then((cursor) => cursor.toArray())
+  .then((array) => {
+    if (array.length === 0) {
+      console.log('No users found. Exit.');
+      process.exit(0);
+    }
 
-  let userid = parseInt(line);
+    array.forEach((user) => {
+      let userid = user._id
 
-  if (!Number.isInteger(userid)) {
-    console.log('This is not an interger - skipping');
-    return;
-  }
+      console.log('Got userid:', userid);
 
-  if (deckidsToUserids[userid] !== undefined) {
-    console.log('duplication of userid');
-    return;
-  }
+      deckidsToUserids[userid] = [];
+    });
 
-  deckidsToUserids[userid] = [];
-});
+    suspendUsers();
+  });
 
 function archiveDeck(deckid, authToken, reason='spam', comment) {
   // console.log('archiveDeck(', deckid);
@@ -67,7 +65,7 @@ function archiveDeck(deckid, authToken, reason='spam', comment) {
   else
     return request(options)
       .then((response) => {
-        console.log('archiveDeck '+deckid+':', response);
+        console.log('archiveDeck '+deckid+':', response === undefined ? 'success' : response);
         return deckid;
       })
       .catch((error) => {
@@ -77,7 +75,7 @@ function archiveDeck(deckid, authToken, reason='spam', comment) {
       });
 }
 
-rl.on('close', function () {
+function suspendUsers() {
   console.log('Finished reading userids.');
   console.log('Count of correct userids read: ', Object.keys(deckidsToUserids).length);
 
@@ -186,4 +184,4 @@ rl.on('close', function () {
         process.exit(0);
       });
   });
-});
+};

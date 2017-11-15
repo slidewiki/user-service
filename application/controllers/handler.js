@@ -18,7 +18,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   util = require('./util'),
   request = require('request'),
   PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '',
-  queueAPI = require('../queue/api.js');
+  queueAPI = require('../queue/api.js'),
+  COLLECTION_SUSPENDEDUSERIDS = 'useridsforsuspension';
 
 module.exports = {
   register: (req, res) => {
@@ -1199,6 +1200,7 @@ module.exports = {
   }
 };
 
+//get and remove user from queue and then add the userid to a list for later suspension
 function reviewUser(req, res, suspended) {
   let secret = (req.query !== undefined && req.query.secret !== undefined) ? req.query.secret : undefined;
 
@@ -1230,11 +1232,13 @@ function reviewUser(req, res, suspended) {
     }
   };
   let update = {
-    $set: {
-      reviewed: true,
-      suspended: suspended,
-      lastReviewDoneBy: reviewerid
-    }
+    reviewed: true,
+    lastReviewDoneBy: reviewerid
+  };
+  if (!suspended)
+    update.suspended = suspended;
+  update = {
+    $set: update
   };
   return userCtrl.partlyUpdate(query, update)
     .then((result) => {
@@ -1244,49 +1248,22 @@ function reviewUser(req, res, suspended) {
         if (!suspended)
           return res();
 
-        //now archive all the decks of the user
-        const options = {
-          url: require('../configs/microservices').deck.uri + '/decks',
-          method: 'GET',
-          qs: {
-            user: userid,
-            // only get the root decks, subdecks cannot be directly archived
-            rootsOnly: true,
-            // only return the _id attribute,
-            idOnly: true,
-          },
-          json: true
-        };
+        //now add the userid to the list
+        return helper.connectToDatabase()
+          .then((dbconn) => dbconn.collection(COLLECTION_SUSPENDEDUSERIDS))
+          .then((collection) => collection.insert({_id: userid}))
+          .then((result2) => {
+            if (result2.insertedCount === 1) {
+              //success
+              return res();
+            }
 
-        function callback(error, response, body) {
-          console.log('root decks: ', (response) ? response.statusCode : undefined, error, body);
-
-          if (!error && (response.statusCode === 200)) {
-            //now archive all decks (one request per deck)
-            let promises = body.reduce((arr, curr) => {
-              arr.push(archiveDeck(curr._id, req.auth.token, 'spam'));
-              return arr;
-            }, []);
-
-            return Promise.all(promises)
-              .then(() => {
-                return res();
-              })
-              .catch((error) => {
-                console.log('Error', error);
-                return res();
-              });
-          } else {
-            console.log('Error', (response) ? response.statusCode : undefined, error, body);
-            return res();
-          }
-        }
-
-        if (process.env.NODE_ENV === 'test') {
-          callback(null, {statusCode: 200}, []);
-        }
-        else
-          request(options, callback);
+            return res(boom.badImplementation());
+          })
+          .catch((error) => {
+            console.log('Error while inserting userid into '+COLLECTION_SUSPENDEDUSERIDS+':', error);
+            return res(boom.badImplementation());
+          });
       }
       else
         return res(boom.notFound());
@@ -1295,43 +1272,6 @@ function reviewUser(req, res, suspended) {
       console.log('Error', error);
       res(boom.badImplementation());
     });
-}
-
-function archiveDeck(deckid, authToken, reason='spam', comment) {
-  let myPromise = new Promise((resolve, reject) => {
-    const headers = {};
-    headers[config.JWT.HEADER] = authToken;
-
-    const options = {
-      url: require('../configs/microservices').deck.uri + '/decktree/'+deckid+'/archive',
-      method: 'POST',
-      json: true,
-      body: {
-        secret: process.env.SECRET_REVIEW_KEY,
-        reason: reason,
-        comment: comment,
-      },
-      headers: headers,
-    };
-
-    function callback(error, response, body) {
-      console.log('archiveDeck: ', (response) ? response.statusCode : undefined, error, body);
-
-      if (!error && (response.statusCode === 200)) {
-        resolve();
-      } else {
-        console.log('Error', (response) ? response.statusCode : undefined, error, body);
-        return reject(error);
-      }
-    }
-
-    if (process.env.NODE_ENV === 'test') {
-      callback(null, {statusCode: 200}, null);
-    }
-    else
-      request(options, callback);
-  });
-  return myPromise;
 }
 
 function isUsernameAlreadyTaken(username) {
