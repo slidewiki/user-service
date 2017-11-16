@@ -75,6 +75,20 @@ let plugins = [
   }
 ];
 
+
+//Configure cookie
+server.state('user_json_storage', {
+    ttl: null,
+    isSecure: true,
+    isHttpOnly: true,
+    encoding: 'form',
+    clearInvalid: false, // remove invalid cookies
+    isSameSite: 'Lax',
+    strictHeader: true // don't allow violations of RFC 6265
+});
+
+
+
 //Register plugins and start webserver
 server.register(plugins, (err) => {
   if (err) {

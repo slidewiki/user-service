@@ -70,7 +70,7 @@ if (process.env.NODE_ENV === 'test') {
 module.exports = {
   MongoDB: {
     PORT: port,
-    HOST: host,
+    HOST: 'mongodb',
     NS: 'local',
     SLIDEWIKIDATABASE: slidewikiDbName
   },

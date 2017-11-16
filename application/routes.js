@@ -1,13 +1,10 @@
-/*
-Each route implementes a basic parameter/payload validation and a swagger API documentation description
-*/
+
 'use strict';
 
 const Joi = require('joi'),
   handlers = require('./controllers/handler'),
   handlers_social = require('./controllers/handler_social'),
-  LANGUAGE_REGEX = /^\w{2,5}$/ , //better /^[a-z]{2}(?:-[A-Z]{2})?$/   ?
-  USERNAME_REGEX = /^[\w\-.~_]*$/ ;
+  handlers_lti = require('./controllers/handler_lti');
 
 module.exports = function (server) {
   //Register new user with credentials
@@ -20,10 +17,10 @@ module.exports = function (server) {
         payload: Joi.object().keys({
           forename: Joi.string().allow('').optional(),
           surname: Joi.string().allow('').optional(),
-          username: Joi.string().regex(USERNAME_REGEX),
+          username: Joi.string().regex(/^[\w\-.~_]*$/),
           email: Joi.string().email(),
           password: Joi.string().min(8).description('This string could be a plain password or a hash and have to be used on other routes as well, like /login and /resetpassword and /user/{id}/passwd'),
-          language: Joi.string().regex(LANGUAGE_REGEX),
+          language: Joi.string().regex(/^\w{2,5}$/),
           organization: Joi.string()
         }).requiredKeys('username', 'email', 'password', 'language'),
       },
@@ -137,9 +134,6 @@ module.exports = function (server) {
                 userid: Joi.number().integer(),
                 username: Joi.string()
               }).required().description('Return schema')
-            },
-            ' 403 ': {
-              'description': 'The user is marked as SPAM.',
             },
             ' 404 ': {
               'description': 'No user for this credentials available.',
@@ -308,11 +302,11 @@ module.exports = function (server) {
         },
         payload: Joi.object().keys({
           email: Joi.string().email().required(),
-          username: Joi.string().regex(USERNAME_REGEX),
+          username: Joi.string().regex(/^[\w\-.~_]*$/),
           surname: Joi.string().allow('').optional(),
           forename: Joi.string().allow('').optional(),
           //sex: Joi.string(),  //not used right now
-          language: Joi.string().regex(LANGUAGE_REGEX),
+          language: Joi.string().regex(/^\w{2,5}$/),
           country: Joi.string().allow('').optional(),
           picture: Joi.string().uri().allow('').optional(),
           description: Joi.string().allow('').optional(),
@@ -381,9 +375,6 @@ module.exports = function (server) {
             ' 200 ': {
               'description': 'Successful',
             },
-            ' 403 ': {
-              'description': 'The user is marked as SPAM.',
-            },
             ' 404 ': {
               'description': 'User not found. Check the id.'
             },
@@ -408,7 +399,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          username: Joi.string().regex(USERNAME_REGEX)
+          username: Joi.string().regex(/^[\w\-.~_]*$/)
         }
       },
       tags: ['api'],
@@ -444,7 +435,7 @@ module.exports = function (server) {
     config: {
       validate: {
         params: {
-          username: Joi.string().regex(USERNAME_REGEX).allow('').optional()
+          username: Joi.string().regex(/^[\w\-.~_]*$/).allow('').optional()
         }
       },
       tags: ['api'],
@@ -510,7 +501,7 @@ module.exports = function (server) {
       validate: {
         payload: {
           email: Joi.string().email(),
-          language: Joi.string().regex(LANGUAGE_REGEX),
+          language: Joi.string().regex(/^\w{2,5}$/),
           APIKey: Joi.string().alphanum().description('Client specific key. Is needed to use this route.'),
           salt: Joi.string().allow('').optional().description('When this parameter is given, then the service assumes that the client will hash the users plaintext password with SHA-512(password + salt). The salt and algorithm should not be changed in a client, because then the via this route created password will not work after such a change.')
         }
@@ -593,7 +584,7 @@ module.exports = function (server) {
           token: Joi.string(),
           token_creation: Joi.string(),//Date
           email: Joi.string().email(),
-          language: Joi.string().regex(LANGUAGE_REGEX)
+          language: Joi.string().regex(/^\w{2,5}$/)
         }).requiredKeys('email', 'identifier', 'provider', 'token', 'token_creation'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -693,9 +684,9 @@ module.exports = function (server) {
           token: Joi.string(),
           scope: Joi.string(),
           token_creation: Joi.string(),//Date
-          username: Joi.string().regex(USERNAME_REGEX),
+          username: Joi.string().regex(/^[\w\-.~_]*$/),
           email: Joi.string().email(),
-          language: Joi.string().regex(LANGUAGE_REGEX),
+          language: Joi.string().regex(/^\w{2,5}$/),
           forename: Joi.string(),
           surname: Joi.string()
         }).requiredKeys('username', 'email', 'identifier', 'provider', 'token', 'token_creation'),
@@ -768,7 +759,7 @@ module.exports = function (server) {
           scope: Joi.string(),
           token_creation: Joi.string(), //Date
           email: Joi.string().email(),  //email of provider
-          language: Joi.string().regex(LANGUAGE_REGEX)
+          language: Joi.string().regex(/^\w{2,5}$/)
         }).requiredKeys('identifier', 'provider', 'token', 'token_creation', 'email')
       },
       tags: ['api'],
@@ -854,6 +845,106 @@ module.exports = function (server) {
       }
     }
   });
+
+  //LTI
+  server.route({
+    method: 'POST',
+    path: '/lti/handle',
+    handler: handlers_lti.handleLTI,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          oauth_consumer_key: Joi.string(),
+          oauth_timestamp: Joi.string(),
+          oauth_signature_method: Joi.string(),
+          oauth_signature: Joi.string(),
+          oauth_version: Joi.string(),
+          ext_user_username: Joi.string(),
+          lis_person_contact_email_primary: Joi.string().email(),
+          lis_person_name_given: Joi.string().allow(''),
+          lis_person_name_family: Joi.string().allow(''),
+          oauth_nonce: Joi.string().allow(''),
+          ext_lms: Joi.string().allow(''),
+          lis_result_sourcedid: Joi.string().allow(''),
+          context_id: Joi.string().allow(''),
+          tool_consumer_info_version: Joi.string().allow(''),
+          tool_consumer_instance_guid: Joi.string().allow(''),
+          context_label: Joi.string().allow(''),
+          lti_message_type: Joi.string().allow(''),
+          lis_person_name_full: Joi.string().allow(''),
+          context_title: Joi.string().allow(''),
+          user_id: Joi.string().allow(''),
+          tool_consumer_instance_description: Joi.string().allow(''),
+          launch_presentation_locale: Joi.string().allow(''),
+          resource_link_description: Joi.string().allow(''),
+          lis_outcome_service_url: Joi.string().allow(''),
+          tool_consumer_info_product_family_code: Joi.string().allow(''),
+          oauth_callback: Joi.string().allow(''),
+          lis_course_section_sourcedid: Joi.string().allow(''),
+          lis_person_sourcedid: Joi.string().allow(''),
+          tool_consumer_instance_name: Joi.string().allow(''),
+          resource_link_id: Joi.string().allow(''),
+          resource_link_title:Joi.string().allow(''),
+          roles: Joi.string().allow(''),
+          context_type: Joi.string().allow(''),
+          lti_version: Joi.string().allow(''),
+          launch_presentation_return_url: Joi.string().allow(''),
+          launch_presentation_document_target: Joi.string().allow('')
+        }).requiredKeys('ext_user_username', 'oauth_consumer_key', 'oauth_signature', 'oauth_timestamp', 'oauth_signature_method', 'oauth_version'),
+      },
+      state: {
+        parse: true, // parse and store in request.state
+        failAction: 'error' // may also be 'ignore' or 'log'
+      },
+      tags: ['api'],
+      description: 'Register a new user via LTI',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+              'headers': {
+                '----jwt----': {
+                  'description': 'Contains the JWT'
+                }
+              },
+              schema: Joi.object().keys({
+                access_token: Joi.string(),
+                expires_in: Joi.number(),
+                userid: Joi.number().integer(),
+                username: Joi.string()
+              }).required().description('Return schema')
+            },
+            ' 401 ': {
+              'description': 'The credentials are wrong',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'OAuth data is wrong or expired'
+                }
+              }
+            },
+            ' 422 ': {
+              'description': 'Wrong user data - see error message',
+              schema: Joi.object().keys({
+                statusCode: Joi.number().integer(),
+                error: Joi.string(),
+                message: Joi.string()
+              }).required().description('Return schema')
+            },
+            ' 423 ': {
+              'description': 'This LTI user is deactivated'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
 
   //groups
 
@@ -1080,213 +1171,6 @@ module.exports = function (server) {
             }
           },
           payloadType: 'json'
-        }
-      }
-    }
-  });
-
-  //Routes for SPAM protection
-
-  server.route({
-    method: 'POST',
-    path: '/user/{id}/suspend',
-    handler: handlers.suspendUser,
-    config: {
-      validate: {
-        params: {
-          id: Joi.number().integer().options({convert: true})
-        },
-        query: {
-          secret: Joi.string()
-        },
-        headers: Joi.object({
-          '----jwt----': Joi.string().required().description('JWT header provided by /login')
-        }).unknown()
-      },
-      tags: ['api'],
-      description: 'Suspends a user which is in review state. Side effect is that all the decks of the user also gets suspended',
-      auth: 'jwt',
-      plugins: {
-        'hapi-swagger': {
-          responses: {
-            ' 200 ': {
-              'description': 'Successful',
-            },
-            ' 401 ': {
-              'description': 'No authentification given.',
-              'headers': {
-                'WWW-Authenticate': {
-                  'description': 'Use your JWT token and secret.'
-                }
-              }
-            },
-            ' 403 ': {
-              'description': 'Not authorized to suspend a user - no reviewer or wrong secret.'
-            },
-            ' 404 ': {
-              'description': 'User not found. Check the id and state of the user.'
-            }
-          },
-          payloadType: 'json'
-        },
-        yar: {
-          skip: true
-        }
-      }
-    }
-  });
-
-  server.route({
-    method: 'PATCH',
-    path: '/user/{id}/approve',
-    handler: handlers.approveUser,
-    config: {
-      validate: {
-        params: {
-          id: Joi.number().integer().options({convert: true})
-        },
-        query: {
-          secret: Joi.string()
-        },
-        headers: Joi.object({
-          '----jwt----': Joi.string().required().description('JWT header provided by /login')
-        }).unknown()
-      },
-      tags: ['api'],
-      description: 'Approves a user which is in review state',
-      auth: 'jwt',
-      plugins: {
-        'hapi-swagger': {
-          responses: {
-            ' 200 ': {
-              'description': 'Successful',
-            },
-            ' 401 ': {
-              'description': 'No authentification given.',
-              'headers': {
-                'WWW-Authenticate': {
-                  'description': 'Use your JWT token and secret.'
-                }
-              }
-            },
-            ' 403 ': {
-              'description': 'Not authorized to approve a user - no reviewer or wrong secret.'
-            },
-            ' 404 ': {
-              'description': 'User not found. Check the id and state of the user.'
-            }
-          },
-          payloadType: 'json'
-        },
-        yar: {
-          skip: true
-        }
-      }
-    }
-  });
-
-  server.route({
-    method: 'GET',
-    path: '/reviewqueue',
-    handler: handlers.getNextReviewableUser,
-    config: {
-      validate: {
-        headers: Joi.object({
-          '----jwt----': Joi.string().required().description('JWT header provided by /login')
-        }).unknown(),
-        query: {
-          secret: Joi.string()
-        },
-      },
-      tags: ['api'],
-      description: 'Get the next reviewable user. As side effect the used queue gets narrowed by one',
-      response: {
-        schema: Joi.object().keys({
-          userid: Joi.number().required(),
-          username: Joi.string().required(),
-          decks: Joi.number().required(),
-          addedByReviewer: Joi.number().required()
-        }).required()
-      },
-      auth: 'jwt',
-      plugins: {
-        'hapi-swagger': {
-          responses: {
-            ' 200 ': {
-              'description': 'Successful',
-            },
-            ' 401 ': {
-              'description': 'No authentification given.',
-              'headers': {
-                'WWW-Authenticate': {
-                  'description': 'Use your JWT token and secret.'
-                }
-              }
-            },
-            ' 403 ': {
-              'description': 'Not authorized to get the next rewiewable user - no reviewer or wrong secret.'
-            },
-            ' 404 ': {
-              'description': 'There is no more user left in the queue.'
-            }
-          },
-          payloadType: 'json'
-        }
-      }
-    }
-  });
-
-  server.route({
-    method: 'POST',
-    path: '/reviewqueue/{id}',
-    handler: handlers.addToQueue,
-    config: {
-      validate: {
-        params: {
-          id: Joi.number().integer().options({convert: true})
-        },
-        query: {
-          secret: Joi.string(),
-          decks: Joi.number().optional()
-        },
-        headers: Joi.object({
-          '----jwt----': Joi.string().required().description('JWT header provided by /login')
-        }).unknown()
-      },
-      tags: ['api'],
-      description: 'Adds a user to the queue (have to be a user which was already there)',
-      auth: 'jwt',
-      plugins: {
-        'hapi-swagger': {
-          responses: {
-            ' 200 ': {
-              'description': 'Successful',
-            },
-            ' 401 ': {
-              'description': 'No authentification given.',
-              'headers': {
-                'WWW-Authenticate': {
-                  'description': 'Use your JWT token and secret.'
-                }
-              }
-            },
-            ' 403 ': {
-              'description': 'Not authorized to add a user to the queue - no reviewer or wrong secret.'
-            },
-            ' 404 ': {
-              'description': 'User not found. Check the id and state of the user.'
-            },
-            ' 409 ': {
-              'description': 'The user was already reviewed.'
-            },
-            ' 423 ': {
-              'description': 'The user is deactivated or not already activated.',
-            }
-          },
-          payloadType: 'json'
-        },
-        yar: {
-          skip: true
         }
       }
     }
