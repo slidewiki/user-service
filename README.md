@@ -80,6 +80,7 @@ Most of them are obligatory to be changed on deployment, especially keys and sec
 * SECRET_REVIEW_KEY - used for internal user review process only
 * URL_PLATFORM - URL of the platform of the used domain/stage
 * SERVICE_URL_ACTIVITIES - URL of the activities-service of the used domain/stage
+* SERVICE_URL_DECK - URL of the deck-service of the used domain/stage
 
 New secret could be created with the command:
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'));"
