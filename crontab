@@ -1,3 +1,4 @@
-@weekly root /cleanup.sh > /var/log/cron.log 2>&1
-@daily root node /nodeApp/queue/update.js > /var/log/cron.log 2>&1
+0 0 * * 0 root /cleanup.sh >> /var/log/cron.log 2>&1
+0 0 * * * root /nodeApp/queue/updateQueue.sh >> /var/log/cron.log 2>&1
+#* * * * * root echo "Hello world" >> /var/log/cron.log 2>&1
 # An empty line or comment is required at the end of this file for a valid cron file.
