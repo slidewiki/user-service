@@ -1,3 +1,3 @@
 #!/bin/bash
 
-node /nodeApp/queue/update.js
+/usr/local/bin/node /nodeApp/queue/update.js

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-node ./database/cleanup.js
+/usr/local/bin/node /nodeApp/database/cleanup.js
