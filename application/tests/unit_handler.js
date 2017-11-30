@@ -994,7 +994,7 @@ describe('User service', () => {
       process.env.SECRET_REVIEW_KEY = 'test';
       console.log('now suspending ...');
       return handler.suspendUser(req, (result3) => {
-        // console.log('result', result3);
+        console.log('result', result3);
 
         expect(result3).to.equal(undefined);
         console.log('Finished');
@@ -1008,8 +1008,7 @@ describe('User service', () => {
           console.log('public user', result);
 
           expect(result).to.not.equal(undefined);
-          expect(result.isBoom).to.equal(true);
-          expect(result.output.statusCode).to.equal(403);
+          expect(result._id).to.equal(suspendedUserId);
 
           return;
         })
