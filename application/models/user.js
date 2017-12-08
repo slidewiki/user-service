@@ -138,6 +138,17 @@ const user = {
     },
     lastReviewDoneBy: {
       type: 'integer'
+    },
+    migratedFrom: {
+      type: 'object',
+      properties: {
+        instance: {
+          type: 'String'
+        },
+        userid: {
+          type: 'integer'
+        }
+      }
     }
   },
   required: ['email', 'username', 'frontendLanguage']

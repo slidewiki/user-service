@@ -576,6 +576,38 @@ module.exports = function (server) {
   });
 
   server.route({
+    method: 'GET',
+    path: '/social/useprovider/slidewiki',
+    handler: handlers_social.slidewiki,
+    config: {
+      validate: {
+        query: {
+          jwt: Joi.string().required().description('JWT header provided by /login'),
+          instance: Joi.string().required()
+        }
+      },
+      tags: ['api'],
+      description: 'Uses JWT and gets userdata from the given instance to sign up or sign in this user',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 404 ': {
+              'description': 'Instance or userid unknown.'
+            }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
     method: 'PUT',
     path: '/social/provider/{provider}',
     handler: handlers_social.addProvider,

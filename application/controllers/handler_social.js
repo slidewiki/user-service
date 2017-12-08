@@ -12,7 +12,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   config = require('../configuration'),
   jwt = require('./jwt'),
   socialProvider = require('./social_provider'),
-  util = require('./util');
+  util = require('./util'),
+  instances = require('../configs/instances.js');
 
 const PROVIDERS = ['github', 'google', 'facebook'],
   PLATFORM_SOCIAL_URL = require('../configs/microservices').platform.uri + '/socialLogin',
@@ -430,8 +431,137 @@ module.exports = {
 
         return res(providers);
       });
+  },
+
+  slidewiki: (req, res) => {
+    if (!instances[req.query.instance]) {
+      return res(boom.notFound('Instance unknown.'));
+    }
+
+    //get detailed user
+    const options = {
+      url: instances[req.query.instance].userinfo.replace('{id}', req.query.userid),
+      method: 'GET',
+      json: true,
+      headers: {
+        '----jwt----': req.query.jwt
+      }
+    };
+
+    function callback(error, response, body) {
+      console.log('got detailed user: ', error, response.statusCode, body);
+
+      if (!error && (response.statusCode === 200)) {
+        let user = body;
+        user.userid = user._id + 0;
+        user._id = undefined;
+
+        //check if user is already migrated
+        userCtrl.find({
+          migratedFrom: {
+            instance: req.query.instance,
+            userid: req.query.userid
+          }
+        })
+          .then((cursor) => cursor.toArray())
+          .then((array) => {
+            if (array === undefined || array === null || array.length < 1) {
+              //now migrate it
+              return migrateUser(req, res, user);
+            }
+            else {
+              //do a sign in
+              return signInMigratedUser(req, res, user);
+            }
+          });
+      } else {
+        console.log('Error', (response) ? response.statusCode : undefined, error, body);
+        return res(boom.badImplementation('Failed to retrieve user data')); //TODO redirect to homepage?
+      }
+    }
+
+    if (process.env.NODE_ENV === 'test') {
+      callback(null, {statusCode: 200}, {});
+    }
+    else
+      request(options, callback);
   }
 };
+
+function migrateUser(req, res, user) {
+  user.migratedFrom = {
+    instance: req.query.instance,
+    userid: user.userid + 0
+  };
+  user.userid = undefined;
+  user.reviewed = undefined;
+  user.suspended = undefined;
+  user.lastReviewDoneBy = undefined;
+  user.registered = (new Date()).toISOString();
+
+  return userCtrl.find({
+    $or: [
+      {
+        username: user.username
+      },
+      {
+        email: user.email
+      }
+    ]
+  })
+  .then((cursor) => cursor.toArray())
+  .then((array) => {
+    if (array === undefined || array === null || array.length < 1) {
+      //save the user as a new one
+      //Send email before creating the user
+      return util.sendEMail(user.email,
+        'Your new account on SlideWiki',
+        'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have migrated your account with the username '+user.username+' from '+instances[req.query.instance].url+' to '+instances[instances.self].url+'. In order to start using your account and learn how get started with the platform please navigate to the following link:\n\n'+PLATFORM_INFORMATION_URL+'/welcome\n\nGreetings,\nthe SlideWiki Team')
+        .then(() => {
+          return userCtrl.create(user)
+            .then((result) => {
+              console.log('migrated user: create result: ', result);
+
+              if (result[0] !== undefined && result[0] !== null) {
+                //Error
+                console.log('ajv error', result, co.parseAjvValidationErrors(result));
+                return res(boom.badImplementation('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+              }
+
+              if (result.insertedCount === 1) {
+                //success
+                user._id = result.insertedId;
+
+                return res({//TODO redirect with jwt and data is needed plus flag that this user needs a fetchUser
+                  userid: result.insertedId,
+                  username: user.username,
+                  access_token: 'dummy',
+                  expires_in: 0
+                })
+                  .header(config.JWT.HEADER, jwt.createToken(user));
+              }
+
+              res(boom.badImplementation());
+            })
+            .catch((error) => {
+              console.log('Error - create user failed:', error, 'used user object:', user);
+              res(boom.badImplementation('Error', error));
+            });
+        })
+        .catch((error) => {
+          console.log('Error sending the email:', error);
+          return res(boom.badImplementation('Error', error));
+        });
+    }
+    else {
+      //save user temp. to change username
+    }
+  });
+}
+
+function signInMigratedUser(req, res, user) {
+
+}
 
 function isProviderSupported(provider) {
   return PROVIDERS.indexOf(provider) !== -1;
