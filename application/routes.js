@@ -583,7 +583,8 @@ module.exports = function (server) {
       validate: {
         query: {
           jwt: Joi.string().required().description('JWT header provided by /login'),
-          instance: Joi.string().required()
+          instance: Joi.string().required(),
+          userid: Joi.string()
         }
       },
       tags: ['api'],
@@ -597,6 +598,44 @@ module.exports = function (server) {
             ' 404 ': {
               'description': 'Instance or userid unknown.'
             }
+          },
+          payloadType: 'form'
+        },
+        yar: {
+          skip: true
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'POST',
+    path: '/social/finalize/{hash}',
+    handler: handlers_social.finalizeUser,
+    config: {
+      validate: {
+        params: {
+          hash: Joi.string()
+        },
+        payload: Joi.object().keys({
+          username: Joi.string().regex(USERNAME_REGEX),
+          email: Joi.string().email()
+        }).requiredKeys('email', 'username'),
+      },
+      tags: ['api'],
+      description: 'Finalizes the migration of a user.',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 404 ': {
+              'description': 'User not prepared for migration.'
+            },
+            ' 409 ': {
+              'description': 'Username or email is already in use.'
+            },
           },
           payloadType: 'form'
         },

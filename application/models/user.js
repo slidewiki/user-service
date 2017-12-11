@@ -143,7 +143,7 @@ const user = {
       type: 'object',
       properties: {
         instance: {
-          type: 'String'
+          type: 'string'
         },
         userid: {
           type: 'integer'

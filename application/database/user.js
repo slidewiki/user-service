@@ -2,7 +2,8 @@
 
 const helper = require('./helper'),
   userModel = require('../models/user.js'),
-  collectionName = 'users';
+  collectionName = 'users',
+  collectionNameTemp = 'temp_users';
 
 // hardcoded (static) users
 // the attributes included are only the public user attributes needed
@@ -18,13 +19,14 @@ const staticUsers = [
 ];
 
 let self = module.exports = {
-  create: (user) => {
+  create: (user, temp = false) => {
+    let name = (temp) ? collectionNameTemp : collectionName;
     return helper.connectToDatabase()
-      .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, collectionName))
+      .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, name))
       .then((newId) => {
         // console.log('newId', newId);
         return helper.connectToDatabase() //db connection have to be accessed again in order to work with more than one collection
-          .then((db2) => db2.collection(collectionName))
+          .then((db2) => db2.collection(name))
           .then((collection) => {
             let isValid = false;
             user._id = newId;
@@ -70,17 +72,19 @@ let self = module.exports = {
       });
   },
 
-  delete: (userid) => {
+  delete: (userid, temp = false) => {
+    let name = (temp) ? collectionNameTemp : collectionName;
     return helper.connectToDatabase()
-      .then((dbconn) => dbconn.collection(collectionName))
+      .then((dbconn) => dbconn.collection(name))
       .then((collection) => collection.remove({
         _id: userid
       }));
   },
 
-  find: (query) => {
+  find: (query, temp = false) => {
+    let name = (temp) ? collectionNameTemp : collectionName;
     return helper.connectToDatabase()
-      .then((dbconn) => dbconn.collection(collectionName))
+      .then((dbconn) => dbconn.collection(name))
       .then((collection) => collection.find(query));
   },
 
