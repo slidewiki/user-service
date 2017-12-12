@@ -577,7 +577,7 @@ module.exports = function (server) {
 
   server.route({
     method: 'GET',
-    path: '/social/useprovider/slidewiki',
+    path: '/social/provider/slidewiki',
     handler: handlers_social.slidewiki,
     config: {
       validate: {

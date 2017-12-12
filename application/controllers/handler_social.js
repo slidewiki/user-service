@@ -441,22 +441,25 @@ module.exports = {
     }
 
     //get detailed user
+    let headers = {};
+    headers[config.JWT.HEADER] = req.query.jwt
     const options = {
       url: instances[req.query.instance].userinfo.replace('{id}', req.query.userid),
       method: 'GET',
       json: true,
-      headers: {
-        '----jwt----': req.query.jwt
-      }
+      headers: headers
     };
 
     function callback(error, response, body) {
-      console.log('got detailed user: ', error, response.statusCode, body, options);
+      console.log('got detailed user: ', error, response.statusCode, body, options, body.providers);
 
-      if (!error && (response.statusCode === 200)) {
+      if (!error && (response.statusCode === 200) && body.username) {
         let user = body;
         user.userid = user._id + 0;
         user._id = undefined;
+        user.providers = [];
+        if (!user.frontendLanguage)
+          user.frontendLanguage = 'en'
 
         //check if user is already migrated
         userCtrl.find({
@@ -482,10 +485,10 @@ module.exports = {
       }
     }
 
-    if (process.env.NODE_ENV === 'test') {
-      callback(null, {statusCode: 200}, {});
-    }
-    else
+    // if (process.env.NODE_ENV === 'test') {
+    //   callback(null, {statusCode: 200}, {});
+    // }
+    // else
       request(options, callback);
   },
 
@@ -499,7 +502,7 @@ module.exports = {
         return userCtrl.find({_id: req.params.hash}, true)
           .then((cursor) => cursor.toArray())
           .then((result) => {
-            //console.log('finalizeUser: result: ', result);
+            console.log('finalizeUser: result: ', result);
 
             switch (result.length) {
               case 0: return res(boom.notFound());
@@ -530,11 +533,18 @@ module.exports = {
                           //success
                           user._id = result.insertedId;
 
-                          return res({
-                            userid: result.insertedId,
-                            username: user.username
-                          })
-                            .header(config.JWT.HEADER, jwt.createToken(user));
+                          return userCtrl.delete(hash, true)
+                            .then(() => {
+                              return res({
+                                userid: result.insertedId,
+                                username: user.username
+                              })
+                                .header(config.JWT.HEADER, jwt.createToken(user));
+                            })
+                            .catch((error) => {
+                              console.log('Error - unable to delete user from temp. collection:', error);
+                              res(boom.badImplementation('Error', error));
+                            });
                         }
 
                         res(boom.badImplementation());
