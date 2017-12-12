@@ -458,18 +458,22 @@ module.exports = {
         user.userid = user._id + 0;
         user._id = undefined;
         user.providers = [];
+        user.groups = undefined;
+        user.hasPassword = false;
         if (!user.frontendLanguage)
           user.frontendLanguage = 'en'
 
         //check if user is already migrated
-        userCtrl.find({
+        let query = {
           migratedFrom: {
             instance: req.query.instance,
-            userid: req.query.userid
+            userid: util.parseStringToInteger(req.query.userid)
           }
-        })
+        };
+        userCtrl.find(query)
           .then((cursor) => cursor.toArray())
           .then((array) => {
+            console.log('searched for already migrated user:', query, array);
             if (array === undefined || array === null || array.length < 1) {
               //now migrate it
               return migrateUser(req, res, user);
@@ -570,7 +574,7 @@ function migrateUser(req, res, user) {
   console.log('migrateUser()');
   user.migratedFrom = {
     instance: req.query.instance,
-    userid: user.userid + 0
+    userid: util.parseStringToInteger(user.userid) + 0
   };
   user.userid = undefined;
   user.reviewed = undefined;
