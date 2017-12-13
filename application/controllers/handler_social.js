@@ -14,7 +14,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   request = require('request'),
   socialProvider = require('./social_provider'),
   util = require('./util'),
-  instances = require('../configs/instances.js');
+  instances = require('../configs/instances.js'),
+  ObjectId = require('mongodb').ObjectID;
 
 const PROVIDERS = ['github', 'google', 'facebook'],
   PLATFORM_SOCIAL_URL = require('../configs/microservices').platform.uri + '/socialLogin',
@@ -503,10 +504,10 @@ module.exports = {
           return res(boom.conflict());
         }
 
-        return userCtrl.find({_id: req.params.hash}, true)
+        return userCtrl.find({_id: ObjectId(req.params.hash)}, true)
           .then((cursor) => cursor.toArray())
           .then((result) => {
-            console.log('finalizeUser: result: ', result);
+            console.log('finalizeUser: result: ', result, req.params.hash);
 
             switch (result.length) {
               case 0: return res(boom.notFound());
@@ -515,6 +516,10 @@ module.exports = {
                 user.username = req.payload.username;
                 user.email = req.payload.email;
                 user._id = undefined;
+                for(let k in user) {
+                  if (user[k] === null)
+                    user[k] = undefined;
+                }
 
                 console.log('create new user');
                 //save the user as a new one
@@ -537,7 +542,7 @@ module.exports = {
                           //success
                           user._id = result.insertedId;
 
-                          return userCtrl.delete(hash, true)
+                          return userCtrl.delete(ObjectId(req.params.hash), true)
                             .then(() => {
                               return res({
                                 userid: result.insertedId,
