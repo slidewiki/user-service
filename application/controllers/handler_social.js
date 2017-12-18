@@ -579,7 +579,8 @@ function migrateUser(req, res, user) {
   console.log('migrateUser()');
   user.migratedFrom = {
     instance: req.query.instance,
-    userid: util.parseStringToInteger(user.userid) + 0
+    userid: util.parseStringToInteger(user.userid) + 0,
+    url: instances[req.query.instance].url
   };
   user.userid = undefined;
   user.reviewed = undefined;

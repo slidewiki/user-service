@@ -147,6 +147,9 @@ const user = {
         },
         userid: {
           type: 'integer'
+        },
+        url: {
+          type: 'string'
         }
       }
     }
