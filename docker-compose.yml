@@ -24,4 +24,4 @@ userservice:
     - DATABASE_URL=mongodb # use a url or the name, defined in the docker-compose file
     - SECRET_REVIEW_KEY=friend
   volumes:
-    - /data/slidewiki-deployment/docker-compose/providerConfig.json:/nodeApp/config.json:ro
+    - /data/slidewiki-deployment/docker-compose/providerConfig_experimental.json:/nodeApp/config.json:ro
