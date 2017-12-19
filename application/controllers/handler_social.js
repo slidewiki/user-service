@@ -1,3 +1,5 @@
+/*eslint no-case-declarations: "warn"*/
+
 /*
 Handles the requests by executing stuff and replying to the client. Uses promises to get stuff done.
 Instance for social function - handler.js got too big
@@ -443,7 +445,7 @@ module.exports = {
 
     //get detailed user
     let headers = {};
-    headers[config.JWT.HEADER] = req.query.jwt
+    headers[config.JWT.HEADER] = req.query.jwt;
     const options = {
       url: instances[req.query.instance].userinfo.replace('{id}', req.query.userid),
       method: 'GET',
@@ -462,7 +464,7 @@ module.exports = {
         user.groups = undefined;
         user.hasPassword = false;
         if (!user.frontendLanguage)
-          user.frontendLanguage = 'en'
+          user.frontendLanguage = 'en';
 
         //check if user is already migrated
         let query = {
@@ -494,7 +496,7 @@ module.exports = {
     //   callback(null, {statusCode: 200}, {});
     // }
     // else
-      request(options, callback);
+    request(options, callback);
   },
 
   finalizeUser: (req, res) => {
@@ -510,9 +512,10 @@ module.exports = {
             console.log('finalizeUser: result: ', result, req.params.hash);
 
             switch (result.length) {
-              case 0: return res(boom.notFound());
+              case 0: res(boom.notFound());
                 break;
-              case 1: let user = result[0];
+              case 1:
+                let user = result[0];
                 user.username = req.payload.username;
                 user.email = req.payload.email;
                 user._id = undefined;
@@ -524,7 +527,7 @@ module.exports = {
                 console.log('create new user');
                 //save the user as a new one
                 //Send email before creating the user
-                return util.sendEMail(user.email,
+                util.sendEMail(user.email,
                   'Your new account on SlideWiki',
                   'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have migrated your account with the username '+user.username+' from '+instances[user.migratedFrom.instance].url+' to '+instances[instances._self].url+'. In order to start using your account and learn how get started with the platform please navigate to the following link:\n\n'+PLATFORM_INFORMATION_URL+'/welcome\n\nGreetings,\nthe SlideWiki Team')
                   .then(() => {
@@ -568,8 +571,8 @@ module.exports = {
                     return res(boom.badImplementation('Error', error));
                   });
                 break;
-              default: return res(boom.badImplementation())
-            };
+              default: return res(boom.badImplementation());
+            }
           });
       });
   }
@@ -598,79 +601,79 @@ function migrateUser(req, res, user) {
       }
     ]
   })
-  .then((cursor) => cursor.toArray())
-  .then((array) => {
-    if (array === undefined || array === null || array.length < 1) {
-      console.log('create new user');
-      //save the user as a new one
-      //Send email before creating the user
-      return util.sendEMail(user.email,
-        'Your new account on SlideWiki',
-        'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have migrated your account with the username '+user.username+' from '+instances[req.query.instance].url+' to '+instances[instances._self].url+'. In order to start using your account and learn how get started with the platform please navigate to the following link:\n\n'+PLATFORM_INFORMATION_URL+'/welcome\n\nGreetings,\nthe SlideWiki Team')
-        .then(() => {
-          return userCtrl.create(user)
-            .then((result) => {
-              console.log('migrated user: create result: ', result.result);
+    .then((cursor) => cursor.toArray())
+    .then((array) => {
+      if (array === undefined || array === null || array.length < 1) {
+        console.log('create new user');
+        //save the user as a new one
+        //Send email before creating the user
+        return util.sendEMail(user.email,
+          'Your new account on SlideWiki',
+          'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have migrated your account with the username '+user.username+' from '+instances[req.query.instance].url+' to '+instances[instances._self].url+'. In order to start using your account and learn how get started with the platform please navigate to the following link:\n\n'+PLATFORM_INFORMATION_URL+'/welcome\n\nGreetings,\nthe SlideWiki Team')
+          .then(() => {
+            return userCtrl.create(user)
+              .then((result) => {
+                console.log('migrated user: create result: ', result.result);
 
-              if (result[0] !== undefined && result[0] !== null) {
-                //Error
-                console.log('ajv error', result, co.parseAjvValidationErrors(result));
-                return res(boom.badImplementation('registration failed because data is wrong: ' + co.parseAjvValidationErrors(result)));
-              }
+                if (result[0] !== undefined && result[0] !== null) {
+                  //Error
+                  console.log('ajv error', result, co.parseAjvValidationErrors(result));
+                  return res(boom.badImplementation('registration failed because data is wrong: ' + co.parseAjvValidationErrors(result)));
+                }
 
-              if (result.insertedCount === 1) {
-                //success
-                user._id = result.insertedId;
+                if (result.insertedCount === 1) {
+                  //success
+                  user._id = result.insertedId;
 
-                return res()
-                  .redirect(PLATFORM_MIGRATE_URL + '?data=' + encodeURIComponent(JSON.stringify({
-                    userid: result.insertedId,
-                    username: user.username,
-                    jwt: jwt.createToken(user)
-                  })))
-                  .temporary(true);
-              }
+                  return res()
+                    .redirect(PLATFORM_MIGRATE_URL + '?data=' + encodeURIComponent(JSON.stringify({
+                      userid: result.insertedId,
+                      username: user.username,
+                      jwt: jwt.createToken(user)
+                    })))
+                    .temporary(true);
+                }
 
-              res(boom.badImplementation());
-            })
-            .catch((error) => {
-              console.log('Error - create user failed:', error, 'used user object:', user);
-              res(boom.badImplementation('Error', error));
-            });
-        })
-        .catch((error) => {
-          console.log('Error sending the email:', error);
-          return res(boom.badImplementation('Error', error));
-        });
-    }
-    else {
-      console.log('save user temp.');
-      //save user temp. to change username
-      userCtrl.create(user, true)
-        .then((result) => {
-          if (result[0] !== undefined && result[0] !== null) {
-            //Error
-            console.log('ajv error', result, co.parseAjvValidationErrors(result));
-            return res(boom.badData('migration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-          }
+                res(boom.badImplementation());
+              })
+              .catch((error) => {
+                console.log('Error - create user failed:', error, 'used user object:', user);
+                res(boom.badImplementation('Error', error));
+              });
+          })
+          .catch((error) => {
+            console.log('Error sending the email:', error);
+            return res(boom.badImplementation('Error', error));
+          });
+      }
+      else {
+        console.log('save user temp.');
+        //save user temp. to change username
+        userCtrl.create(user, true)
+          .then((result) => {
+            if (result[0] !== undefined && result[0] !== null) {
+              //Error
+              console.log('ajv error', result, co.parseAjvValidationErrors(result));
+              return res(boom.badData('migration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+            }
 
-          if (result.insertedCount === 1) {
-            //success
-            user._id = result.insertedId;
+            if (result.insertedCount === 1) {
+              //success
+              user._id = result.insertedId;
 
-            return res()
-              .redirect(PLATFORM_MIGRATE_URL + '?data=' + encodeURIComponent(JSON.stringify({
-                hash: result.insertedId,
-                username: user.username,
-                email: user.email
-              })))
-              .temporary(true);
-          }
+              return res()
+                .redirect(PLATFORM_MIGRATE_URL + '?data=' + encodeURIComponent(JSON.stringify({
+                  hash: result.insertedId,
+                  username: user.username,
+                  email: user.email
+                })))
+                .temporary(true);
+            }
 
-          res(boom.badImplementation());
-        });
-    }
-  });
+            res(boom.badImplementation());
+          });
+      }
+    });
 }
 
 function signInMigratedUser(req, res, userFromOtherInstance, userFromThisInstance) {
