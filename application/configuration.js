@@ -87,5 +87,8 @@ module.exports = {
     from: SMTP_from,
     enabled: SMTP_enabled
   },
+  NOTIFICATION_TYPES: {
+    1: 'request_deck_edit_rights'
+  }
   SALT: '6cee6c6a420e0573d1a4ad8ecb44f2113d010a0c3aadd3c1251b9aa1406ba6a3' //must be the same as in slidewiki-platform, see handler.js resetPassword
 };
