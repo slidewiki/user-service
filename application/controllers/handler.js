@@ -1192,6 +1192,11 @@ module.exports = {
   sendEmail: (req, res) => {
     switch (req.payload.reason) {
       case 1: //request_deck_edit_rights
+        //check data values
+        if (!req.payload.data.deckname || !req.payload.data.deckid) {
+          return res(boom.badRequest('payload.data was wrong'));
+        }
+
         return userCtrl.find({_id: req.params.id})
           .then((cursor) => cursor.toArray())
           .then((array) => {
@@ -1199,16 +1204,11 @@ module.exports = {
               return res(boom.notFound());
             }
 
-            //check data values
-            if (!req.payload.data.deckname || !req.payload.data.deckid) {
-              return res(boom.badRequest('payload.data was wrong'));
-            }
-
             let email = array[0].email;
 
             let connectionPromise = util.sendEMail(email,
               'User requested deck edit rights',
-              'Dear SlideWiki user,\n\na request has been made by another user to acquire deck edit rights on your deck "' + req.payload.data.deckname + '". The request was made by ' + req.auth.credentials.username + '.\n\nIn order to grant the rights, use the following link: ' + PLATFORM_INFORMATION_URL + '/deck/' + req.payload.data.deckid + '/deck/' + req.payload.data.deckid + '/edit?grantEditRights=true&userid=' + req.auth.credentials.userid + ' .\n\nIf you do not want to grant rights, then just ignore this email.\n\nThanks,\nthe SlideWiki Team');
+              'Dear SlideWiki user,\n\na request has been made by another user to acquire deck edit rights on your deck "' + req.payload.data.deckname + '". The request was made by ' + req.auth.credentials.username + '.\nIn order to grant the rights, use the following link: ' + PLATFORM_INFORMATION_URL + '/deck/' + req.payload.data.deckid + '/deck/' + req.payload.data.deckid + '/edit?grantEditRights=true&userid=' + req.auth.credentials.userid + ' .\n\nIf you do not want to grant rights, then just ignore this email.\n\nThanks,\nthe SlideWiki Team');
 
             return connectionPromise
               .then((data) => {
