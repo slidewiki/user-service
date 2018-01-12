@@ -54,6 +54,12 @@ module.exports = {
           identifier: user.identifier
         };
 
+        //remove null values
+        for (let key in data) {
+          if (data[key] === null)
+            data[key] = undefined;
+        }
+
         // console.log('handleOAuth2Token: created data', data);
 
         return providerCtrl.create(data)
