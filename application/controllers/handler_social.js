@@ -68,7 +68,8 @@ module.exports = {
 
             if (result[0] !== undefined && result[0] !== null) {
               //Error
-              return res(boom.badImplementation('Implementation error - data model error:', co.parseAjvValidationErrors(result)));
+              console.log('Error', co.parseAjvValidationErrors(result));
+              return res(boom.badImplementation('Implementation error - data model error'));
             }
 
             if (result.insertedCount === 1) {
