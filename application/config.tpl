@@ -7,7 +7,7 @@
     "key": "",
     "secret": "",
     "callback": "/social/provider/github",
-    "scope": ["user"]
+    "scope": ["read:user,user:email"]
   },
   "google": {
     "key": "",
