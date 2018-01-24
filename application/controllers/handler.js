@@ -1404,7 +1404,8 @@ function enrichGroupMembers(group) {
     prev.push(curr.userid);
     return prev;
   }, []);
-  userids.push(group.creator.userid);
+	const creatorId = (group.creator.userid === undefined) ? group.creator : group.creator.userid;
+  userids.push(creatorId);
 
   console.log('enrichGroupMembers: group, userids', group, userids);
 
@@ -1426,13 +1427,15 @@ function enrichGroupMembers(group) {
         return prev;
       }, []);
       let creator = array.filter((user) => {
-        return user.userid === group.creator.userid;
+        return user.userid === creatorId;
       });
+			if (creator === undefined || creator === null)
+				creator = [group.creator];
       let members = array.filter((user) => {
-        return user.userid !== group.creator.userid;
+        return user.userid !== creatorId;
       });
 
-      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0]._id, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
+      console.log('enrichGroupMembers: got creator and users (amount)', creator[0], members.concat(group.members).length);
 
       //add joined attribute to members
       members = (members.concat(group.members)).reduce((prev, curr) => {
