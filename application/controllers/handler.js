@@ -1223,7 +1223,6 @@ module.exports = {
             console.log('Error', error);
             res(boom.badImplementation(error));
           });
-        break;
 
       default:
         return res(boom.notFound('Bad reason id'));
