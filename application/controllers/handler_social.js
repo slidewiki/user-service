@@ -54,6 +54,12 @@ module.exports = {
           identifier: user.identifier
         };
 
+        //remove null values
+        for (let key in data) {
+          if (data[key] === null)
+            data[key] = undefined;
+        }
+
         // console.log('handleOAuth2Token: created data', data);
 
         return providerCtrl.create(data)
@@ -62,7 +68,8 @@ module.exports = {
 
             if (result[0] !== undefined && result[0] !== null) {
               //Error
-              return res(boom.badImplementation('Implementation error - data model error:', co.parseAjvValidationErrors(result)));
+              console.log('Error', co.parseAjvValidationErrors(result));
+              return res(boom.badImplementation('Implementation error - data model error'));
             }
 
             if (result.insertedCount === 1) {
