@@ -1208,7 +1208,7 @@ module.exports = {
 
             let connectionPromise = util.sendEMail(email,
               'User requested deck edit rights',
-              'Dear SlideWiki user,\n\na request has been made by another user to acquire deck edit rights on your deck "' + req.payload.data.deckname + '". The request was made by ' + req.auth.credentials.username + '.\nIn order to grant the rights, use the following link: ' + PLATFORM_INFORMATION_URL + '/deck/' + req.payload.data.deckid + '/deck/' + req.payload.data.deckid + '/edit?grantEditRights=true&userid=' + req.auth.credentials.userid + ' .\n\nIf you do not want to grant rights, then just ignore this email.\n\nThanks,\nthe SlideWiki Team');
+              'Dear SlideWiki user,\n\na request has been made by another user to acquire deck edit rights on your deck "' + req.payload.data.deckname + '". The request was made by ' + req.auth.credentials.username + '.\nIn order to grant the rights, use the following link: ' + PLATFORM_INFORMATION_URL + '/deck/' + req.payload.data.deckid + '/deck/' + req.payload.data.deckid + '/edit?interestedUser=' + req.auth.credentials.username + '\n\nIf you do not want to grant rights, then just ignore this email.\n\nThanks,\nthe SlideWiki Team');
 
             return connectionPromise
               .then((data) => {
