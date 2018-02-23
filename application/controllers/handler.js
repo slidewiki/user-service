@@ -1191,7 +1191,7 @@ module.exports = {
 
   sendEmail: (req, res) => {
     switch (req.payload.reason) {
-      case 1: //request_deck_edit_rights
+      case 1: { //request_deck_edit_rights
         //check data values
         if (!req.payload.data.deckname || !req.payload.data.deckid) {
           return res(boom.badRequest('payload.data was wrong'));
@@ -1223,9 +1223,45 @@ module.exports = {
             console.log('Error', error);
             res(boom.badImplementation(error));
           });
+      }
 
-      default:
+      case 2: { //video recorded
+        //check data values
+        if (!req.payload.data.filename || !req.payload.data.deck || !req.payload.data.creationDate) {
+          return res(boom.badRequest('payload.data was wrong'));
+        }
+
+        return userCtrl.find({_id: req.params.id})
+          .then((cursor) => cursor.toArray())
+          .then((array) => {
+            if (array.length !== 1) {
+              return res(boom.notFound());
+            }
+
+            let email = array[0].email;
+
+            let connectionPromise = util.sendEMail(email,
+              'User requested deck edit rights',
+              'Dear SlideWiki user ' + array[0].username + ',\n\nYou\'ve held a live session about ' + req.payload.data.deck + (req.payload.data.revision) ? '-'+req.payload.data.revision : '' + ' that ended at about ' + req.payload.data.creationDate + '. Our system finished to create a video of this session. You can view or download the video at: ' + require('../configs/microservices').file.uri + '\nFeel free to use the video for whatever reason you like to.\n\nThanks,\nthe SlideWiki Team');
+
+            return connectionPromise
+              .then((data) => {
+                return res();
+              })
+              .catch((error) => {
+                console.log('Error', error);
+                res(boom.badImplementation(error));
+              });
+          })
+          .catch((error) => {
+            console.log('Error', error);
+            res(boom.badImplementation(error));
+          });
+      }
+
+      default: {
         return res(boom.notFound('Bad reason id'));
+      }
     }
   }
 };
