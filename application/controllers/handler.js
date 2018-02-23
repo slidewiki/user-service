@@ -1227,7 +1227,7 @@ module.exports = {
 
       case 2: { //video recorded
         //check data values
-        if (!req.payload.data.filename || !req.payload.data.deck || !req.payload.data.creationDate) {
+        if (!req.payload.data.fileName || !req.payload.data.deck || !req.payload.data.creationDate) {
           return res(boom.badRequest('payload.data was wrong'));
         }
 
@@ -1241,8 +1241,8 @@ module.exports = {
             let email = array[0].email;
 
             let connectionPromise = util.sendEMail(email,
-              'User requested deck edit rights',
-              'Dear SlideWiki user ' + array[0].username + ',\n\nYou\'ve held a live session about ' + req.payload.data.deck + (req.payload.data.revision) ? '-'+req.payload.data.revision : '' + ' that ended at about ' + req.payload.data.creationDate + '. Our system finished to create a video of this session. You can view or download the video at: ' + require('../configs/microservices').file.uri + '\nFeel free to use the video for whatever reason you like to.\n\nThanks,\nthe SlideWiki Team');
+              'New video about your session of deck ' + req.payload.data.deck + (req.payload.data.revision) ? '-'+req.payload.data.revision : '',
+              'Dear SlideWiki user ' + array[0].username + ',\n\nYou\'ve held a live session about ' + req.payload.data.deck + (req.payload.data.revision) ? '-'+req.payload.data.revision : '' + ' that ended at about ' + req.payload.data.creationDate + '. Our system finished to create a video of this session. You can view or download the video at: ' + require('../configs/microservices').file.uri + '/video/' + req.payload.data.fileName + '\nFeel free to use the video for whatever reason you like to.\n\nThanks,\nthe SlideWiki Team');
 
             return connectionPromise
               .then((data) => {
