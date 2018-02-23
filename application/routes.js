@@ -1085,6 +1085,47 @@ module.exports = function (server) {
     }
   });
 
+  server.route({
+    method: 'POST',
+    path: '/user/{id}/sendEmail',
+    handler: handlers.sendEmail,
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().options({convert: true})
+        },
+        payload: {
+          reason: Joi.number(),
+          data: Joi.object().unknown()
+        }
+      },
+      tags: ['api'],
+      description: 'Sends an email to the user with the given userid. The reason determines the text of the email and the data object contains any keys (one level) used for the email text.',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'No authentification given.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and secret.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'User or reason not found. Check the id of user and reason.'
+            }
+          },
+          payloadType: 'json'
+        }
+      }
+    }
+  });
+
   //Routes for SPAM protection
 
   server.route({

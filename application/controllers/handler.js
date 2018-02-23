@@ -1187,6 +1187,46 @@ module.exports = {
         console.log('Error', error);
         res(boom.badImplementation(error));
       });
+  },
+
+  sendEmail: (req, res) => {
+    switch (req.payload.reason) {
+      case 1: //request_deck_edit_rights
+        //check data values
+        if (!req.payload.data.deckname || !req.payload.data.deckid) {
+          return res(boom.badRequest('payload.data was wrong'));
+        }
+
+        return userCtrl.find({_id: req.params.id})
+          .then((cursor) => cursor.toArray())
+          .then((array) => {
+            if (array.length !== 1) {
+              return res(boom.notFound());
+            }
+
+            let email = array[0].email;
+
+            let connectionPromise = util.sendEMail(email,
+              'User requested deck edit rights',
+              'Dear SlideWiki user,\n\na request has been made by another user to acquire deck edit rights on your deck "' + req.payload.data.deckname + '". The request was made by ' + req.auth.credentials.username + '.\nIn order to grant the rights, use the following link: ' + PLATFORM_INFORMATION_URL + '/deck/' + req.payload.data.deckid + '/deck/' + req.payload.data.deckid + '/edit?interestedUser=' + req.auth.credentials.username + '\n\nIf you do not want to grant rights, then just ignore this email.\n\nThanks,\nthe SlideWiki Team');
+
+            return connectionPromise
+              .then((data) => {
+                return res();
+              })
+              .catch((error) => {
+                console.log('Error', error);
+                res(boom.badImplementation(error));
+              });
+          })
+          .catch((error) => {
+            console.log('Error', error);
+            res(boom.badImplementation(error));
+          });
+
+      default:
+        return res(boom.notFound('Bad reason id'));
+    }
   }
 };
 
