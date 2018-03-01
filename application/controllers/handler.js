@@ -1444,7 +1444,8 @@ function enrichGroupMembers(group) {
     prev.push(curr.userid);
     return prev;
   }, []);
-  userids.push((group.creator.userid) ? group.creator.userid : group.creator);
+  const creatorid = (group.creator.userid) ? group.creator.userid : group.creator;
+  userids.push(creatorid);
 
   console.log('enrichGroupMembers: group, userids', group, userids);
 
@@ -1466,10 +1467,10 @@ function enrichGroupMembers(group) {
         return prev;
       }, []);
       let creator = array.filter((user) => {
-        return user.userid === group.creator.userid;
+        return user.userid === creatorid;
       });
       let members = array.filter((user) => {
-        return user.userid !== group.creator.userid;
+        return user.userid !== creatorid;
       });
 
       console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0].userid, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
