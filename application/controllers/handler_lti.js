@@ -3,12 +3,12 @@
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
   co = require('../common'),
   userCtrl = require('../database/user'),
-  ltiCtrl = require('../database/lti'),
-  config = require('../configuration'),
+  //ltiCtrl = require('../database/lti'),
+  //config = require('../configuration'),
   jwt = require('./jwt'),
   util = require('./util'),
   lti = require('ims-lti'),
-  handler = require('./handler'),
+  //handler = require('./handler'),
   Microservices = require('../configs/microservices.js');
 
 const user_CookieName = 'user_json_storage';
@@ -19,7 +19,7 @@ const PROVIDERS = ['github', 'google', 'facebook'],
 
 module.exports = {
 
-handleLTI: (req, res) => {
+  handleLTI: (req, res) => {
     //console.log('handleLTI-New');
     //console.log('req='+JSON.stringify(req.query));
     // Validate LTI request
@@ -32,112 +32,113 @@ handleLTI: (req, res) => {
     //TODO: Accept different types of signatures
     let ltiProvider = new lti.Provider(ltiKeySecret.key, ltiKeySecret.secret);
     ltiProvider.valid_request(req, function(err, isValid){
-        if(err){
-            console.log('There was an error in the LTI request', err);
-            res(boom.badImplementation());
-        }
-        else{
-          let user = getUser(req);
+      if(err){
+        console.log('There was an error in the LTI request', err);
+        res(boom.badImplementation());
+      }
+      else{
+        let user = getUser(req);
 
-          console.log('Registration with LTI: ', user.username, user.email);
-          //check if username already exists
-          return util.isIdentityAssigned(user.email, user.username)
-            .then((result) => {
+        console.log('Registration with LTI: ', user.username, user.email);
+        //check if username already exists
+        return util.isIdentityAssigned(user.email, user.username)
+          .then((result) => {
 
-              if (result.assigned === false) {
-                    // If the user doesn't exist, create a new user
-                    return userCtrl.create(user)
-                      .then((result) => {
+            if (result.assigned === false) {
+              // If the user doesn't exist, create a new user
+              return userCtrl.create(user)
+                .then((result) => {
 
-                        console.log('result='+simpleStringify(result));
-                        if (result[0] !== undefined && result[0] !== null) {
-                          //Error
-                          console.log('ajv error', result, co.parseAjvValidationErrors(result));
-                          return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-                        }
+                  console.log('result='+simpleStringify(result));
+                  if (result[0] !== undefined && result[0] !== null) {
+                    //Error
+                    console.log('ajv error', result, co.parseAjvValidationErrors(result));
+                    return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+                  }
 
-                        if (result.insertedCount === 1) {
-                          //success
-                          console.log('new user created. successful, result.insertedId='+result.insertedId);
-                            let data = {
-                              userid: result.insertedId,
-                              username: user.username,
-                              jwt: jwt.createLTIToken({
-                                userid: result.insertedId,
-                                username: user.username
-                              })
-                            };
-
-                          //success
-                          return res()
-                            .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
-                            .temporary(true);
-
-                        }
-
-                        res(boom.badImplementation());
+                  if (result.insertedCount === 1) {
+                    //success
+                    console.log('new user created. successful, result.insertedId='+result.insertedId);
+                    let data = {
+                      userid: result.insertedId,
+                      username: user.username,
+                      jwt: jwt.createLTIToken({
+                        userid: result.insertedId,
+                        username: user.username
                       })
+                    };
+
+                    //success
+                    return res()
+                      .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
+                      .temporary(true);
+
+                  }
+
+                  res(boom.badImplementation());
+                });
 
 
-              } else {
+            } else {
 
-                /*
+              /*
                   If the user is already registered, sign in
-                */
-                console.log('already registered. signed in. result='+simpleStringify(result));
-                let id = result.userid;
-                //id='1';
-                let data = {
+              */
+              console.log('already registered. signed in. result='+simpleStringify(result));
+              let id = result.userid;
+              //id='1';
+              let data = {
+                userid: id,
+                username: user.username,
+                jwt: jwt.createLTIToken({
                   userid: id,
-                  username: user.username,
-                  jwt: jwt.createLTIToken({
-                    userid: id,
-                    username: user.username
-                  })
-                };
+                  username: user.username
+                })
+              };
 
-            //success
-            return res()
-              .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
-              .temporary(true);
+              //success
+              return res()
+                .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
+                .temporary(true);
 
-              }
+            }
 
-            })
-            .catch((error) => {
-              console.log('Error - util.isIdentityAssigned('+user.email+', '+user.username+') failed:', error);
-              res(boom.badImplementation('Error', error));
-            });
+          })
+          .catch((error) => {
+            console.log('Error - util.isIdentityAssigned('+user.email+', '+user.username+') failed:', error);
+            res(boom.badImplementation('Error', error));
+          });
 
 
-        }
+      }
     });
 
-},
+  },
 
 
 };
 
 function simpleStringify (object){
-        var simpleObject = {};
-        for (var prop in object ){
-            if (!object.hasOwnProperty(prop)){
-                continue;
-            }
-            if (typeof(object[prop]) == 'object'){
-                continue;
-            }
-            if (typeof(object[prop]) == 'function'){
-                continue;
-            }
-            simpleObject[prop] = object[prop];
-        }
-        return JSON.stringify(simpleObject); // returns cleaned up JSON
-    };
+  let simpleObject = {};
+  for (let prop in object ){
+    if (!object.hasOwnProperty(prop)){
+      continue;
+    }
+    if (typeof(object[prop]) == 'object'){
+      continue;
+    }
+    if (typeof(object[prop]) == 'function'){
+      continue;
+    }
+    simpleObject[prop] = object[prop];
+  }
+  return JSON.stringify(simpleObject); // returns cleaned up JSON
+};
 
 
 function getUser(req){
-  let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'') || document.username.replace(/\s/g,'');
+  //let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'') || document.username.replace(/\s/g,'');
+  let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'');
   let email = util.parseAPIParameter(req.payload.lis_person_contact_email_primary).toLowerCase();
 
   return {
@@ -147,8 +148,8 @@ function getUser(req){
     email: email,
     frontendLanguage: 'en',
     // spokenLanguages: [util.parseAPIParameter(req.payload.language)],
-    country:          util.parseAPIParameter(req.payload.launch_presentation_locale) || document.location || '',
-
+    //country:          util.parseAPIParameter(req.payload.launch_presentation_locale) || document.location || '',
+    country:          util.parseAPIParameter(req.payload.launch_presentation_locale),
     picture:          '',
     description:      '',
     organization:     '',
