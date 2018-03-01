@@ -6,6 +6,7 @@ Each route implementes a basic parameter/payload validation and a swagger API do
 const Joi = require('joi'),
   handlers = require('./controllers/handler'),
   handlers_social = require('./controllers/handler_social'),
+  handlers_lti = require('./controllers/handler_lti'),
   LANGUAGE_REGEX = /^\w{2,5}$/ , //better /^[a-z]{2}(?:-[A-Z]{2})?$/   ?
   USERNAME_REGEX = /^[\w\-.~_]*$/ ;
 
@@ -854,6 +855,107 @@ module.exports = function (server) {
       }
     }
   });
+
+  //LTI
+  server.route({
+      method: 'POST',
+      path: '/lti/handle',
+      handler: handlers_lti.handleLTI,
+      config: {
+        validate: {
+          payload: Joi.object().keys({
+            oauth_consumer_key: Joi.string(),
+            oauth_timestamp: Joi.string(),
+            oauth_signature_method: Joi.string(),
+            oauth_signature: Joi.string(),
+            oauth_version: Joi.string(),
+            ext_user_username: Joi.string(),
+            lis_person_contact_email_primary: Joi.string().email(),
+            lis_person_name_given: Joi.string().allow(''),
+            lis_person_name_family: Joi.string().allow(''),
+            oauth_nonce: Joi.string().allow(''),
+            ext_lms: Joi.string().allow(''),
+            lis_result_sourcedid: Joi.string().allow(''),
+            context_id: Joi.string().allow(''),
+            tool_consumer_info_version: Joi.string().allow(''),
+            tool_consumer_instance_guid: Joi.string().allow(''),
+            context_label: Joi.string().allow(''),
+            lti_message_type: Joi.string().allow(''),
+            lis_person_name_full: Joi.string().allow(''),
+            context_title: Joi.string().allow(''),
+            user_id: Joi.string().allow(''),
+            tool_consumer_instance_description: Joi.string().allow(''),
+            launch_presentation_locale: Joi.string().allow(''),
+            resource_link_description: Joi.string().allow(''),
+            lis_outcome_service_url: Joi.string().allow(''),
+            tool_consumer_info_product_family_code: Joi.string().allow(''),
+            oauth_callback: Joi.string().allow(''),
+            lis_course_section_sourcedid: Joi.string().allow(''),
+            lis_person_sourcedid: Joi.string().allow(''),
+            tool_consumer_instance_name: Joi.string().allow(''),
+            resource_link_id: Joi.string().allow(''),
+            resource_link_title:Joi.string().allow(''),
+            roles: Joi.string().allow(''),
+            context_type: Joi.string().allow(''),
+            lti_version: Joi.string().allow(''),
+            launch_presentation_return_url: Joi.string().allow(''),
+            launch_presentation_document_target: Joi.string().allow('')
+          }).requiredKeys('ext_user_username', 'oauth_consumer_key', 'oauth_signature', 'oauth_timestamp', 'oauth_signature_method', 'oauth_version'),
+        },
+        state: {
+          parse: true, // parse and store in request.state
+          failAction: 'error' // may also be 'ignore' or 'log'
+        },
+        tags: ['api'],
+        description: 'Register a new user via LTI',
+        auth: false,
+        plugins: {
+          'hapi-swagger': {
+            responses: {
+              ' 200 ': {
+                'description': 'Successful',
+                'headers': {
+                  '----jwt----': {
+                    'description': 'Contains the JWT'
+                  }
+                },
+                schema: Joi.object().keys({
+                  access_token: Joi.string(),
+                  expires_in: Joi.number(),
+                  userid: Joi.number().integer(),
+                  username: Joi.string()
+                }).required().description('Return schema')
+              },
+              ' 401 ': {
+                'description': 'The credentials are wrong',
+                'headers': {
+                  'WWW-Authenticate': {
+                    'description': 'OAuth data is wrong or expired'
+                  }
+                }
+              },
+              ' 422 ': {
+                'description': 'Wrong user data - see error message',
+                schema: Joi.object().keys({
+                  statusCode: Joi.number().integer(),
+                  error: Joi.string(),
+                  message: Joi.string()
+                }).required().description('Return schema')
+              },
+              ' 423 ': {
+                'description': 'This LTI user is deactivated'
+              }
+            },
+            payloadType: 'form'
+          },
+          yar: {
+            skip: true
+          }
+        }
+      }
+    });
+
+
 
   //groups
 
