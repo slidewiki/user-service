@@ -133,7 +133,7 @@ function simpleStringify (object){
     simpleObject[prop] = object[prop];
   }
   return JSON.stringify(simpleObject); // returns cleaned up JSON
-};
+}
 
 
 function getUser(req){
