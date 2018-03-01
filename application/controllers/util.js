@@ -62,7 +62,7 @@ module.exports = {
                   if (value1.hasOwnProperty(field2)) {
                     let key2 = field2;
                     let value2 = value1[field2];
-                    console.log('key2='+key2+", value2="+value2);
+                    console.log('key2='+key2+', value2='+value2);
 
                     if(key2 === '_id'){
                       userId = value2;
@@ -70,7 +70,7 @@ module.exports = {
                     }
                   }
                 }
-                //console.log("key="+key1+", value="+value1);
+                //console.log('key='+key1+', value='+value1);
               }
             }
             console.log('userId='+userId);

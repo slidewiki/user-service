@@ -927,7 +927,7 @@ module.exports = function (server) {
               }).required().description('Return schema')
             },
             ' 401 ': {
-             'description': 'The credentials are wrong',
+              'description': 'The credentials are wrong',
               'headers': {
                 'WWW-Authenticate': {
                   'description': 'OAuth data is wrong or expired'

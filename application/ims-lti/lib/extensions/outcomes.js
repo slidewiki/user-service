@@ -238,7 +238,7 @@
           results = [];
           for (key in headers) {
             val = headers[key];
-            results.push(key + '=\"' + (utils.special_encode(val)) + '\"');
+            results.push(key +'=\"'+(utils.special_encode(val))+'\"');
           }
           return results;
         })()).join(','),
