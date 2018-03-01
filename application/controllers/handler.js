@@ -1444,7 +1444,7 @@ function enrichGroupMembers(group) {
     prev.push(curr.userid);
     return prev;
   }, []);
-  userids.push(group.creator.userid);
+  userids.push((group.creator.userid) ? group.creator.userid : group.creator);
 
   console.log('enrichGroupMembers: group, userids', group, userids);
 
@@ -1472,7 +1472,7 @@ function enrichGroupMembers(group) {
         return user.userid !== group.creator.userid;
       });
 
-      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0]._id, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
+      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0].userid, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
 
       //add joined attribute to members
       members = (members.concat(group.members)).reduce((prev, curr) => {
