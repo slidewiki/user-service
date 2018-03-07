@@ -56,6 +56,29 @@ While executing unit/integration tests the env *testing* is set, which disables 
 *All script are also available in the [migration](https://github.com/slidewiki/migration) repo.*
 * [db_migration_hashing.js](https://github.com/slidewiki/user-service/blob/master/application/db_migration_hashing.js): Is used for the migration of the old slidewiki.org to the new one. It hashes the passwords regarding our new hashing policies.
 * [db_migration_usernames.js](https://github.com/slidewiki/user-service/blob/master/application/db_migration_usernames.js): Is used for migration of the old slidewiki and combining multiple user datasets. It handles duplication of usernames and set all email addresses to lower case.
+* [suspend_users.js](https://github.com/slidewiki/user-service/blob/master/application/queue/suspend_users.js): suspend users and their decks plus groups which have their id in the *useridsforsuspension* collection - See section SPAM handling
+
+## SPAM handling
+
+With the platform a process detects SPAM'ish users and add their id to the *useridsforsuspension* collection.
+This collection could also be filled by hand.
+These userids are used by [suspend_users.js](https://github.com/slidewiki/user-service/blob/master/application/queue/suspend_users.js).
+This script sets each user as suspended and delete the corresponding user groups and also archives the owned decks.
+Atm the script have to be called by hand but could be added to the crontab.
+
+### How to add a user to the suspension list:
+
+Connect to the Mongo shell and add the userid:
+
+*db.useridsforsuspension.insert({_id: *userid*})*
+
+### How to execute the script
+
+Run
+
+*node queue/suspend_users.js \<JWT>*
+  
+The JWT have to be a valid token of a users which is a reviewer.
 
 ## Installation and running (in a container, works both on UNIX and Windows):
 
