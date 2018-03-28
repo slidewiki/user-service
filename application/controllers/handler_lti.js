@@ -7,20 +7,13 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   //config = require('../configuration'),
   jwt = require('./jwt'),
   util = require('./util'),
-  lti = require('ims-lti'),
-  //handler = require('./handler'),
-  Microservices = require('../configs/microservices.js');
+  lti = require('ims-lti');
 
-const user_CookieName = 'user_json_storage';
-const PROVIDERS = ['github', 'google', 'facebook'],
-  PLATFORM_SOCIAL_URL = require('../configs/microservices').platform.uri + '/socialLogin',
-  PLATFORM_LTI_URL = require('../configs/microservices').platform.uri+ '/ltiLogin',
-  PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '';
+const PLATFORM_LTI_URL = require('../configs/microservices').platform.uri+ '/ltiLogin';
 
 module.exports = {
 
   handleLTI: (req, res) => {
-    //console.log('handleLTI-New');
     //console.log('req='+JSON.stringify(req.query));
     // Validate LTI request
     let ltiKeySecret = {
