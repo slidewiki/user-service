@@ -46,6 +46,36 @@ module.exports = {
           console.log('isIdentityAssigned: cursor.array.length:', array.length);
 
           if (array.length > 0) {
+            //console.log('array='+JSON.stringify(array)); // returns cleaned up JSON
+            //console.log('array.id='+array[0]);
+
+            let userId = -1;
+            /*
+              Retrieve value of user id from the array
+            */
+            for(let field1 in array){
+              if (array.hasOwnProperty(field1)) {
+                let key1 = field1;
+                let value1 = array[field1];
+
+                for(let field2 in value1){
+                  if (value1.hasOwnProperty(field2)) {
+                    let key2 = field2;
+                    let value2 = value1[field2];
+                    console.log('key2='+key2+', value2='+value2);
+
+                    if(key2 === '_id'){
+                      userId = value2;
+                      break;
+                    }
+                  }
+                }
+                //console.log('key='+key1+', value='+value1);
+              }
+            }
+            console.log('userId='+userId);
+
+
             const isEMailAssigned = !(array.reduce((prev, curr) => {
               const sameEMail = curr.email === email;
               return prev && !sameEMail;
@@ -58,7 +88,8 @@ module.exports = {
             resolve({
               assigned: isEMailAssigned || isUsernameAssigned,
               username: isUsernameAssigned,
-              email: isEMailAssigned
+              email: isEMailAssigned,
+              userid: userId
             });
           } else {
             resolve({assigned: false});
