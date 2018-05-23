@@ -125,6 +125,7 @@ module.exports = {
             .temporary(true);
         }
 
+        console.log('Error in activateUser', result);
         return res(boom.forbidden('Wrong credentials were used'));
       })
       .catch((error) => {

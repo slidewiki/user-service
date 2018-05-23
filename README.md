@@ -77,7 +77,7 @@ Connect to the Mongo shell and add the userid:
 Run
 
 *node queue/suspend_users.js \<JWT>*
-  
+
 The JWT have to be a valid token of a users which is a reviewer.
 
 ## Installation and running (in a container, works both on UNIX and Windows):
@@ -104,6 +104,9 @@ Most of them are obligatory to be changed on deployment, especially keys and sec
 * URL_PLATFORM - URL of the platform of the used domain/stage
 * SERVICE_URL_ACTIVITIES - URL of the activities-service of the used domain/stage
 * SERVICE_URL_DECK - URL of the deck-service of the used domain/stage
+* LTI_ID - ask Umar
+* LTI_KEY - ask Umar
+* LTI_SECRET - ask Umar
 
 New secret could be created with the command:
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'));"

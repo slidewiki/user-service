@@ -7,7 +7,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   //config = require('../configuration'),
   jwt = require('./jwt'),
   util = require('./util'),
-  lti = require('ims-lti');
+  lti = require('ims-lti'),
+  LTI_CONFIG = require('../configuration.js').LTI;
 
 const PLATFORM_LTI_URL = require('../configs/microservices').platform.uri+ '/ltiLogin';
 
@@ -15,11 +16,15 @@ module.exports = {
 
   handleLTI: (req, res) => {
     //console.log('req='+JSON.stringify(req.query));
+
+    if (!LTI_CONFIG.ENABLED)
+      return res(boom.notFound());
+
     // Validate LTI request
     let ltiKeySecret = {
-      '_id': 1234,
-      'key': 'CHANGEME',
-      'secret': 'CHANGEME'
+      '_id': LTI_CONFIG._ID,
+      'key': LTI_CONFIG.KEY,
+      'secret': LTI_CONFIG.SECRET
     };
 
     //TODO: Accept different types of signatures
