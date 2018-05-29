@@ -9,11 +9,10 @@ const helper = require('./helper');
 module.exports = function() {
 
   // SAMPLE CODE
-  return helper.getCollection('decks').then((decks) => {
+  return helper.getCollection('users').then((decks) => {
     return decks.createIndexes([
-      { key: {'revisions.contentItems.ref.id': 1} },
-      { key: {'revisions.contentItems.ref.revision': 1} },
-      { key: {'revisions.contentItems.kind': 1} },
+      { key: {'username': 1} },
+      { key: {'email': 1, 'password': 1} }
     ]);
   });
 
