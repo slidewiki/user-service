@@ -1,5 +1,8 @@
-FROM node:6.11-slim
+FROM node:8-slim
 MAINTAINER Kurt Junghanns <kjunghanns@informatik.uni-leipzig.de>
+
+ARG BUILD_ENV=local
+ENV BUILD_ENV ${BUILD_ENV}
 
 RUN mkdir /nodeApp
 WORKDIR /nodeApp
@@ -16,7 +19,7 @@ RUN apt-get install -y cron supervisor
 # ----------------------- #
 
 ADD ./application/ ./
-RUN npm install --production
+RUN if [ "$BUILD_ENV" = "travis" ] ; then npm prune --production ; else rm -R node_modules ; npm install --production ; fi
 
 # ---------------------- #
 #   Configuration Cron   #
