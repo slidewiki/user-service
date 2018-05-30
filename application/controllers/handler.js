@@ -125,6 +125,7 @@ module.exports = {
             .temporary(true);
         }
 
+        // console.log('Error in activateUser', result);
         return res(boom.forbidden('Wrong credentials were used'));
       })
       .catch((error) => {
@@ -1481,7 +1482,8 @@ function enrichGroupMembers(group) {
     prev.push(curr.userid);
     return prev;
   }, []);
-  userids.push(group.creator.userid);
+  const creatorid = (group.creator.userid) ? group.creator.userid : group.creator;
+  userids.push(creatorid);
 
   console.log('enrichGroupMembers: group, userids', group, userids);
 
@@ -1503,13 +1505,13 @@ function enrichGroupMembers(group) {
         return prev;
       }, []);
       let creator = array.filter((user) => {
-        return user.userid === group.creator.userid;
+        return user.userid === creatorid;
       });
       let members = array.filter((user) => {
-        return user.userid !== group.creator.userid;
+        return user.userid !== creatorid;
       });
 
-      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0]._id, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
+      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0].userid, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
 
       //add joined attribute to members
       members = (members.concat(group.members)).reduce((prev, curr) => {

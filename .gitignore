@@ -35,3 +35,4 @@ node_modules
 .coveralls.yml
 
 config.json
+application/.nyc_output

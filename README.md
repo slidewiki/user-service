@@ -105,6 +105,9 @@ Most of them are obligatory to be changed on deployment, especially keys and sec
 * SERVICE_URL_ACTIVITIES - URL of the activities-service of the used domain/stage
 * SERVICE_URL_DECK - URL of the deck-service of the used domain/stage
 * SERVICE_URL_FILE - URL of the file-service of the used domain/stage
+* LTI_ID - ask Umar
+* LTI_KEY - ask Umar
+* LTI_SECRET - ask Umar
 
 New secret could be created with the command:
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'));"
