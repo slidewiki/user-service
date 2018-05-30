@@ -125,7 +125,6 @@ module.exports = {
             .temporary(true);
         }
 
-        // console.log('Error in activateUser', result);
         return res(boom.forbidden('Wrong credentials were used'));
       })
       .catch((error) => {
@@ -1243,8 +1242,8 @@ module.exports = {
             let videoURL = require('../configs/microservices').file.uri + '/video/' + req.payload.data.fileName;
 
             let connectionPromise = util.sendEMail(email,
-              'New video about your live session of deck ' + req.payload.data.deck + (req.payload.data.revision) ? '-'+req.payload.data.revision : '',
-              'Dear ' + array[0].username + ',\n\nwe have finshed the video about your live session of deck ' + req.payload.data.deck + (req.payload.data.revision) ? '-'+req.payload.data.revision : '' + ' that ended at ' + req.payload.data.creationDate + '. Feel free to watch the video at: <a href="' + videoURL + '">' + videoURL + '</a>. if you want to download it, open the mentioned link, right click on the video and select "Save as ...". Please keep in mind we delete videos after eight weeks.\nFeel free to use, share and modify the video according to the license <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International (CC BY 4.0)</a>.\n\nYour SlideWiki Team');
+              'New video about your live session of deck ' + req.payload.data.deck + ((req.payload.data.revision) ? '-'+req.payload.data.revision : ''),
+              'Dear ' + array[0].username + ',\n\nwe have finshed the video about your live session of deck ' + req.payload.data.deck + ((req.payload.data.revision) ? '-'+req.payload.data.revision : '') + ' that ended at ' + req.payload.data.creationDate + '. Feel free to watch the video at: <a href="' + videoURL + '">' + videoURL + '</a>. if you want to download it, open the mentioned link, right click on the video and select "Save as ...". Please keep in mind we delete videos after eight weeks.\nFeel free to use, share and modify the video according to the license <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International (CC BY 4.0)</a>.\n\nYour SlideWiki Team');
 
             return connectionPromise
               .then(() => {
@@ -1482,8 +1481,7 @@ function enrichGroupMembers(group) {
     prev.push(curr.userid);
     return prev;
   }, []);
-  const creatorid = (group.creator.userid) ? group.creator.userid : group.creator;
-  userids.push(creatorid);
+  userids.push(group.creator.userid);
 
   console.log('enrichGroupMembers: group, userids', group, userids);
 
@@ -1505,13 +1503,13 @@ function enrichGroupMembers(group) {
         return prev;
       }, []);
       let creator = array.filter((user) => {
-        return user.userid === creatorid;
+        return user.userid === group.creator.userid;
       });
       let members = array.filter((user) => {
-        return user.userid !== creatorid;
+        return user.userid !== group.creator.userid;
       });
 
-      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0].userid, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
+      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0]._id, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
 
       //add joined attribute to members
       members = (members.concat(group.members)).reduce((prev, curr) => {
