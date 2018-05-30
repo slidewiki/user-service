@@ -20,6 +20,19 @@ describe('User service Unit tests', () => {
     done();
   });
 
+  const correct_user1 = {
+    username: 'tboonxemailtest',
+    forename: 'Kurt',
+    surname: 'Junghanns',
+    email: 'tboonxemailtest@gmail.com',
+    password: '2347298347823648263284t374t',
+    language: 'de',
+    defaults: [{
+      language: 'de'
+    }]
+  };
+  let userid = 1;
+
   context('Use sendMail function', () => {
     it('wrong type of reason id', () => {
       let req = {
@@ -96,6 +109,28 @@ describe('User service Unit tests', () => {
         return;
       });
     });
+
+    it('Register user', () => {
+      let req = {
+        payload: correct_user1,
+        info: {
+          host: 'localhost'
+        }
+      };
+      return handler.register(req, (result) => {
+        console.log(result);
+
+        expect(result.userid).to.not.equal(undefined);
+
+        userid = result.userid;
+
+        return;
+      })
+        .catch((Error) => {
+          console.log(Error);
+          throw Error;
+        });
+    });
     it('correct reason id 1', () => {
       let req = {
         payload: {
@@ -106,7 +141,7 @@ describe('User service Unit tests', () => {
           }
         },
         params: {
-          id: 1
+          id: userid
         },
         auth: {
           credentials: {
@@ -134,7 +169,7 @@ describe('User service Unit tests', () => {
           }
         },
         params: {
-          id: 1
+          id: userid
         },
         auth: {
           credentials: {
