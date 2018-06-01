@@ -104,6 +104,7 @@ Most of them are obligatory to be changed on deployment, especially keys and sec
 * URL_PLATFORM - URL of the platform of the used domain/stage
 * SERVICE_URL_ACTIVITIES - URL of the activities-service of the used domain/stage
 * SERVICE_URL_DECK - URL of the deck-service of the used domain/stage
+* SERVICE_URL_FILE - URL of the file-service of the used domain/stage
 * LTI_ID - ask Umar
 * LTI_KEY - ask Umar
 * LTI_SECRET - ask Umar

@@ -125,7 +125,6 @@ module.exports = {
             .temporary(true);
         }
 
-        // console.log('Error in activateUser', result);
         return res(boom.forbidden('Wrong credentials were used'));
       })
       .catch((error) => {
@@ -1192,7 +1191,7 @@ module.exports = {
 
   sendEmail: (req, res) => {
     switch (req.payload.reason) {
-      case 1: //request_deck_edit_rights
+      case 1: { //request_deck_edit_rights
         //check data values
         if (!req.payload.data.deckname || !req.payload.data.deckid) {
           return res(boom.badRequest('payload.data was wrong'));
@@ -1224,9 +1223,46 @@ module.exports = {
             console.log('Error', error);
             res(boom.badImplementation(error));
           });
+      }
 
-      default:
+      case 2: { //video recorded
+        //check data values
+        if (!req.payload.data.fileName || !req.payload.data.deck || !req.payload.data.creationDate) {
+          return res(boom.badRequest('payload.data does not include all needed fields'));
+        }
+
+        return userCtrl.find({_id: req.params.id})
+          .then((cursor) => cursor.toArray())
+          .then((array) => {
+            if (array.length !== 1) {
+              return res(boom.notFound('User does not exist'));
+            }
+
+            let email = array[0].email;
+            let videoURL = require('../configs/microservices').file.uri + '/video/' + req.payload.data.fileName;
+
+            let connectionPromise = util.sendEMail(email,
+              'New video about your live session of deck ' + req.payload.data.deck + ((req.payload.data.revision) ? '-'+req.payload.data.revision : ''),
+              'Dear ' + array[0].username + ',\n\nwe have finshed the video about your live session of deck ' + req.payload.data.deck + ((req.payload.data.revision) ? '-'+req.payload.data.revision : '') + ' that ended at ' + req.payload.data.creationDate + '. Feel free to watch the video at: <a href="' + videoURL + '">' + videoURL + '</a>. if you want to download it, open the mentioned link, right click on the video and select "Save as ...". Please keep in mind we delete videos after eight weeks.\nFeel free to use, share and modify the video according to the license <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International (CC BY 4.0)</a>.\n\nYour SlideWiki Team');
+
+            return connectionPromise
+              .then(() => {
+                return res();
+              })
+              .catch((error) => {
+                console.log('Error', error);
+                res(boom.badImplementation(error));
+              });
+          })
+          .catch((error) => {
+            console.log('Error', error);
+            res(boom.badImplementation(error));
+          });
+      }
+
+      default: {
         return res(boom.notFound('Bad reason id'));
+      }
     }
   }
 };
