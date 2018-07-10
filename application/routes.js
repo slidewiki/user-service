@@ -317,7 +317,8 @@ module.exports = function (server) {
           country: Joi.string().allow('').optional(),
           picture: Joi.string().uri().allow('').optional(),
           description: Joi.string().allow('').optional(),
-          organization: Joi.string().allow('').optional()
+          organization: Joi.string().allow('').optional(),
+          displayName: Joi.string().allow('').optional()
         }).requiredKeys('email', 'username', 'language'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')

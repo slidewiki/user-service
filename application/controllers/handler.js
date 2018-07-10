@@ -344,7 +344,8 @@ module.exports = {
             country:     util.parseAPIParameter(req.payload.country),
             picture:     util.parseAPIParameter(req.payload.picture),
             description: util.parseAPIParameter(req.payload.description),
-            organization: util.parseAPIParameter(req.payload.organization)
+            organization: util.parseAPIParameter(req.payload.organization),
+            displayName: util.parseAPIParameter(req.payload.displayName)
           }
         };
 
@@ -542,7 +543,8 @@ module.exports = {
         {email: new RegExp(term, 'i')},
         {forename: new RegExp(term, 'i')},
         {surname: new RegExp(term, 'i')},
-        {organization: new RegExp(term, 'i')}
+        {organization: new RegExp(term, 'i')},
+        {displayName: new RegExp(term, 'i')}
       ],
       deactivated: {
         $not: {
@@ -564,13 +566,13 @@ module.exports = {
     // console.log('query:', query);
 
     return userCtrl.find(query)
-      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1}))
+      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1, displayName: 1}))
       .then((cursor2) => cursor2.limit(8))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
         // console.log('handler: searchUser: similar usernames', array);
         let data = array.reduce((prev, curr) => {
-          let description = curr.username;
+          let description = curr.displayName || curr.username;
           if (curr.organization)
             description = description + ', ' + curr.organization;
           if (curr.country)
@@ -582,7 +584,8 @@ module.exports = {
               picture: curr.picture,
               country: curr.country,
               organization: curr.organization,
-              username: curr.username
+              username: curr.username,
+              displayName: curr.displayName
             }))
           });
           return prev;
@@ -1422,7 +1425,7 @@ function prepareDetailedUserData(user) {
 
 //Remove attributes of the user data object which should not be transmitted for the user profile
 function preparePublicUserData(user) {
-  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description', 'country', 'suspended'];
+  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description', 'country', 'suspended', 'displayName'];
   let minimizedUser = {};
 
   let key;
@@ -1492,7 +1495,7 @@ function enrichGroupMembers(group) {
     }
   };
   return userCtrl.find(query)
-    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1, country: 1, organization: 1}))
+    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1, country: 1, organization: 1, displayName: 1}))
     .then((cursor2) => cursor2.toArray())
     .then((array) => {
       array = array.reduce((prev, curr) => {
@@ -1523,6 +1526,7 @@ function enrichGroupMembers(group) {
           prev[curr.userid].picture = curr.picture;
           prev[curr.userid].country = curr.country;
           prev[curr.userid].organization = curr.organization;
+          prev[curr.userid].displayName = curr.displayName;
         }
         else
           prev[curr.userid].joined = curr.joined;
