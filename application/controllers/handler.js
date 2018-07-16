@@ -174,7 +174,8 @@ module.exports = {
               username: result[0].username,
               picture: result[0].picture,
               access_token: 'dummy',
-              expires_in: 0
+              expires_in: 0,
+              displayName: result[0].displayName
             })
               .header(config.JWT.HEADER, jwt.createToken(result[0]));
             break;

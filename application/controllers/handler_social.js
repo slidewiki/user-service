@@ -397,7 +397,8 @@ module.exports = {
                   userid: result[0]._id,
                   username: result[0].username,
                   access_token: 'dummy',
-                  expires_in: 0
+                  expires_in: 0,
+                  displayName: result[0].displayName
                 })
                   .header(config.JWT.HEADER, jwt.createToken(result[0]));
               default:

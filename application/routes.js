@@ -136,7 +136,8 @@ module.exports = function (server) {
                 access_token: Joi.string(),
                 expires_in: Joi.number(),
                 userid: Joi.number().integer(),
-                username: Joi.string()
+                username: Joi.string(),
+                displayName: Joi.string()
               }).required().description('Return schema')
             },
             ' 403 ': {
@@ -787,7 +788,8 @@ module.exports = function (server) {
                 access_token: Joi.string(),
                 expires_in: Joi.number(),
                 userid: Joi.number().integer(),
-                username: Joi.string()
+                username: Joi.string(),
+                displayName: Joi.string()
               }).required().description('Return schema')
             },
             ' 401 ': {
