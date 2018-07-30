@@ -4,6 +4,7 @@ console.log('This script will read userids from the given file and suspend them 
 
 const config = require('../configuration'),
   userCtrl = require('../database/user'),
+  jwt = require('../controllers/jwt'),
   async = require('async'),
   request = require('request-promise-native'),
   helper = require('../database/helper'),
@@ -12,13 +13,10 @@ const config = require('../configuration'),
 let deckidsToUserids = {};
 
 // generate a `isReviewer` jwt the deck service will accept  
-const jwt = require('jsonwebtoken');
-const adminToken = jwt.sign({
-  userid: -1,
+const adminToken = jwt.createToken({
+  _id: -1,
   username: 'system',
   isReviewer: true,
-}, config.JWT.SERIAL, {
-  algorithm: config.JWT.ALGORITHM,
 });
 
 console.log('First the userids are read.');
