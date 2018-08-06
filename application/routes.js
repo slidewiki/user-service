@@ -1056,7 +1056,8 @@ module.exports = function (server) {
           timestamp: Joi.string().allow('').optional(),
           members: Joi.array().items(Joi.object().keys({
             userid: Joi.number(),
-            joined: Joi.string().allow('').optional()
+            joined: Joi.string().allow('').optional(),
+            role: Joi.string().valid('admin').optional()
           }).requiredKeys('userid')),
           referenceDateTime: Joi.string().allow('').optional()
         }).requiredKeys('name'),
@@ -1077,7 +1078,7 @@ module.exports = function (server) {
               'description': 'Not authorized to update or create this usergroup.',
               'headers': {
                 'WWW-Authenticate': {
-                  'description': 'Use your JWT token and the right userid.'
+                  'description': 'Use your JWT token and make sure you are the group creator or an admin.'
                 }
               }
             },

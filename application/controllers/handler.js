@@ -749,7 +749,7 @@ module.exports = {
 
     let group = req.payload;
 
-    group.creator = {
+    let possibleCreator = {
       userid: userid,
       username: req.auth.credentials.username
     };
@@ -780,6 +780,8 @@ module.exports = {
     if (group.id === undefined || group.id === null) {
       //create
       console.log('create group', group.name);
+
+      group.creator = possibleCreator;
 
       return usergroupCtrl.create(group)
         .then((result) => {
@@ -839,13 +841,17 @@ module.exports = {
           }
 
           let dCreator = document.creator.userid || document.creator;
-          if (dCreator !== group.creator.userid) {
+          let idAdmin = !document.members.reduce((a, c) => {
+            return a && !(c.userid === userid && c.role === 'admin');
+          }, true);
+          if (dCreator !== userid && !idAdmin) {
             return res(boom.unauthorized());
           }
 
-          //some attribute should be unchangeable
+          //some attributes should be unchangeable
           group.timestamp = document.timestamp;
           group._id = document._id;
+          group.creator = document.creator;
 
           return usergroupCtrl.update(group)
             .then((result) => {
@@ -1514,7 +1520,7 @@ function enrichGroupMembers(group) {
         return user.userid !== creatorid;
       });
 
-      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0].userid, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
+      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0].userid, name: creator[0].username}, members.concat(group.members).length);
 
       //add joined attribute to members
       members = (members.concat(group.members)).reduce((prev, curr) => {
