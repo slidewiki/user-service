@@ -1058,7 +1058,8 @@ module.exports = function (server) {
             userid: Joi.number(),
             joined: Joi.string().allow('').optional()
           }).requiredKeys('userid')),
-          referenceDateTime: Joi.string().allow('').optional()
+          referenceDateTime: Joi.string().allow('').optional(),
+          picture: Joi.string().uri().allow('').optional()
         }).requiredKeys('name'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
