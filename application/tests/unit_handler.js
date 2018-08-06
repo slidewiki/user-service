@@ -113,7 +113,7 @@ describe('User service', () => {
     isActive: true,
     members: [
       {
-        userid: 2,
+        userid: 3,
         joined: (new Date()).toISOString()
       }
     ]
@@ -124,13 +124,9 @@ describe('User service', () => {
     isActive: true,
     members: [
       {
-        userid: 2,
+        userid: 3,
         joined: (new Date()).toISOString(),
         role: 'admin'
-      },
-      {
-        userid: 3,
-        joined: (new Date()).toISOString()
       }
     ]
   };
@@ -139,11 +135,6 @@ describe('User service', () => {
     description: 'Used for Unit tests again',
     isActive: true,
     members: [
-      {
-        userid: 2,
-        joined: (new Date()).toISOString(),
-        role: 'admin'
-      },
       {
         userid: 3,
         joined: (new Date()).toISOString()
@@ -156,12 +147,12 @@ describe('User service', () => {
     isActive: true,
     members: [
       {
-        userid: 2,
+        userid: 3,
         joined: (new Date()).toISOString(),
         role: 'admin'
       },
       {
-        userid: 3,
+        userid: 6,
         joined: (new Date()).toISOString()
       },
       {
@@ -673,7 +664,7 @@ describe('User service', () => {
         payload: group,
         auth: { //headers which will be set with JWT
           credentials: {
-            userid: correct_usergroup2.members[1].userid
+            userid: correct_usergroup2.members[0].userid
           }
         }
       };
@@ -749,12 +740,12 @@ describe('User service', () => {
         payload: [groupid]
       };
       return handler.getUsergroups(req, (result) => {
-        console.log('testresult: ', result);
+        console.log('testresult: ', result, result[0].members);
 
         expect(result[0]).to.not.equal(undefined);
         expect(result[0].creator.userid).to.equal(userid);
         expect(result[0].creator.username).to.not.equal(undefined);
-        expect(result[0].members.length).to.equal(0);
+        expect(result[0].members.length).to.equal(1);
 
         return;
       })
