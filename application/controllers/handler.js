@@ -1535,8 +1535,10 @@ function enrichGroupMembers(group) {
           prev[curr.userid].organization = curr.organization;
           prev[curr.userid].displayName = curr.displayName;
         }
-        else
+        else {
           prev[curr.userid].joined = curr.joined;
+          prev[curr.userid].role = curr.role;
+        }
         return prev;
       }, {});
       members = Object.keys(members).map((key) => { return members[key]; }).filter((member) => {return member.joined && member.userid && member.username;});
