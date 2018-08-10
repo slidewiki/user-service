@@ -841,10 +841,8 @@ module.exports = {
           }
 
           let dCreator = document.creator.userid || document.creator;
-          let idAdmin = !document.members.reduce((a, c) => {
-            return a && !(c.userid === userid && c.role === 'admin');
-          }, true);
-          if (dCreator !== userid && !idAdmin) {
+          let isAdmin = document.members.some((m) => m.userid === userid && m.role === 'admin');
+          if (dCreator !== userid && !isAdmin) {
             return res(boom.unauthorized());
           }
 
