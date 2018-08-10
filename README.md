@@ -66,6 +66,12 @@ These userids are used by [suspend_users.js](https://github.com/slidewiki/user-s
 This script sets each user as suspended and delete the corresponding user groups and also archives the owned decks.
 Atm the script have to be called by hand but could be added to the crontab.
 
+### Review process
+
+Crontab updates the list of users (*reviewable_users* collection) for the manual review process every night.
+Besides this costly process we add userids to list list of suspenable users (*useridsforsuspension* collection) per script (not in this repo) on demand in order to speed up the process.
+In every case the script [suspend_users.js](https://github.com/slidewiki/user-service/blob/master/application/queue/suspend_users.js) has to be called manually by the administrator.
+
 ### How to add a user to the suspension list:
 
 Connect to the Mongo shell and add the userid:
