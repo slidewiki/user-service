@@ -50,6 +50,9 @@ const usergroup = {
         },
         required: ['userid']
       }
+    },
+    picture: {
+      type: 'string'
     }
   },
   required: ['name', 'timestamp', 'creator']

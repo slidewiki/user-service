@@ -120,7 +120,8 @@ describe('User service', () => {
         userid: 2,
         joined: (new Date()).toISOString()
       }
-    ]
+    ],
+    picture: 'https://avatars.githubusercontent.com/u/3153545?v=3'
   };
 
   // this user should be rejected by register function
@@ -563,6 +564,7 @@ describe('User service', () => {
         // console.log(result);
 
         expect(result.name).to.equal('Blub blabla blub');
+        expect(result.picture).to.equal(correct_usergroup2.picture);
 
         return;
       })
