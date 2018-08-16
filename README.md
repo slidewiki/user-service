@@ -56,6 +56,7 @@ While executing unit/integration tests the env *testing* is set, which disables 
 *All script are also available in the [migration](https://github.com/slidewiki/migration) repo.*
 * [db_migration_hashing.js](https://github.com/slidewiki/user-service/blob/master/application/db_migration_hashing.js): Is used for the migration of the old slidewiki.org to the new one. It hashes the passwords regarding our new hashing policies.
 * [db_migration_usernames.js](https://github.com/slidewiki/user-service/blob/master/application/db_migration_usernames.js): Is used for migration of the old slidewiki and combining multiple user datasets. It handles duplication of usernames and set all email addresses to lower case.
+* [deckids_import.sh](https://github.com/slidewiki/user-service/blob/master/application/queue/deckids_import.sh): import to a database a list with deck ids from a file to the useridsforsuspension collection in order to call the next script to suspend them. Usage; `deckids_import.sh <database> <filetoimport>`, both options are required and in that order. Needs a mongoDB environment ( `mongoimport` and  `mongo` command line tool).
 * [suspend_users.js](https://github.com/slidewiki/user-service/blob/master/application/queue/suspend_users.js): suspend users and their decks plus groups which have their id in the *useridsforsuspension* collection - See section SPAM handling
 
 ## SPAM handling
@@ -64,7 +65,7 @@ With the platform a process detects SPAM'ish users and add their id to the *user
 This collection could also be filled by hand.
 These userids are used by [suspend_users.js](https://github.com/slidewiki/user-service/blob/master/application/queue/suspend_users.js).
 This script sets each user as suspended and delete the corresponding user groups and also archives the owned decks.
-Atm the script have to be called by hand but could be added to the crontab.
+Atm the script have to be called by hand but could be added to the crontab. It does not require any user credentias or JWT, as long as the `JWT_SERIAL` env variable when running it is set, and is the same as in the deckservice that holds the decks that will be archived during user suspension.
 
 ### Review process
 
