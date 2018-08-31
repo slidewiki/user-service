@@ -341,7 +341,8 @@ describe('User service', () => {
           email: correct_user1.email,
           username: correct_user1.username,
           forename: correct_user1.forename + ' von',
-          surname: correct_user1.surname
+          surname: correct_user1.surname,
+          displayName: 'XXX'
         },
         params: {
           id: userid
@@ -367,7 +368,34 @@ describe('User service', () => {
           //updates username
           expect(result2).to.equal(undefined);
 
-          return;
+          //check if changes were applied
+          let req = {
+            params: {
+              identifier: userid
+            }
+          };
+          return handler.getPublicUser(req, (result) => {
+            //console.log(result);
+
+            expect(result._id).to.equal(userid);
+            expect(result.username).to.equal(correct_user1.username);
+
+            //now with username
+            req.params.identifier = correct_user1.username;
+
+            return handler.getPublicUser(req, (result2) => {
+              //console.log(result);
+
+              expect(result2._id).to.equal(userid);
+              expect(result2.displayName).to.equal('XXX');
+
+              return;
+            });
+          })
+            .catch((Error) => {
+              console.log('Error', Error);
+              throw Error;
+            });
         });
       })
         .catch((Error) => {
