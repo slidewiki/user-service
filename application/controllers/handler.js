@@ -49,38 +49,9 @@ module.exports = {
         if (result.assigned === false) {
           //Send email before creating the user
           let message = 'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have registered your account with the username '+user.username+'. In order to activate your account please use the following link:\n\n https://'+req.info.host+'/user/activate/'+user.email+'/'+user.activate_secret+'\n\nGreetings,\nthe SlideWiki Team';
-/*
           if (!config.SMTP.enabled) {
             user.authorised = true;
           }
-*/
-          user.authorised = true;
-
-          return userCtrl.create(user)
-            .then((result) => {
-               console.log('register: user create result: ', result);
-
-              if (result[0] !== undefined && result[0] !== null) {
-                //Error
-                return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-              }
-
-              if (result.insertedCount === 1) {
-                //success
-                return res({
-                  userid: result.insertedId,
-                  secret: user.activate_secret
-                });
-              }
-
-              res(boom.badImplementation());
-            })
-            .catch((error) => {
-              console.log('Error on creating a user:', error);
-              res(boom.badImplementation('Error', error));
-            });
-
-/*
           return util.sendEMail(user.email,
             'Your new account on SlideWiki',
             message)
@@ -113,8 +84,6 @@ module.exports = {
               console.log('Error sending the email:', error);
               return res(boom.badImplementation('Error', error));
             });
-*/
-
         } else {
           let message = 'The username and email is already taken';
           if (result.email === false)
@@ -135,17 +104,10 @@ module.exports = {
     const email = util.parseAPIParameter(req.params.email),
       secret = util.parseAPIParameter(req.params.secret);
 
-/*
     const query = {
       email: email,
       activate_secret: secret,
       authorised: false
-    };
-*/
-    const query = {
-      email: email,
-      activate_secret: secret,
-      authorised: true
     };
 
     console.log('trying to activate ', email);
@@ -156,12 +118,9 @@ module.exports = {
       }
     })
       .then((result) => {
-         console.log("result.result.ok="+result.result.ok);
-        console.log("result.result.n="+result.result.n);
+        // console.log(result.result);
         if (result.result.ok === 1 && result.result.n === 1) {
-
           //success
-          console.log("successfully activated");
           return res()
             .redirect(PLATFORM_INFORMATION_URL)
             .temporary(true);
@@ -176,40 +135,15 @@ module.exports = {
   },
 
   login: (req, res) => {
-
-/*
     const query = {
       email: req.payload.email.toLowerCase(),
       password: co.hashPassword(decodeURI(req.payload.password), config.SALT)
     };
-*/
-
-const query = {
-  email: req.payload.email.toLowerCase(),
-  password: req.payload.password
-};
     console.log('try logging in with email', query.email);
-    console.log('try logging in with password', query.password);
-
-/*
-    res({
-  userid: 3,
-  username: 'urm5',
-  picture: '',
-  access_token: 'dummy',
-  expires_in: 0
-})
-  .header(config.JWT.HEADER, jwt.createToken({
-    userid: 3,
-    username: 'urm5'
-  }));
-
-*/
 
     return userCtrl.find(query)
       .then((cursor) => cursor.toArray())
       .then((result) => {
-        console.log("result="+result.length);
         switch (result.length) {
           case 0:
             res(boom.notFound('The credentials are wrong', '{"email":"", "password": ""}'));
@@ -241,7 +175,8 @@ const query = {
               username: result[0].username,
               picture: result[0].picture,
               access_token: 'dummy',
-              expires_in: 0
+              expires_in: 0,
+              displayName: result[0].displayName
             })
               .header(config.JWT.HEADER, jwt.createToken(result[0]));
             break;
@@ -254,9 +189,8 @@ const query = {
         console.log('Error: ', error);
         res(boom.badImplementation(error));
       });
-
   },
-
+  
   getUser: (req, res) => {
     //check if the request comes from the right user (have the right JWT data)
     const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
@@ -272,24 +206,6 @@ const query = {
             return res(boom.locked('This user is deactivated.'));
           }
 
-/*
-          var myArray = userltiCtrl.readLTIs();
-          for (let key in myArray) {
-            //console.log("key: %o, value: %o", key, myArray[key]);
-            console.log("key is "+key);
-          }
-*/
-
-/*
-          return userltiCtrl.readLTIs()
-            .then((ltiArray) => {
-          //console.log('get groups array');
-          for (var key in ltiArray) {
-            //console.log("key: %o, value: %o", key, myArray[key]);
-            console.log("LTI key is "+key);
-          }
-        });
-*/
       return usergroupCtrl.readGroupsOfUser(req.params.id)
             .then((groupArray) => {
               user.groups = groupArray;
@@ -301,48 +217,6 @@ const query = {
                   return res(prepareDetailedUserData(user)).header(config.JWT.HEADER, jwt.createToken(user));
               }); //end return userltiCtrl
             }); //end return usergroupCtrl
-
-
-            //get groups of a user
-          /*
-            return usergroupCtrl.readGroupsOfUser(req.params.id)
-              .then((array) => {
-                user.groups = array;
-
-                return res(prepareDetailedUserData(user)).header(config.JWT.HEADER, jwt.createToken(user));
-              });
-              */
-
-              /*
-              var promise1 = new Promise((resolve, reject) => {
-
-                return usergroupCtrl.readGroupsOfUser(req.params.id)
-                  .then((array) => {
-                    user.groups = array;
-
-                  });
-              });
-
-              var promise2 = new Promise((resolve, reject) => {
-                return userltiCtrl.readLTIsOfUser(req.params.id)
-                  .then((array) => {
-                    user.ltis = array;
-
-                  });
-              });
-
-*/
-              /*
-              var printResult = (results) => {
-                console.log("Results = ", results, "message = ", message)
-                return res(prepareDetailedUserData(user)).header(config.JWT.HEADER, jwt.createToken(user));
-              };
-              Promise.all([promise1, promise2]).then(printResult);
-              */
-
-
-
-
         }
         else {
           return res(boom.notFound());
