@@ -350,7 +350,8 @@ module.exports = {
             country:     util.parseAPIParameter(req.payload.country),
             picture:     util.parseAPIParameter(req.payload.picture),
             description: util.parseAPIParameter(req.payload.description),
-            organization: util.parseAPIParameter(req.payload.organization)
+            organization: util.parseAPIParameter(req.payload.organization),
+            displayName: util.parseAPIParameter(req.payload.displayName)
           }
         };
 
@@ -548,7 +549,8 @@ module.exports = {
         {email: new RegExp(term, 'i')},
         {forename: new RegExp(term, 'i')},
         {surname: new RegExp(term, 'i')},
-        {organization: new RegExp(term, 'i')}
+        {organization: new RegExp(term, 'i')},
+        {displayName: new RegExp(term, 'i')}
       ],
       deactivated: {
         $not: {
@@ -570,13 +572,13 @@ module.exports = {
     // console.log('query:', query);
 
     return userCtrl.find(query)
-      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1}))
+      .then((cursor1) => cursor1.project({username: 1, _id: 1, picture: 1, country: 1, organization: 1, displayName: 1}))
       .then((cursor2) => cursor2.limit(8))
       .then((cursor3) => cursor3.toArray())
       .then((array) => {
         // console.log('handler: searchUser: similar usernames', array);
         let data = array.reduce((prev, curr) => {
-          let description = curr.username;
+          let description = curr.displayName || curr.username;
           if (curr.organization)
             description = description + ', ' + curr.organization;
           if (curr.country)
@@ -588,7 +590,8 @@ module.exports = {
               picture: curr.picture,
               country: curr.country,
               organization: curr.organization,
-              username: curr.username
+              username: curr.username,
+              displayName: curr.displayName
             }))
           });
           return prev;
@@ -1496,7 +1499,7 @@ module.exports = {
 
   sendEmail: (req, res) => {
     switch (req.payload.reason) {
-      case 1: //request_deck_edit_rights
+      case 1: { //request_deck_edit_rights
         //check data values
         if (!req.payload.data.deckname || !req.payload.data.deckid) {
           return res(boom.badRequest('payload.data was wrong'));
@@ -1528,9 +1531,46 @@ module.exports = {
             console.log('Error', error);
             res(boom.badImplementation(error));
           });
+      }
 
-      default:
+      case 2: { //video recorded
+        //check data values
+        if (!req.payload.data.fileName || !req.payload.data.deck || !req.payload.data.creationDate) {
+          return res(boom.badRequest('payload.data does not include all needed fields'));
+        }
+
+        return userCtrl.find({_id: req.params.id})
+          .then((cursor) => cursor.toArray())
+          .then((array) => {
+            if (array.length !== 1) {
+              return res(boom.notFound('User does not exist'));
+            }
+
+            let email = array[0].email;
+            let videoURL = require('../configs/microservices').file.uri + '/video/' + req.payload.data.fileName;
+
+            let connectionPromise = util.sendEMail(email,
+              'New video about your live session of deck ' + req.payload.data.deck + ((req.payload.data.revision) ? '-'+req.payload.data.revision : ''),
+              'Dear ' + array[0].username + ',\n\nwe have finshed the video about your live session of deck ' + req.payload.data.deck + ((req.payload.data.revision) ? '-'+req.payload.data.revision : '') + ' that ended at ' + req.payload.data.creationDate + '. Feel free to watch the video at: <a href="' + videoURL + '">' + videoURL + '</a>. if you want to download it, open the mentioned link, right click on the video and select "Save as ...". Please keep in mind we delete videos after eight weeks.\nFeel free to use, share and modify the video according to the license <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International (CC BY 4.0)</a>.\n\nYour SlideWiki Team');
+
+            return connectionPromise
+              .then(() => {
+                return res();
+              })
+              .catch((error) => {
+                console.log('Error', error);
+                res(boom.badImplementation(error));
+              });
+          })
+          .catch((error) => {
+            console.log('Error', error);
+            res(boom.badImplementation(error));
+          });
+      }
+
+      default: {
         return res(boom.notFound('Bad reason id'));
+      }
     }
   }
 };
@@ -1690,7 +1730,7 @@ function prepareDetailedUserData(user) {
 
 //Remove attributes of the user data object which should not be transmitted for the user profile
 function preparePublicUserData(user) {
-  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description', 'country', 'suspended'];
+  const shownKeys = ['_id', 'username', 'organization', 'picture', 'description', 'country', 'suspended', 'displayName'];
   let minimizedUser = {};
 
   let key;
@@ -1749,7 +1789,8 @@ function enrichGroupMembers(group) {
     prev.push(curr.userid);
     return prev;
   }, []);
-  userids.push(group.creator.userid);
+  const creatorid = (group.creator.userid) ? group.creator.userid : group.creator;
+  userids.push(creatorid);
 
   console.log('enrichGroupMembers: group, userids', group, userids);
 
@@ -1759,7 +1800,7 @@ function enrichGroupMembers(group) {
     }
   };
   return userCtrl.find(query)
-    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1, country: 1, organization: 1}))
+    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1, country: 1, organization: 1, displayName: 1}))
     .then((cursor2) => cursor2.toArray())
     .then((array) => {
       array = array.reduce((prev, curr) => {
@@ -1771,13 +1812,13 @@ function enrichGroupMembers(group) {
         return prev;
       }, []);
       let creator = array.filter((user) => {
-        return user.userid === group.creator.userid;
+        return user.userid === creatorid;
       });
       let members = array.filter((user) => {
-        return user.userid !== group.creator.userid;
+        return user.userid !== creatorid;
       });
 
-      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0]._id, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
+      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0].userid, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
 
       //add joined attribute to members
       members = (members.concat(group.members)).reduce((prev, curr) => {
@@ -1790,6 +1831,7 @@ function enrichGroupMembers(group) {
           prev[curr.userid].picture = curr.picture;
           prev[curr.userid].country = curr.country;
           prev[curr.userid].organization = curr.organization;
+          prev[curr.userid].displayName = curr.displayName;
         }
         else
           prev[curr.userid].joined = curr.joined;

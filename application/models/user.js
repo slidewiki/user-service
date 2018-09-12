@@ -102,6 +102,9 @@ const user = {
     forename: {
       type: 'string'
     },
+    displayName: {
+      type: 'string'
+    },
     country: {
       type: 'string'
     },

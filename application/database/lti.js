@@ -43,7 +43,7 @@ let self = module.exports = {
     return helper.connectToDatabase()
       .then((dbconn) => dbconn.collection(collectionName))
       .then((collection) => collection.remove({
-        _id: userid
+        _id: userid //TODO this is just wrong - "create" inserts an increment and not a userid
       }));
   },
 

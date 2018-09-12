@@ -136,7 +136,8 @@ module.exports = function (server) {
                 access_token: Joi.string(),
                 expires_in: Joi.number(),
                 userid: Joi.number().integer(),
-                username: Joi.string()
+                username: Joi.string(),
+                displayName: Joi.string()
               }).required().description('Return schema')
             },
             ' 403 ': {
@@ -317,7 +318,8 @@ module.exports = function (server) {
           country: Joi.string().allow('').optional(),
           picture: Joi.string().uri().allow('').optional(),
           description: Joi.string().allow('').optional(),
-          organization: Joi.string().allow('').optional()
+          organization: Joi.string().allow('').optional(),
+          displayName: Joi.string().allow('').optional()
         }).requiredKeys('email', 'username', 'language'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
@@ -786,7 +788,8 @@ module.exports = function (server) {
                 access_token: Joi.string(),
                 expires_in: Joi.number(),
                 userid: Joi.number().integer(),
-                username: Joi.string()
+                username: Joi.string(),
+                displayName: Joi.string()
               }).required().description('Return schema')
             },
             ' 401 ': {
@@ -1056,7 +1059,8 @@ module.exports = function (server) {
             userid: Joi.number(),
             joined: Joi.string().allow('').optional()
           }).requiredKeys('userid')),
-          referenceDateTime: Joi.string().allow('').optional()
+          referenceDateTime: Joi.string().allow('').optional(),
+          picture: Joi.string().uri().allow('').optional()
         }).requiredKeys('name'),
         headers: Joi.object({
           '----jwt----': Joi.string().required().description('JWT header provided by /login')
