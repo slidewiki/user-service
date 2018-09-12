@@ -1,6 +1,7 @@
 'use strict';
 
 const userCtrl = require('../database/user'),
+  userltiCtrl = require('../database/userlti'),
   SMTPConnection = require('smtp-connection'),
   config = require('../configuration'),
   Joi = require('joi');
@@ -89,6 +90,89 @@ module.exports = {
               assigned: isEMailAssigned || isUsernameAssigned,
               username: isUsernameAssigned,
               email: isEMailAssigned,
+              userid: userId
+            });
+          } else {
+            resolve({assigned: false});
+          }
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
+    return myPromise;
+  },
+
+
+  isLTIIdentityAssigned: (username) => {
+    let myPromise = new Promise((resolve, reject) => {
+      // check for static users!!
+      let staticUser = userCtrl.findStaticUserByName(username);
+      if (staticUser) {
+        return resolve({
+          assigned: true,
+          username: true,
+          email: false,
+        });
+      }
+
+      return userCtrl.find({
+        $or: [
+          {
+            username: new RegExp('^' + username + '$', 'i')
+          }
+        ]
+      })
+        .then((cursor) => cursor.project({email: 1, username: 1}))
+        .then((cursor2) => cursor2.toArray())
+        .then((array) => {
+          console.log('util.isLTIIdentityAssigned: cursor.array.length:', array.length);
+          if (array.length > 0) {
+            //console.log('array='+JSON.stringify(array)); // returns cleaned up JSON
+            //console.log('array.id='+array[0]);
+
+            let userId = -1;
+            /*
+              Retrieve value of user id from the array
+            */
+            for(let field1 in array){
+              if (array.hasOwnProperty(field1)) {
+                let key1 = field1;
+                let value1 = array[field1];
+
+                for(let field2 in value1){
+                  if (value1.hasOwnProperty(field2)) {
+                    let key2 = field2;
+                    let value2 = value1[field2];
+                    console.log('key2='+key2+', value2='+value2);
+
+                    if(key2 === '_id'){
+                      userId = value2;
+                      break;
+                    }
+                  }
+                }
+                //console.log('key='+key1+', value='+value1);
+              }
+            }
+            console.log('userId='+userId);
+
+            /*
+            const isEMailAssigned = !(array.reduce((prev, curr) => {
+              const sameEMail = curr.email === email;
+              return prev && !sameEMail;
+            }, true));
+            */
+            const isUsernameAssigned = !(array.reduce((prev, curr) => {
+              const sameUsername = curr.username.toLowerCase() === username.toLowerCase();
+              return prev && !sameUsername;
+            }, true));
+
+            resolve({
+              //assigned: isEMailAssigned || isUsernameAssigned,
+              assigned: isUsernameAssigned,
+              username: isUsernameAssigned,
+              //email: isEMailAssigned,
               userid: userId
             });
           } else {
