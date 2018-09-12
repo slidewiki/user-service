@@ -49,12 +49,12 @@ module.exports = {
 
 
   readAllLTIs: () => {
-      console.log('database.userlti.readLTIs');
-      return helper.connectToDatabase()
-        .then((dbconn) => dbconn.collection(collectionName))
-        .then((collection) => collection.find())
-        .then((cursor) => cursor.toArray());
-    },
+    console.log('database.userlti.readLTIs');
+    return helper.connectToDatabase()
+      .then((dbconn) => dbconn.collection(collectionName))
+      .then((collection) => collection.find())
+      .then((cursor) => cursor.toArray());
+  },
 
   readLTIsOfUser: (userid) => {
     return helper.connectToDatabase()

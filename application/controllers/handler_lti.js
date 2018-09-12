@@ -25,39 +25,39 @@ module.exports = {
 
     return userltiCtrl.readAllLTIs()
       .then((ltiArray) => {
-          //console.log("array.length"+ltiArray.length);
+        //console.log("array.length"+ltiArray.length);
 
-          for(var i=0; i<ltiArray.length; i++){
-            var ltiObj = ltiArray[i];
-            //console.log("lti.secret="+ltiObj.secret+ ", lti.key="+ltiObj.key);
-            var ltiProvider = new lti.Provider(ltiObj.key, ltiObj.secret);
-            ltiProvider.valid_request(req, function(err, isValid){
-              if(err){
+        for(var i=0; i<ltiArray.length; i++){
+          var ltiObj = ltiArray[i];
+          //console.log("lti.secret="+ltiObj.secret+ ", lti.key="+ltiObj.key);
+          var ltiProvider = new lti.Provider(ltiObj.key, ltiObj.secret);
+          ltiProvider.valid_request(req, function(err, isValid){
+            if(err){
               console.log('There was an error in the LTI request', err);
-              }
-              else {
-                console.log('There is the valid LTI request. i='+i);
-                isValid = true;
-                //console.log('isValid='+isValid);
-                proceedLTI(req, res, ltiObj);
-              }
-            });
-          } //end for
-        }).catch((error) => {
-          console.log('userltiCtrl.readAllLTIs failed:', error);
-          res(boom.badImplementation('Error', error));
+            }
+            else {
+              console.log('There is the valid LTI request. i='+i);
+              isValid = true;
+              //console.log('isValid='+isValid);
+              proceedLTI(req, res, ltiObj);
+            }
+          });
+        } //end for
+      }).catch((error) => {
+        console.log('userltiCtrl.readAllLTIs failed:', error);
+        res(boom.badImplementation('Error', error));
       });
-    },
+  },
 
-  };
+};
 
 
 
-  function proceedLTI(req, res){
-    //console.log('proceedLTI');
-    var user = getUser(req);
+function proceedLTI(req, res){
+  //console.log('proceedLTI');
+  var user = getUser(req);
 
-    return util.isLTIIdentityAssigned(user.username)
+  return util.isLTIIdentityAssigned(user.username)
     .then((result) => {
       if (result.assigned === false) {
         // If the user doesn't exist, create a new user
@@ -96,18 +96,18 @@ module.exports = {
 
       } else {
         // If the user is already registered, sign in
-          console.log('already registered. signed in. result='+simpleStringify(result));
-          console.log('PLATFORM_LTI_URL ='+PLATFORM_LTI_URL);
-          console.log('result.userid ='+result.userid);
-          let id = result.userid;
-          let data = {
+        console.log('already registered. signed in. result='+simpleStringify(result));
+        console.log('PLATFORM_LTI_URL ='+PLATFORM_LTI_URL);
+        console.log('result.userid ='+result.userid);
+        let id = result.userid;
+        let data = {
+          userid: id,
+          username: user.username,
+          jwt: jwt.createLTIToken({
             userid: id,
-            username: user.username,
-            jwt: jwt.createLTIToken({
-              userid: id,
-              username: user.username
-            })
-          };
+            username: user.username
+          })
+        };
 
 
         //success
@@ -147,7 +147,7 @@ function simpleStringify (object){
 function getUser(req){
   //let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'') || document.username.replace(/\s/g,'');
   console.log('req.payload.ext_user_username='+req.payload.ext_user_username);
-  let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+"@lti.org";
+  let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+'@lti.org';
   var email = 'temp@temp.com';
 
   return {

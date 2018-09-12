@@ -190,7 +190,7 @@ module.exports = {
         res(boom.badImplementation(error));
       });
   },
-  
+
   getUser: (req, res) => {
     //check if the request comes from the right user (have the right JWT data)
     const isUseridMatching = util.isJWTValidForTheGivenUserId(req);
@@ -206,7 +206,7 @@ module.exports = {
             return res(boom.locked('This user is deactivated.'));
           }
 
-      return usergroupCtrl.readGroupsOfUser(req.params.id)
+          return usergroupCtrl.readGroupsOfUser(req.params.id)
             .then((groupArray) => {
               user.groups = groupArray;
 
@@ -215,7 +215,7 @@ module.exports = {
                   user.ltis = ltiArray;
 
                   return res(prepareDetailedUserData(user)).header(config.JWT.HEADER, jwt.createToken(user));
-              }); //end return userltiCtrl
+                }); //end return userltiCtrl
             }); //end return usergroupCtrl
         }
         else {
@@ -696,7 +696,7 @@ module.exports = {
       });
   },
 
-//groups
+  //groups
   deleteUsergroup: (req, res) => {
     //first check if user is creator
     return usergroupCtrl.read(req.params.groupid)
@@ -921,119 +921,119 @@ module.exports = {
   },
 
 
-    getUsergroups: (req, res) => {
-      if (req.payload === undefined || req.payload.length < 1)
-        return res(boom.badData());
+  getUsergroups: (req, res) => {
+    if (req.payload === undefined || req.payload.length < 1)
+      return res(boom.badData());
 
-      let selectors = req.payload.reduce((q, element) => {
-        q.push({_id: element});
-        return q;
-      }, []);
-      let query = {
-        $or: selectors
-      };
+    let selectors = req.payload.reduce((q, element) => {
+      q.push({_id: element});
+      return q;
+    }, []);
+    let query = {
+      $or: selectors
+    };
 
-      console.log('getUsergroups:', query);
+    console.log('getUsergroups:', query);
 
-      return usergroupCtrl.find(query)
-        .then((cursor) => cursor.toArray())
-        .then((array) => {
-          if (array === undefined || array === null || array.length < 1) {
-            return res([]);
-          }
+    return usergroupCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        if (array === undefined || array === null || array.length < 1) {
+          return res([]);
+        }
 
-          let enrichedGroups_promises = array.reduce((prev, curr) => {
-            prev.push(enrichGroupMembers(curr));
-            return prev;
-          }, []);
-          return Promise.all(enrichedGroups_promises)
-            .then((enrichedGroups) => {
-              return res(enrichedGroups);
-            });
-        })
-        .catch((error) => {
-          console.log('Error while reading groups:', error);
-          res(boom.badImplementation(error));
-        });
-    },
-
-
-      leaveUsergroup: (req, res) => {
-        return usergroupCtrl.partlyUpdate({
-          _id: req.params.groupid
-        }, {
-          $pull: {
-            members: {
-              userid: req.auth.credentials.userid
-            }
-          }
-        }).
-          then((result) => {
-            console.log('leaveUsergroup: ', result.result);
-            if (result.result.ok !== 1)
-              return res(boom.notFound());
-
-            if (result.result.nModified !== 1)
-              return res(boom.unauthorized());
-
-            return res();
+        let enrichedGroups_promises = array.reduce((prev, curr) => {
+          prev.push(enrichGroupMembers(curr));
+          return prev;
+        }, []);
+        return Promise.all(enrichedGroups_promises)
+          .then((enrichedGroups) => {
+            return res(enrichedGroups);
           });
-      },
+      })
+      .catch((error) => {
+        console.log('Error while reading groups:', error);
+        res(boom.badImplementation(error));
+      });
+  },
+
+
+  leaveUsergroup: (req, res) => {
+    return usergroupCtrl.partlyUpdate({
+      _id: req.params.groupid
+    }, {
+      $pull: {
+        members: {
+          userid: req.auth.credentials.userid
+        }
+      }
+    }).
+      then((result) => {
+        console.log('leaveUsergroup: ', result.result);
+        if (result.result.ok !== 1)
+          return res(boom.notFound());
+
+        if (result.result.nModified !== 1)
+          return res(boom.unauthorized());
+
+        return res();
+      });
+  },
 
 
   //ltis
-    deleteUserlti: (req, res) => {
-      //first check if user is creator
-      return userltiCtrl.read(req.params.ltiid)
-        .then((document) => {
-          if (document === undefined || document === null) {
-            return res(boom.notFound());
-          }
+  deleteUserlti: (req, res) => {
+    //first check if user is creator
+    return userltiCtrl.read(req.params.ltiid)
+      .then((document) => {
+        if (document === undefined || document === null) {
+          return res(boom.notFound());
+        }
 
-          let creator = document.creator.userid || document.creator;
-          if (creator !== req.auth.credentials.userid) {
-            return res(boom.unauthorized());
-          }
+        let creator = document.creator.userid || document.creator;
+        if (creator !== req.auth.credentials.userid) {
+          return res(boom.unauthorized());
+        }
 
-          //now delete
-          return userltiCtrl.delete(req.params.ltiid)
-            .then((result) => {
-              // console.log('deleteUserlti: deleted', result.result);
+        //now delete
+        return userltiCtrl.delete(req.params.ltiid)
+          .then((result) => {
+            // console.log('deleteUserlti: deleted', result.result);
 
-              if (result.result.ok !== 1) {
-                return res(boom.badImplementation());
-              }
+            if (result.result.ok !== 1) {
+              return res(boom.badImplementation());
+            }
 
-              if (result.result.n !== 1) {
-                return res(boom.notFound());
-              }
+            if (result.result.n !== 1) {
+              return res(boom.notFound());
+            }
 
-              if (document.members.length < 1)
-                return res();
+            if (document.members.length < 1)
+              return res();
 
               //notify users
-              let promises = [];
-              document.members.forEach((member) => {
-                promises.push(notifiyUser({
-                  id: creator,
-                  name: document.creator.username || 'LTI leader'
-                }, member.userid, 'left', document, true));
-              });
-              return Promise.all(promises).then(() => {
-                return res();
-              }).catch((error) => {
-                console.log('Error while processing notification of users:', error);
-                //reply(boom.badImplementation());
-                //for now always succeed
-                return res();
-              });
+            let promises = [];
+            document.members.forEach((member) => {
+              promises.push(notifiyUser({
+                id: creator,
+                name: document.creator.username || 'LTI leader'
+              }, member.userid, 'left', document, true));
             });
-        })
-        .catch((error) => {
-          console.log('error while reading or deleting the userlti '+req.params.ltiid+':', error);
-          res(boom.badImplementation(error));
-        });
-    },
+            return Promise.all(promises).then(() => {
+              return res();
+            }).catch((error) => {
+              console.log('Error while processing notification of users:', error);
+              //reply(boom.badImplementation());
+              //for now always succeed
+              return res();
+            });
+          });
+      })
+      .catch((error) => {
+        console.log('error while reading or deleting the userlti '+req.params.ltiid+':', error);
+        res(boom.badImplementation(error));
+      });
+  },
 
 
 
@@ -1210,41 +1210,41 @@ module.exports = {
   },
 
 
-    getUserltis: (req, res) => {
-      if (req.payload === undefined || req.payload.length < 1)
-        return res(boom.badData());
+  getUserltis: (req, res) => {
+    if (req.payload === undefined || req.payload.length < 1)
+      return res(boom.badData());
 
-      let selectors = req.payload.reduce((q, element) => {
-        q.push({_id: element});
-        return q;
-      }, []);
-      let query = {
-        $or: selectors
-      };
+    let selectors = req.payload.reduce((q, element) => {
+      q.push({_id: element});
+      return q;
+    }, []);
+    let query = {
+      $or: selectors
+    };
 
-      console.log('handler.getUserltis:', query);
+    console.log('handler.getUserltis:', query);
 
-      return userltiCtrl.find(query)
-        .then((cursor) => cursor.toArray())
-        .then((array) => {
-          if (array === undefined || array === null || array.length < 1) {
-            return res([]);
-          }
+    return userltiCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        if (array === undefined || array === null || array.length < 1) {
+          return res([]);
+        }
 
-          let enrichedLTIs_promises = array.reduce((prev, curr) => {
-            prev.push(enrichLTIMembers(curr));
-            return prev;
-          }, []);
-          return Promise.all(enrichedLTIs_promises)
-            .then((enrichedLTIs) => {
-              return res(enrichedLTIs);
-            });
-        })
-        .catch((error) => {
-          console.log('Error while reading ltis:', error);
-          res(boom.badImplementation(error));
-        });
-    },
+        let enrichedLTIs_promises = array.reduce((prev, curr) => {
+          prev.push(enrichLTIMembers(curr));
+          return prev;
+        }, []);
+        return Promise.all(enrichedLTIs_promises)
+          .then((enrichedLTIs) => {
+            return res(enrichedLTIs);
+          });
+      })
+      .catch((error) => {
+        console.log('Error while reading ltis:', error);
+        res(boom.badImplementation(error));
+      });
+  },
 
 
   //
@@ -1265,36 +1265,6 @@ module.exports = {
         res(boom.notFound('Wrong user id', error));
       });
   },
-
-
-/*
-  getUserdata: (req, res) => {
-    return usergroupCtrl.readGroupsOfUser(req.auth.credentials.userid)
-      .then((groupArray) => {
-        if (groupArray === undefined || groupArray === null)
-          return res(boom.notFound());
-
-          return userltitrl.readLTIsOfUser(req.auth.credentials.userid)
-            .then((ltiArray) => {
-              if (ltiArray === undefined || ltiArray === null)
-                return res(boom.notFound());
-
-                return res({
-                  id: req.auth.credentials.userid,
-                  username: req.auth.credentials.username,
-                  groups: groupArray,
-                  ltis: ltiArray
-                });
-
-        }); //userltitrl.readLTIsOfUser
-      })
-      .catch((error) => {
-        console.log('getUserdata('+req.auth.credentials.userid+') error:', error);
-        res(boom.notFound('Wrong user id', error));
-      });
-  },
-
-*/
 
   getUsers: (req, res) => {
     if (req.payload === undefined || req.payload.length < 1)

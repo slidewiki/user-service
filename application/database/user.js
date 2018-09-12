@@ -23,7 +23,7 @@ let self = module.exports = {
     return helper.connectToDatabase()
       .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, collectionName))
       .then((newId) => {
-        return newId
+        return newId;
       });
   },
 
