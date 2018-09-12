@@ -25,10 +25,10 @@ module.exports = {
 
     return userltiCtrl.readAllLTIs()
       .then((ltiArray) => {
-        //console.log("array.length"+ltiArray.length);
+      //console.log("array.length"+ltiArray.length);
 
-        for(var i=0; i<ltiArray.length; i++){
-          var ltiObj = ltiArray[i];
+        for(let i=0; i<ltiArray.length; i++){
+          let ltiObj = ltiArray[i];
           //console.log("lti.secret="+ltiObj.secret+ ", lti.key="+ltiObj.key);
           var ltiProvider = new lti.Provider(ltiObj.key, ltiObj.secret);
           ltiProvider.valid_request(req, function(err, isValid){

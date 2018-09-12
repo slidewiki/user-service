@@ -1179,21 +1179,21 @@ module.exports = function (server) {
           responses: {
             ' 200 ': {
               'description': 'Successful',
-          },
+            },
             ' 401 ': {
               'description': 'Not authorized to update or create this userlti.',
               'headers': {
                 'WWW-Authenticate': {
                   'description': 'Use your JWT token and the right userid.'
-                  }
                 }
-              },
+              }
+            },
             ' 404 ': {
-                  'description': 'LTI for update not found. Check the id.'
-                },
+              'description': 'LTI for update not found. Check the id.'
+            },
             ' 422 ': {
-                  'description': 'Wrong userlti data - see error message'
-                }
+              'description': 'Wrong userlti data - see error message'
+            }
           },
           payloadType: 'json'
         }
@@ -1224,15 +1224,15 @@ module.exports = function (server) {
         'hapi-swagger': {
           responses: {
             ' 200 ': {
-            'description': 'Successful',
+              'description': 'Successful',
             },
             ' 401 ': {
               'description': 'Not authorized to delete this lti.',
               'headers': {
                 'WWW-Authenticate': {
                   'description': 'Use your JWT token and the right ltiid.'
-                  }
                 }
+              }
             },
             ' 404 ': {
               'description': 'LTI not found. Check the id.'
