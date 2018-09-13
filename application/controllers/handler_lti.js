@@ -37,7 +37,7 @@ module.exports = {
                 isValid = true;
                 found = true;
                 //console.log('isValid='+isValid);
-                console.log("lti.id="+ltiObj._id+ ", lti.members.length="+ltiObj.members.length);
+                //console.log('lti.id='+ltiObj._id+', lti.members.length='+ltiObj.members.length);
                 proceedLTI(req, res, ltiObj);
               }
             });
@@ -55,7 +55,7 @@ module.exports = {
 
 function proceedLTI(req, res, ltiObj){
   //console.log('proceedLTI');
-  console.log("proceedLTI.lti.id="+ltiObj._id+ ", lti.members.length="+ltiObj.members.length);
+  //console.log('proceedLTI.lti.id='+ltiObj._id+ ', lti.members.length='+ltiObj.members.length);
 
   var user = getUser(req);
 
@@ -87,9 +87,9 @@ function proceedLTI(req, res, ltiObj){
               //Add new user to the LTI group
               console.log('ltiObj.members.length before='+ltiObj.members.length);
               let member = {
-                    userid: newUserId,
-                    joined: (new Date()).toISOString()
-                };
+                userid: newUserId,
+                joined: (new Date()).toISOString()
+              };
               ltiObj.members.push(member);
               console.log('ltiObj.members.length after='+ltiObj.members.length);
 
