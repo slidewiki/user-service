@@ -51,24 +51,6 @@ const provider = {
   required: ['provider', 'token', 'token_creation']
 };
 
-/*
-const ltiKeys = {
-  type: 'object',
-  properties: {
-    _id: {
-      type: 'integer'
-    },
-    key: {
-      type: 'string'
-    },
-    secret: {
-      type: 'string'
-    }
-  },
-  //required: ['key', 'secret', 'id']
-  required: ['key', 'secret', 'id']
-};
-*/
 
 const user = {
   type: 'object',
@@ -164,12 +146,6 @@ const user = {
     lastReviewDoneBy: {
       type: 'integer'
     }
-    /*,
-    ltiKeysArray: {
-      type: 'array',
-      items: ltiKeys
-    }
-    */
   },
   required: ['email', 'username', 'frontendLanguage']
 };

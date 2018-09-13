@@ -56,8 +56,8 @@ module.exports = {
 function proceedLTI(req, res, ltiObj){
   //console.log('proceedLTI');
   //console.log('proceedLTI.lti.id='+ltiObj._id+ ', lti.members.length='+ltiObj.members.length);
-
-  var user = getUser(req);
+  var email = 'lti'+ltiObj._id+'.user'+(lti.members.length+1)+'@slidewiki.org';
+  var user = getUser(req, email);
 
   return util.isLTIIdentityAssigned(user.username)
     .then((result) => {
@@ -85,13 +85,13 @@ function proceedLTI(req, res, ltiObj){
               };
 
               //Add new user to the LTI group
-              console.log('ltiObj.members.length before='+ltiObj.members.length);
+              //console.log('ltiObj.members.length before='+ltiObj.members.length);
               let member = {
                 userid: newUserId,
                 joined: (new Date()).toISOString()
               };
               ltiObj.members.push(member);
-              console.log('ltiObj.members.length after='+ltiObj.members.length);
+              //console.log('ltiObj.members.length after='+ltiObj.members.length);
 
               return userltiCtrl.update(ltiObj)
                 .then((result) => {
@@ -163,11 +163,11 @@ function simpleStringify (object){
 }
 
 
-function getUser(req){
+function getUser(req, email){
   //let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'') || document.username.replace(/\s/g,'');
   console.log('req.payload.ext_user_username='+req.payload.ext_user_username);
   let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+LTI_ID;
-  var email = 'temp@temp.com';
+  //var email = 'temp@temp.com';
 
   return {
     username: username,
