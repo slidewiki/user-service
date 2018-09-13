@@ -8,7 +8,7 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   jwt = require('./jwt'),
   util = require('./util'),
   lti = require('ims-lti'),
-  LTI_CONFIG = require('../configuration.js').LTI;
+  LTI_ID = require('../configuration.js').LTI_ID;
 
 const PLATFORM_LTI_URL = require('../configs/microservices').platform.uri+ '/ltiLogin';
 
@@ -16,32 +16,32 @@ module.exports = {
 
   handleLTI: (req, res) => {
 
-
-    if (!LTI_CONFIG.ENABLED)
-      return res(boom.notFound());
-
     let resource_id = req.params.resource_id;
     let isValid = false;
 
     return userltiCtrl.readAllLTIs()
       .then((ltiArray) => {
       //console.log("array.length"+ltiArray.length);
-
+        let found = false;
         for(let i=0; i<ltiArray.length; i++){
-          let ltiObj = ltiArray[i];
-          //console.log("lti.secret="+ltiObj.secret+ ", lti.key="+ltiObj.key);
-          var ltiProvider = new lti.Provider(ltiObj.key, ltiObj.secret);
-          ltiProvider.valid_request(req, function(err, isValid){
-            if(err){
-              console.log('There was an error in the LTI request', err);
-            }
-            else {
-              console.log('There is the valid LTI request. i='+i);
-              isValid = true;
-              //console.log('isValid='+isValid);
-              proceedLTI(req, res, ltiObj);
-            }
-          });
+          if(!found){
+            let ltiObj = ltiArray[i];
+            //console.log("lti.secret="+ltiObj.secret+ ", lti.key="+ltiObj.key);
+            var ltiProvider = new lti.Provider(ltiObj.key, ltiObj.secret);
+            ltiProvider.valid_request(req, function(err, isValid){
+              if(err){
+                console.log('There was an error in the LTI request', err);
+              }
+              else {
+                console.log('There is the valid LTI request. i='+i);
+                isValid = true;
+                found = true;
+                //console.log('isValid='+isValid);
+                console.log("lti.id="+ltiObj._id+ ", lti.members.length="+ltiObj.members.length);
+                proceedLTI(req, res, ltiObj);
+              }
+            });
+          }//end if(!found)
         } //end for
       }).catch((error) => {
         console.log('userltiCtrl.readAllLTIs failed:', error);
@@ -53,8 +53,10 @@ module.exports = {
 
 
 
-function proceedLTI(req, res){
+function proceedLTI(req, res, ltiObj){
   //console.log('proceedLTI');
+  console.log("proceedLTI.lti.id="+ltiObj._id+ ", lti.members.length="+ltiObj.members.length);
+
   var user = getUser(req);
 
   return util.isLTIIdentityAssigned(user.username)
@@ -72,6 +74,7 @@ function proceedLTI(req, res){
             if (result.insertedCount === 1) {
               //success
               console.log('new user created. successful, result.insertedId='+result.insertedId);
+              let newUserId = result.insertedId;
               let data = {
                 userid: result.insertedId,
                 username: user.username,
@@ -81,10 +84,27 @@ function proceedLTI(req, res){
                 })
               };
 
-              //success
-              return res()
-                .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
-                .temporary(true);
+              //Add new user to the LTI group
+              console.log('ltiObj.members.length before='+ltiObj.members.length);
+              let member = {
+                    userid: newUserId,
+                    joined: (new Date()).toISOString()
+                };
+              ltiObj.members.push(member);
+              console.log('ltiObj.members.length after='+ltiObj.members.length);
+
+              return userltiCtrl.update(ltiObj)
+                .then((result) => {
+
+                  //success
+                  return res()
+                    .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
+                    .temporary(true);
+
+                }).catch((error) => {
+                  console.log('userltiCtrl.update(lti) failed:', error);
+                  res(boom.badImplementation('Error', error));
+                });
 
             }
             res(boom.badImplementation());
@@ -108,7 +128,6 @@ function proceedLTI(req, res){
             username: user.username
           })
         };
-
 
         //success
         return res()
@@ -147,7 +166,7 @@ function simpleStringify (object){
 function getUser(req){
   //let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'') || document.username.replace(/\s/g,'');
   console.log('req.payload.ext_user_username='+req.payload.ext_user_username);
-  let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+'@lti.org';
+  let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+LTI_ID;
   var email = 'temp@temp.com';
 
   return {
