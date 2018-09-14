@@ -21,7 +21,7 @@ module.exports = {
 
     return userltiCtrl.readAllLTIs()
       .then((ltiArray) => {
-      //console.log("array.length"+ltiArray.length);
+        //console.log("ltiArray.length="+ltiArray.length);
         let found = false;
         for(let i=0; i<ltiArray.length; i++){
           if(!found){
@@ -34,7 +34,7 @@ module.exports = {
               }
               else {
                 console.log('There is the valid LTI request. i='+i);
-                isValid = true;
+                //isValid = true;
                 found = true;
                 //console.log('isValid='+isValid);
                 //console.log('lti.id='+ltiObj._id+', lti.members.length='+ltiObj.members.length);
@@ -56,7 +56,7 @@ module.exports = {
 function proceedLTI(req, res, ltiObj){
   //console.log('proceedLTI');
   //console.log('proceedLTI.lti.id='+ltiObj._id+ ', lti.members.length='+ltiObj.members.length);
-  var email = 'lti'+ltiObj._id+'.user'+(lti.members.length+1)+'@slidewiki.org';
+  var email = 'lti'+ltiObj._id+'.user'+(ltiObj.members.length+1)+'@slidewiki.org';
   var user = getUser(req, email);
 
   return util.isLTIIdentityAssigned(user.username)
