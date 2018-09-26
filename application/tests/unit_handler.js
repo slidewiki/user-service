@@ -565,7 +565,7 @@ describe('User service', () => {
 
     //usergroups
 
-    it('Try to create wrong usergroup', () => {
+    it('Try to create wrong usergroup', function(done) {
       let req = {
         payload: wrong_usergroup,
         auth: { //headers which will be set with JWT
@@ -574,18 +574,21 @@ describe('User service', () => {
           }
         }
       };
-      return handler.createOrUpdateUsergroup(req, (result) => {
-        // console.log(result);
+      handler.createOrUpdateUsergroup(req, (result) => {
+        console.log(result);
+        let error = undefined;
 
-        expect(result.isBoom).to.equal(true);
-        expect(result.output.statusCode).to.equal(500);
+        try {
+          expect(result).to.not.equal(undefined);
+          expect(result.isBoom).to.equal(true);
+          expect(result.output).to.not.equal(undefined);
+          expect(result.output.statusCode).to.equal(422);
+        } catch (e) {
+          error = e;
+        }
 
-        return;
-      })
-        .catch((Error) => {
-          console.log('Error', Error);
-          throw Error;
-        });
+        done(error);
+      });
     }).timeout(60000);
     it('Create usergroup', () => {
       let req = {

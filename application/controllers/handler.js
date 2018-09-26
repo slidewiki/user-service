@@ -789,7 +789,7 @@ module.exports = {
 
           if (result[0] !== undefined && result[0] !== null) {
             //Error
-            return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+            return res(boom.badData('Wrong data: ' + JSON.stringify(co.parseAjvValidationErrors(result))));
           }
 
           if (result.insertedCount === 1) {
@@ -827,7 +827,7 @@ module.exports = {
     }
     else if (group.id < 1) {
       //error
-      return res(boom.badData());
+      return res(boom.badData('Group id is not valid'));
     }
     else {
       //update
@@ -857,7 +857,7 @@ module.exports = {
 
               if (result[0] !== undefined && result[0] !== null) {
                 //Error
-                return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+                return res(boom.badData('Wrong data: ' + JSON.stringify(co.parseAjvValidationErrors(result))));
               }
 
               if (result.result.ok === 1) {
