@@ -627,24 +627,25 @@ describe('User service', () => {
           throw Error;
         });
     }).timeout(60000);
-    it('Get usergroup', () => {
+    it('Get usergroup', function(done) {
       let req = {
         payload: [groupid]
       };
-      return handler.getUsergroups(req, (result) => {
-        console.log('testresult: ', result);
+      handler.getUsergroups(req, (result) => {
+        console.log('testresult: ', result, result.members);
+        let error = undefined;
 
-        expect(result[0]).to.not.equal(undefined);
-        expect(result[0].creator.userid).to.equal(userid);
-        expect(result[0].creator.username).to.not.equal(undefined);
-        expect(result[0].members.length).to.equal(0);
+        try {
+          expect(result[0]).to.not.equal(undefined);
+          expect(result[0].creator.userid).to.equal(userid);
+          expect(result[0].creator.username).to.not.equal(undefined);
+          expect(result[0].members.length).to.equal(2);
+        } catch (e) {
+          error = e;
+        }
 
-        return;
-      })
-        .catch((Error) => {
-          console.log('Error', Error);
-          throw Error;
-        });
+        done(error);
+      });
     }).timeout(60000);
     it('Delete usergroup', () => {
       let req = {
@@ -890,7 +891,7 @@ describe('User service', () => {
 
     // SPAM protection functions
 
-    it('Get reviewable users', () => {
+    it('Get reviewable users', function(done) {
       let req = {
         params: {
         },
@@ -900,15 +901,20 @@ describe('User service', () => {
           }
         }
       };
-      return handler.getReviewableUsers(req, (result) => {
+      handler.getReviewableUsers(req, (result) => {
         console.log('result', result);
+        let error = undefined;
 
-        expect(result).to.not.equal(undefined);
-        expect(result.length).to.equal(1);
-        expect(result[0]).to.not.equal(undefined);
-        expect(result[0].userid).to.not.equal(undefined);
-        expect(result[0].username).to.not.equal(undefined);
-        return;
+        try {
+          expect(result).to.not.equal(undefined);
+          expect(result.length).to.equal(2);
+          expect(result[0]).to.not.equal(undefined);
+          expect(result[0].userid).to.not.equal(undefined);
+          expect(result[0].username).to.not.equal(undefined);
+        } catch (e) {
+          error = e;
+        }
+         done(error);
       });
     });
 
