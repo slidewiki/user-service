@@ -749,7 +749,7 @@ module.exports = {
 
     let group = req.payload;
 
-    group.creator = {
+    let possibleCreator = {
       userid: userid,
       username: req.auth.credentials.username
     };
@@ -781,13 +781,15 @@ module.exports = {
       //create
       console.log('create group', group.name);
 
+      group.creator = possibleCreator;
+
       return usergroupCtrl.create(group)
         .then((result) => {
           // console.log('createOrUpdateUsergroup: created group', result.result || result);
 
           if (result[0] !== undefined && result[0] !== null) {
             //Error
-            return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+            return res(boom.badData('Wrong data: ' + JSON.stringify(co.parseAjvValidationErrors(result))));
           }
 
           if (result.insertedCount === 1) {
@@ -825,7 +827,7 @@ module.exports = {
     }
     else if (group.id < 1) {
       //error
-      return res(boom.badData());
+      return res(boom.badData('Group id is not valid'));
     }
     else {
       //update
@@ -839,13 +841,15 @@ module.exports = {
           }
 
           let dCreator = document.creator.userid || document.creator;
-          if (dCreator !== group.creator.userid) {
+          let isAdmin = document.members.some((m) => m.userid === userid && m.role === 'admin');
+          if (dCreator !== userid && !isAdmin) {
             return res(boom.unauthorized());
           }
 
-          //some attribute should be unchangeable
+          //some attributes should be unchangeable
           group.timestamp = document.timestamp;
           group._id = document._id;
+          group.creator = document.creator;
 
           return usergroupCtrl.update(group)
             .then((result) => {
@@ -853,7 +857,7 @@ module.exports = {
 
               if (result[0] !== undefined && result[0] !== null) {
                 //Error
-                return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+                return res(boom.badData('Wrong data: ' + JSON.stringify(co.parseAjvValidationErrors(result))));
               }
 
               if (result.result.ok === 1) {
@@ -1514,7 +1518,7 @@ function enrichGroupMembers(group) {
         return user.userid !== creatorid;
       });
 
-      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0].userid, name: creator[0].username, email: creator[0].email}, members.concat(group.members).length);
+      console.log('enrichGroupMembers: got creator and users (amount)', {id: creator[0].userid, name: creator[0].username}, members.concat(group.members).length);
 
       //add joined attribute to members
       members = (members.concat(group.members)).reduce((prev, curr) => {
@@ -1529,8 +1533,10 @@ function enrichGroupMembers(group) {
           prev[curr.userid].organization = curr.organization;
           prev[curr.userid].displayName = curr.displayName;
         }
-        else
+        else {
           prev[curr.userid].joined = curr.joined;
+          prev[curr.userid].role = curr.role;
+        }
         return prev;
       }, {});
       members = Object.keys(members).map((key) => { return members[key]; }).filter((member) => {return member.joined && member.userid && member.username;});
