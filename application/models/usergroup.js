@@ -46,6 +46,10 @@ const usergroup = {
           joined: {
             type: 'string',
             format: 'date-time'
+          },
+          role: {
+            type: 'string',
+            enum: ['admin']
           }
         },
         required: ['userid']

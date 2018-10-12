@@ -21,7 +21,7 @@ script:
 - npm run test
 after_success:
 - cd ..
-- openssl aes-256-cbc -K $encrypted_c19eec6ff982_key -iv $encrypted_c19eec6ff982_iv -in deployment_keys.tar.enc -out deployment_keys.tar -d
+- openssl aes-256-cbc -K $encrypted_0cefb8727e91_key -iv $encrypted_0cefb8727e91_iv -in deployment_keys.tar.enc -out deployment_keys.tar -d
 - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then ./travis_scripts/dockerhub.sh ; fi
 - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then ./travis_scripts/deploy.sh ; fi
 - cd application

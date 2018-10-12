@@ -96,13 +96,24 @@ describe('User service', () => {
     'picture': 'https://avatars.githubusercontent.com/u/3153545?v=3',
     'name': 'Kurt Junghanns'
   };
+  let wrong_usergroup = {
+    Name: 'Testgroup',
+    text: 'Used for Unit tests',
+    acive: 1,
+    members: [
+      {
+        username: 'A',
+        id: 2
+      }
+    ]
+  };
   let correct_usergroup = {
     name: 'Testgroup',
     description: 'Used for Unit tests',
     isActive: true,
     members: [
       {
-        userid: 1,
+        userid: 3,
         joined: (new Date()).toISOString()
       }
     ]
@@ -113,12 +124,41 @@ describe('User service', () => {
     isActive: true,
     members: [
       {
-        userid: 1,
+        userid: 3,
+        joined: (new Date()).toISOString(),
+        role: 'admin'
+      }
+    ]
+  };
+  let correct_usergroup3 = {
+    name: '!!!',
+    description: 'Used for Unit tests again',
+    isActive: true,
+    members: [
+      {
+        userid: 3,
+        joined: (new Date()).toISOString()
+      }
+    ]
+  };
+  let correct_usergroup4 = {
+    name: '???',
+    description: 'Used for Unit tests again!',
+    isActive: true,
+    members: [
+      {
+        userid: 3,
+        joined: (new Date()).toISOString(),
+        role: 'admin'
+      },
+      {
+        userid: 6,
         joined: (new Date()).toISOString()
       },
       {
-        userid: 2,
-        joined: (new Date()).toISOString()
+        userid: 4,
+        joined: (new Date()).toISOString(),
+        role: 'admin'
       }
     ],
     picture: 'https://avatars.githubusercontent.com/u/3153545?v=3'
@@ -526,12 +566,38 @@ describe('User service', () => {
 
     //usergroups
 
+    it('Try to create wrong usergroup', function(done) {
+      let req = {
+        payload: wrong_usergroup,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: userid
+          }
+        }
+      };
+      handler.createOrUpdateUsergroup(req, (result) => {
+        console.log(result);
+        let error = undefined;
+
+        try {
+          expect(result).to.not.equal(undefined);
+          expect(result.isBoom).to.equal(true);
+          expect(result.output).to.not.equal(undefined);
+          expect(result.output.statusCode).to.equal(422);
+        } catch (e) {
+          error = e;
+        }
+
+        done(error);
+      });
+    }).timeout(60000);
     it('Create usergroup', () => {
       let req = {
         payload: correct_usergroup,
         auth: { //headers which will be set with JWT
           credentials: {
-            userid: userid
+            userid: userid,
+            username: 'tboonx'
           }
         }
       };
@@ -565,6 +631,53 @@ describe('User service', () => {
 
         expect(result.name).to.equal('Blub blabla blub');
         expect(result.picture).to.equal(correct_usergroup2.picture);
+
+        return;
+      })
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
+    }).timeout(60000);
+    it('Update usergroup as admin', () => {
+      let group = correct_usergroup3;
+      group.id = groupid;
+      let req = {
+        payload: group,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: correct_usergroup2.members[0].userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        // console.log(result);
+
+        expect(result.name).to.equal('!!!');
+
+        return;
+      })
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+        });
+    }).timeout(60000);
+    it('Try to update usergroup as a not admin', () => {
+      let group = correct_usergroup4;
+      group.id = groupid;
+      let req = {
+        payload: group,
+        auth: { //headers which will be set with JWT
+          credentials: {
+            userid: correct_usergroup2.members[0].userid
+          }
+        }
+      };
+      return handler.createOrUpdateUsergroup(req, (result) => {
+        // console.log(result);
+
+        expect(result.isBoom).to.equal(true);
+        expect(result.output.statusCode).to.equal(401);
 
         return;
       })
