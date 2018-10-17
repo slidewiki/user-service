@@ -136,7 +136,7 @@ describe('User service', () => {
     isActive: true,
     members: [
       {
-        userid: 3,
+        userid: 5,
         joined: (new Date()).toISOString()
       }
     ]
@@ -752,7 +752,7 @@ describe('User service', () => {
           expect(result[0]).to.not.equal(undefined);
           expect(result[0].creator.userid).to.equal(userid);
           expect(result[0].creator.username).to.not.equal(undefined);
-          expect(result[0].members.length).to.equal(2);
+          expect(result[0].members.length).to.equal(1);
         } catch (e) {
           error = e;
         }
@@ -1027,7 +1027,7 @@ describe('User service', () => {
         } catch (e) {
           error = e;
         }
-         done(error);
+        done(error);
       });
     });
 
