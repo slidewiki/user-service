@@ -1290,30 +1290,18 @@ function reviewUser(req, res, suspended) {
 
   let query = {
     _id: userid,
-    authorised: {
-      $not: {
-        $eq: false
-      }
-    },
     deactivated: {
-      $not: {
-        $eq: true
-      }
-    },
-    reviewed: {
       $not: {
         $eq: true
       }
     }
   };
   let update = {
-    reviewed: true,
-    lastReviewDoneBy: reviewerid
-  };
-  if (!suspended)
-    update.suspended = suspended;
-  update = {
-    $set: update
+    $set: {
+      reviewed: true,
+      lastReviewDoneBy: reviewerid,
+      suspended: suspended
+    }
   };
   return userCtrl.partlyUpdate(query, update)
     .then((result) => {
