@@ -1011,7 +1011,7 @@ module.exports = {
             if (document.members.length < 1)
               return res();
 
-              //notify users
+            //notify users
             let promises = [];
             document.members.forEach((member) => {
               promises.push(notifiyUser({
