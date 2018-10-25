@@ -20,17 +20,17 @@ module.exports = {
     return userltiCtrl.readAllLTIs()
       .then((ltiArray) => {
         for(let i=0; i<ltiArray.length; i++){
-            let ltiObj = ltiArray[i];
-            var ltiProvider = new lti.Provider(ltiObj.key, ltiObj.secret);
-            ltiProvider.valid_request(req, function(err, isValid){
-              if(err){
-                console.log('There was an error in the LTI request', err);
-              }
-              else {
-                console.log('There is the valid LTI request. i='+i);
-                proceedLTI(req, res, ltiObj);
-              }
-            });
+          let ltiObj = ltiArray[i];
+          let ltiProvider = new lti.Provider(ltiObj.key, ltiObj.secret);
+          ltiProvider.valid_request(req, (err, isValid) => {
+            if(err){
+              console.log('There was an error in the LTI request', err);
+            }
+            else {
+              console.log('There is the valid LTI request. i='+i);
+              proceedLTI(req, res, ltiObj);
+            }
+          });
         } //end for
       }).catch((error) => {
         console.log('userltiCtrl.readAllLTIs failed:', error);
@@ -43,8 +43,8 @@ module.exports = {
 
 
 function proceedLTI(req, res, ltiObj){
-  var email = 'lti'+ltiObj._id+'.user'+(ltiObj.members.length+1)+'@slidewiki.org';
-  var user = getUser(req, email);
+  let email = 'lti'+ltiObj._id+'.user'+(ltiObj.members.length+1)+'@slidewiki.org';
+  let user = getUser(req, email);
 
   return util.isLTIIdentityAssigned(user.username)
     .then((result) => {
