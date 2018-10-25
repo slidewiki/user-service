@@ -19,9 +19,7 @@ module.exports = {
 
     return userltiCtrl.readAllLTIs()
       .then((ltiArray) => {
-        let found = false;
         for(let i=0; i<ltiArray.length; i++){
-          if(!found){
             let ltiObj = ltiArray[i];
             var ltiProvider = new lti.Provider(ltiObj.key, ltiObj.secret);
             ltiProvider.valid_request(req, function(err, isValid){
@@ -30,11 +28,9 @@ module.exports = {
               }
               else {
                 console.log('There is the valid LTI request. i='+i);
-                found = true;
                 proceedLTI(req, res, ltiObj);
               }
             });
-          }//end if(!found)
         } //end for
       }).catch((error) => {
         console.log('userltiCtrl.readAllLTIs failed:', error);
