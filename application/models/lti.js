@@ -22,7 +22,6 @@ const ltiKeys = {
       type: 'string'
     }
   },
-  //required: ['key', 'secret', 'id']
   required: ['key', 'secret', 'id']
 };
 

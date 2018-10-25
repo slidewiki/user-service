@@ -1014,7 +1014,7 @@ module.exports = {
             //notify users
             let promises = [];
             document.members.forEach((member) => {
-              promises.push(notifiyUser({
+              promises.push(notifiyLTIUser({
                 id: creator,
                 name: document.creator.username || 'LTI leader'
               }, member.userid, 'left', document, true));
@@ -1752,6 +1752,42 @@ function notifiyUser(actor, receiver, type, group, isActiveAction = false) {
   });
   return promise;
 }
+
+
+function notifiyLTIUser(actor, receiver, type, lti, isActiveAction = false) {
+  let promise = new Promise((resolve, reject) => {
+    let message = actor.name + ': Has ' + type + ' the LTI Group ' + lti.key;
+    if (isActiveAction)
+      message = 'You ' + type + ' the LTI group ' + lti.key;
+    const options = {
+      url: require('../configs/microservices').activities.uri + '/activity/new',
+      method: 'POST',
+      json: true,
+      body: {
+        activity_type: type,
+        user_id: actor.id.toString(),
+        content_id: lti._id.toString(),
+        content_kind: 'lti',
+        content_name: message,
+        content_owner_id: receiver.toString()
+      }
+    };
+
+    function callback(error, response, body) {
+      // console.log('notifiyUser: ', error, response.statusCode, body);
+
+      if (!error && (response.statusCode === 200)) {
+        return resolve(body);
+      } else {
+        return reject(error);
+      }
+    }
+
+    request(options, callback);
+  });
+  return promise;
+}
+
 
 //Uses userids of creator and members in order to add username and picture
 function enrichGroupMembers(group) {

@@ -18,16 +18,7 @@ const staticUsers = [
 ];
 
 let self = module.exports = {
-
-  getNextUserId: (userid) => {
-    return helper.connectToDatabase()
-      .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, collectionName))
-      .then((newId) => {
-        return newId;
-      });
-  },
-
-
+  
   create: (user) => {
     return helper.connectToDatabase()
       .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, collectionName))

@@ -10,7 +10,6 @@ let self = module.exports = {
     return helper.connectToDatabase()
       .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, collectionName))
       .then((newId) => {
-        // console.log('newId', newId);
         return helper.connectToDatabase() //db connection have to be accessed again in order to work with more than one collection
           .then((db2) => db2.collection(collectionName))
           .then((collection) => {

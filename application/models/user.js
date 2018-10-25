@@ -1,7 +1,5 @@
 'use strict';
 
-//const ltiKeys = require('./lti');
-
 //require
 let Ajv = require('ajv');
 let ajv = Ajv({

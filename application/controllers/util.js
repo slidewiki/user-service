@@ -128,8 +128,6 @@ module.exports = {
         .then((array) => {
           console.log('util.isLTIIdentityAssigned: cursor.array.length:', array.length);
           if (array.length > 0) {
-            //console.log('array='+JSON.stringify(array)); // returns cleaned up JSON
-            //console.log('array.id='+array[0]);
 
             let userId = -1;
             /*
@@ -144,7 +142,7 @@ module.exports = {
                   if (value1.hasOwnProperty(field2)) {
                     let key2 = field2;
                     let value2 = value1[field2];
-                    console.log('key2='+key2+', value2='+value2);
+                    //console.log('key2='+key2+', value2='+value2);
 
                     if(key2 === '_id'){
                       userId = value2;
@@ -152,27 +150,17 @@ module.exports = {
                     }
                   }
                 }
-                //console.log('key='+key1+', value='+value1);
               }
             }
-            console.log('userId='+userId);
 
-            /*
-            const isEMailAssigned = !(array.reduce((prev, curr) => {
-              const sameEMail = curr.email === email;
-              return prev && !sameEMail;
-            }, true));
-            */
             const isUsernameAssigned = !(array.reduce((prev, curr) => {
               const sameUsername = curr.username.toLowerCase() === username.toLowerCase();
               return prev && !sameUsername;
             }, true));
 
             resolve({
-              //assigned: isEMailAssigned || isUsernameAssigned,
               assigned: isUsernameAssigned,
               username: isUsernameAssigned,
-              //email: isEMailAssigned,
               userid: userId
             });
           } else {
