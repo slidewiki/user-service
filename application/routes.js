@@ -903,7 +903,7 @@ module.exports = function (server) {
           lti_version: Joi.string().allow(''),
           launch_presentation_return_url: Joi.string().allow(''),
           launch_presentation_document_target: Joi.string().allow('')
-        }).requiredKeys('oauth_consumer_key', 'oauth_signature', 'oauth_timestamp', 'oauth_signature_method', 'oauth_version'),
+        }).requiredKeys('ext_user_username', 'oauth_consumer_key', 'oauth_signature', 'oauth_timestamp', 'oauth_signature_method', 'oauth_version'),
       },
       state: {
         parse: true, // parse and store in request.state
