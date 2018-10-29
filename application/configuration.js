@@ -66,6 +66,20 @@ if (process.env.NODE_ENV === 'test') {
   slidewikiDbName = 'slidewiki_test';
 }
 
+//LTI stuff
+let lti_id, lti_key, lti_secret, lti_enabled = false;
+if (!co.isEmpty(process.env.LTI_ID)) {
+  lti_id = process.env.LTI_ID;
+}
+if (!co.isEmpty(process.env.LTI_KEY)) {
+  lti_key = process.env.LTI_KEY;
+}
+if (!co.isEmpty(process.env.LTI_SECRET)) {
+  lti_secret = process.env.LTI_SECRET;
+}
+if (lti_id && lti_key && lti_secret)
+  lti_enabled = true;
+
 module.exports = {
   MongoDB: {
     PORT: port,

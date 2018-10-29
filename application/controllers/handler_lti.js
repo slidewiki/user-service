@@ -44,7 +44,18 @@ module.exports = {
 
 function proceedLTI(req, res, ltiObj){
   let email = 'lti'+ltiObj._id+'.user'+(ltiObj.members.length+1)+'@slidewiki.org';
-  let user = getUser(req, email);
+  let username = 'lti'+ltiObj._id+'.user'+(ltiObj.members.length+1)+LTI_ID;
+  console.log('req.payload.ext_user_username='+req.payload.ext_user_username);
+  if(req.payload.ext_user_username !== '' && req.payload.ext_user_username !== undefined){
+    username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+LTI_ID;
+  }
+
+  let user = getUser(req, username, email);
+
+  console.log('req.params.resource_id='+req.params.resource_id);
+  let resource_id='';
+  if(req.params.resource_id !== '' && req.params.resource_id >=0)
+    resource_id = req.params.resource_id;
 
   return util.isLTIIdentityAssigned(user.username)
     .then((result) => {
@@ -83,7 +94,7 @@ function proceedLTI(req, res, ltiObj){
 
                   //success
                   return res()
-                    .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
+                    .redirect(PLATFORM_LTI_URL + '?resource_id='+resource_id+'&data=' + encodeURIComponent(JSON.stringify(data)))
                     .temporary(true);
 
                 }).catch((error) => {
@@ -102,8 +113,6 @@ function proceedLTI(req, res, ltiObj){
       } else {
         // If the user is already registered, sign in
         console.log('already registered. signed in. result='+simpleStringify(result));
-        console.log('PLATFORM_LTI_URL ='+PLATFORM_LTI_URL);
-        console.log('result.userid ='+result.userid);
         let id = result.userid;
         let data = {
           userid: id,
@@ -116,7 +125,7 @@ function proceedLTI(req, res, ltiObj){
 
         //success
         return res()
-          .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
+          .redirect(PLATFORM_LTI_URL + '?resource_id='+resource_id+'&data=' + encodeURIComponent(JSON.stringify(data)))
           .temporary(true);
       }
 
@@ -145,9 +154,9 @@ function simpleStringify (object){
 }
 
 
-function getUser(req, email){
-  console.log('req.payload.ext_user_username='+req.payload.ext_user_username);
-  let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+LTI_ID;
+function getUser(req, username, email){
+  //console.log('req.payload.ext_user_username='+req.payload.ext_user_username);
+  //let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+LTI_ID;
   return {
     username: username,
     email: email,
