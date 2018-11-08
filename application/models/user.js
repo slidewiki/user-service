@@ -141,6 +141,20 @@ const user = {
     },
     lastReviewDoneBy: {
       type: 'integer'
+    },
+    migratedFrom: {
+      type: 'object',
+      properties: {
+        instance: {
+          type: 'string'
+        },
+        userid: {
+          type: 'integer'
+        },
+        url: {
+          type: 'string'
+        }
+      }
     }
   },
   required: ['email', 'username', 'frontendLanguage']

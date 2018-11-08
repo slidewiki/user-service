@@ -1,3 +1,5 @@
+/*eslint no-case-declarations: "warn"*/
+
 /*
 Handles the requests by executing stuff and replying to the client. Uses promises to get stuff done.
 Instance for social function - handler.js got too big
@@ -11,11 +13,15 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   providerCtrl = require('../database/provider'),
   config = require('../configuration'),
   jwt = require('./jwt'),
+  request = require('request'),
   socialProvider = require('./social_provider'),
-  util = require('./util');
+  util = require('./util'),
+  instances = require('../configs/instances.js'),
+  ObjectId = require('mongodb').ObjectID;
 
 const PROVIDERS = ['github', 'google', 'facebook'],
   PLATFORM_SOCIAL_URL = require('../configs/microservices').platform.uri + '/socialLogin',
+  PLATFORM_MIGRATE_URL = require('../configs/microservices').platform.uri + '/migrateUser',
   PLATFORM_INFORMATION_URL = require('../configs/microservices').platform.uri + '';
 
 module.exports = {
@@ -438,8 +444,258 @@ module.exports = {
 
         return res(providers);
       });
+  },
+
+  slidewiki: (req, res) => {
+    if (!instances[req.query.instance]) {
+      return res(boom.notFound('Instance unknown.'));
+    }
+
+    //get detailed user
+    let headers = {};
+    headers[config.JWT.HEADER] = req.query.jwt;
+    const options = {
+      url: instances[req.query.instance].userinfo.replace('{id}', req.query.userid),
+      method: 'GET',
+      json: true,
+      headers: headers
+    };
+
+    function callback(error, response, body) {
+      console.log('got detailed user: ', error, response.statusCode, body, options, body.providers);
+
+      if (!error && (response.statusCode === 200) && body.username) {
+        let user = body;
+        user.userid = user._id + 0;
+        user._id = undefined;
+        user.providers = [];
+        user.groups = undefined;
+        user.hasPassword = false;
+        if (!user.frontendLanguage)
+          user.frontendLanguage = 'en';
+
+        //check if user is already migrated
+        let query = {
+          migratedFrom: {
+            instance: req.query.instance,
+            userid: util.parseStringToInteger(req.query.userid)
+          }
+        };
+        userCtrl.find(query)
+          .then((cursor) => cursor.toArray())
+          .then((array) => {
+            console.log('searched for already migrated user:', query, array);
+            if (array === undefined || array === null || array.length < 1) {
+              //now migrate it
+              return migrateUser(req, res, user);
+            }
+            else {
+              //do a sign in
+              return signInMigratedUser(req, res, user, array[0]);
+            }
+          });
+      } else {
+        console.log('Error', (response) ? response.statusCode : undefined, error, body);
+        return res(boom.badImplementation('Failed to retrieve user data')); //TODO redirect to homepage?
+      }
+    }
+
+    // if (process.env.NODE_ENV === 'test') {
+    //   callback(null, {statusCode: 200}, {});
+    // }
+    // else
+    request(options, callback);
+  },
+
+  finalizeUser: (req, res) => {
+    return util.isIdentityAssigned(req.payload.email, req.payload.username)
+      .then((result) => {
+        if (result.assigned) {
+          return res(boom.conflict());
+        }
+
+        return userCtrl.find({_id: ObjectId(req.params.hash)}, true)
+          .then((cursor) => cursor.toArray())
+          .then((result) => {
+            console.log('finalizeUser: result: ', result, req.params.hash);
+
+            switch (result.length) {
+              case 0: res(boom.notFound());
+                break;
+              case 1:
+                let user = result[0];
+                user.username = req.payload.username;
+                user.email = req.payload.email;
+                user._id = undefined;
+                for(let k in user) {
+                  if (user[k] === null)
+                    user[k] = undefined;
+                }
+
+                console.log('create new user');
+                //save the user as a new one
+                //Send email before creating the user
+                util.sendEMail(user.email,
+                  'Your new account on SlideWiki',
+                  'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have migrated your account with the username '+user.username+' from '+instances[user.migratedFrom.instance].url+' to '+instances[instances._self].url+'. In order to start using your account and learn how get started with the platform please navigate to the following link:\n\n'+PLATFORM_INFORMATION_URL+'/welcome\n\nGreetings,\nthe SlideWiki Team')
+                  .then(() => {
+                    return userCtrl.create(user)
+                      .then((result) => {
+                        console.log('migrated user: create result: ', result.result);
+
+                        if (result[0] !== undefined && result[0] !== null) {
+                          //Error
+                          console.log('ajv error', result, co.parseAjvValidationErrors(result));
+                          return res(boom.badImplementation('registration failed because data is wrong: ' + co.parseAjvValidationErrors(result)));
+                        }
+
+                        if (result.insertedCount === 1) {
+                          //success
+                          user._id = result.insertedId;
+
+                          return userCtrl.delete(ObjectId(req.params.hash), true)
+                            .then(() => {
+                              return res({
+                                userid: result.insertedId,
+                                username: user.username
+                              })
+                                .header(config.JWT.HEADER, jwt.createToken(user));
+                            })
+                            .catch((error) => {
+                              console.log('Error - unable to delete user from temp. collection:', error);
+                              res(boom.badImplementation('Error', error));
+                            });
+                        }
+
+                        res(boom.badImplementation());
+                      })
+                      .catch((error) => {
+                        console.log('Error - create user failed:', error, 'used user object:', user);
+                        res(boom.badImplementation('Error', error));
+                      });
+                  })
+                  .catch((error) => {
+                    console.log('Error sending the email:', error);
+                    return res(boom.badImplementation('Error', error));
+                  });
+                break;
+              default: return res(boom.badImplementation());
+            }
+          });
+      });
   }
 };
+
+function migrateUser(req, res, user) {
+  console.log('migrateUser()');
+  user.migratedFrom = {
+    instance: req.query.instance,
+    userid: util.parseStringToInteger(user.userid) + 0,
+    url: instances[req.query.instance].url
+  };
+  user.userid = undefined;
+  user.reviewed = undefined;
+  user.suspended = undefined;
+  user.lastReviewDoneBy = undefined;
+  user.registered = (new Date()).toISOString();
+
+  return userCtrl.find({
+    $or: [
+      {
+        username: user.username
+      },
+      {
+        email: user.email
+      }
+    ]
+  })
+    .then((cursor) => cursor.toArray())
+    .then((array) => {
+      if (array === undefined || array === null || array.length < 1) {
+        console.log('create new user');
+        //save the user as a new one
+        //Send email before creating the user
+        return util.sendEMail(user.email,
+          'Your new account on SlideWiki',
+          'Dear '+user.forename+' '+user.surname+',\n\nwelcome to SlideWiki! You have migrated your account with the username '+user.username+' from '+instances[req.query.instance].url+' to '+instances[instances._self].url+'. In order to start using your account and learn how get started with the platform please navigate to the following link:\n\n'+PLATFORM_INFORMATION_URL+'/welcome\n\nGreetings,\nthe SlideWiki Team')
+          .then(() => {
+            return userCtrl.create(user)
+              .then((result) => {
+                console.log('migrated user: create result: ', result.result);
+
+                if (result[0] !== undefined && result[0] !== null) {
+                  //Error
+                  console.log('ajv error', result, co.parseAjvValidationErrors(result));
+                  return res(boom.badImplementation('registration failed because data is wrong: ' + co.parseAjvValidationErrors(result)));
+                }
+
+                if (result.insertedCount === 1) {
+                  //success
+                  user._id = result.insertedId;
+
+                  return res()
+                    .redirect(PLATFORM_MIGRATE_URL + '?data=' + encodeURIComponent(JSON.stringify({
+                      userid: result.insertedId,
+                      username: user.username,
+                      jwt: jwt.createToken(user)
+                    })))
+                    .temporary(true);
+                }
+
+                res(boom.badImplementation());
+              })
+              .catch((error) => {
+                console.log('Error - create user failed:', error, 'used user object:', user);
+                res(boom.badImplementation('Error', error));
+              });
+          })
+          .catch((error) => {
+            console.log('Error sending the email:', error);
+            return res(boom.badImplementation('Error', error));
+          });
+      }
+      else {
+        console.log('save user temp.');
+        //save user temp. to change username
+        userCtrl.create(user, true)
+          .then((result) => {
+            if (result[0] !== undefined && result[0] !== null) {
+              //Error
+              console.log('ajv error', result, co.parseAjvValidationErrors(result));
+              return res(boom.badData('migration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+            }
+
+            if (result.insertedCount === 1) {
+              //success
+              user._id = result.insertedId;
+
+              return res()
+                .redirect(PLATFORM_MIGRATE_URL + '?data=' + encodeURIComponent(JSON.stringify({
+                  hash: result.insertedId,
+                  username: user.username,
+                  email: user.email
+                })))
+                .temporary(true);
+            }
+
+            res(boom.badImplementation());
+          });
+      }
+    });
+}
+
+function signInMigratedUser(req, res, userFromOtherInstance, userFromThisInstance) {
+  console.log('signInMigratedUser()');
+
+  //TODO update userFromThisInstance?
+  return res()
+    .redirect(PLATFORM_MIGRATE_URL + '?data=' + encodeURIComponent(JSON.stringify({
+      userid: userFromThisInstance._id,
+      username: userFromThisInstance.username,
+      jwt: jwt.createToken(userFromThisInstance)
+    })))
+    .temporary(true);
+}
 
 function isProviderSupported(provider) {
   return PROVIDERS.indexOf(provider) !== -1;

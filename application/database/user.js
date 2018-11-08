@@ -2,7 +2,8 @@
 
 const helper = require('./helper'),
   userModel = require('../models/user.js'),
-  collectionName = 'users';
+  collectionName = 'users',
+  collectionNameTemp = 'temp_users';
 
 // hardcoded (static) users
 // the attributes included are only the public user attributes needed
@@ -18,28 +19,49 @@ const staticUsers = [
 ];
 
 let self = module.exports = {
-  create: (user) => {
-    return helper.connectToDatabase()
-      .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, collectionName))
-      .then((newId) => {
-        // console.log('newId', newId);
-        return helper.connectToDatabase() //db connection have to be accessed again in order to work with more than one collection
-          .then((db2) => db2.collection(collectionName))
-          .then((collection) => {
-            let isValid = false;
-            user._id = newId;
-            try {
-              isValid = userModel(user);
-              if (!isValid) {
-                return userModel.errors;
-              }
-              return collection.insertOne(user);
-            } catch (e) {
-              console.log('user validation failed', e);
-              throw e;
+  create: (user, temp = false) => {
+    let name = (temp) ? collectionNameTemp : collectionName;
+
+    if (temp) {
+      return helper.connectToDatabase() //db connection have to be accessed again in order to work with more than one collection
+        .then((db2) => db2.collection(name))
+        .then((collection) => {
+          let isValid = false;
+          try {
+            isValid = userModel(user);
+            if (!isValid) {
+              return userModel.errors;
             }
-          }); //id is created and concatinated automatically
-      });
+            return collection.insertOne(user);
+          } catch (e) {
+            console.log('user validation failed', e);
+            throw e;
+          }
+        }); //id is created and concatinated automatically
+    }
+    else {
+      return helper.connectToDatabase()
+        .then((dbconn) => helper.getNextIncrementationValueForCollection(dbconn, name))
+        .then((newId) => {
+          // console.log('newId', newId);
+          return helper.connectToDatabase() //db connection have to be accessed again in order to work with more than one collection
+            .then((db2) => db2.collection(name))
+            .then((collection) => {
+              let isValid = false;
+              user._id = newId;
+              try {
+                isValid = userModel(user);
+                if (!isValid) {
+                  return userModel.errors;
+                }
+                return collection.insertOne(user);
+              } catch (e) {
+                console.log('user validation failed', e);
+                throw e;
+              }
+            }); //id is created and concatinated automatically
+        });
+    }
   },
 
   read: (userid) => {
@@ -70,17 +92,19 @@ let self = module.exports = {
       });
   },
 
-  delete: (userid) => {
+  delete: (userid, temp = false) => {
+    let name = (temp) ? collectionNameTemp : collectionName;
     return helper.connectToDatabase()
-      .then((dbconn) => dbconn.collection(collectionName))
+      .then((dbconn) => dbconn.collection(name))
       .then((collection) => collection.remove({
         _id: userid
       }));
   },
 
-  find: (query) => {
+  find: (query, temp = false) => {
+    let name = (temp) ? collectionNameTemp : collectionName;
     return helper.connectToDatabase()
-      .then((dbconn) => dbconn.collection(collectionName))
+      .then((dbconn) => dbconn.collection(name))
       .then((collection) => collection.find(query));
   },
 
