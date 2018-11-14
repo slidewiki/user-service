@@ -121,7 +121,7 @@ module.exports = {
         if (result.result.ok === 1 && result.result.n === 1) {
           //success
           return res()
-            .redirect(PLATFORM_INFORMATION_URL)
+            .redirect(PLATFORM_INFORMATION_URL + '/account-activated')
             .temporary(true);
         }
 
