@@ -1024,7 +1024,7 @@ module.exports = {
       });
   },
 
-  getReviewableUsers: (req, res) => {
+  getReviewableUsers: (req, res, offset) => {
     let query = {
       authorised: {
         $not: {
@@ -1043,14 +1043,23 @@ module.exports = {
       }
     };
 
+    if (offset && offset > 0) {
+      query['_id'] = {
+        '$gt': offset
+      };
+    }
+    console.log('getReviewableUsers query', query);
+
     return userCtrl.find(query)
       .then((cursor) => cursor.project({_id: 1, registered: 1, username: 1}))
-      .then((cursor2) => cursor2.toArray())
+      .then((cursor2) => cursor2.limit(1000))
+      .then((cursor3) => cursor3.sort({_id: 1}))
+      .then((cursor4) => cursor4.toArray())
       .then((array) => {
         if (array.length < 1)
           return res([]);
 
-        // console.log('filter users', array.length);
+        console.log('filter users', array.length);
         let startTime = (new Date('2017-07-19')).getTime();
         let userids = array.reduce((arr, curr) => {
           if ((new Date(curr.registered)).getTime() > startTime)
@@ -1072,7 +1081,7 @@ module.exports = {
         };
 
         function callback(error, response, body) {
-          // console.log('getReviewableUsers: ', error, response.statusCode, body);
+          console.log('getReviewableUsers: ', error, response.statusCode, body);
 
           if (!error && (response.statusCode === 200)) {
             let result = body.reduce((arr, curr) => {
@@ -1091,7 +1100,7 @@ module.exports = {
           }
         }
 
-        // console.log('now calling the service');
+        console.log('now calling the service');
 
         if (process.env.NODE_ENV === 'test') {
           callback(null, {statusCode: 200}, userids.reduce((arr, curr) => {arr.push({_id: curr, decksCount: 3}); return arr;}, []));
