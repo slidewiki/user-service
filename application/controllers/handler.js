@@ -1053,7 +1053,7 @@ module.exports = {
     return userCtrl.find(query)
       .then((cursor) => cursor.project({_id: 1, registered: 1, username: 1}))
       .then((cursor2) => cursor2.sort({_id: 1}))
-      .then((cursor3) => cursor3.limit(3000))
+      // .then((cursor3) => cursor3.limit(3000))
       .then((cursor4) => cursor4.toArray())
       .then((array) => {
         if (array.length < 1)
