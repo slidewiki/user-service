@@ -66,19 +66,6 @@ if (process.env.NODE_ENV === 'test') {
   slidewikiDbName = 'slidewiki_test';
 }
 
-//LTI stuff
-let lti_id, lti_key, lti_secret, lti_enabled = false;
-if (!co.isEmpty(process.env.LTI_ID)) {
-  lti_id = process.env.LTI_ID;
-}
-if (!co.isEmpty(process.env.LTI_KEY)) {
-  lti_key = process.env.LTI_KEY;
-}
-if (!co.isEmpty(process.env.LTI_SECRET)) {
-  lti_secret = process.env.LTI_SECRET;
-}
-if (lti_id && lti_key && lti_secret)
-  lti_enabled = true;
 
 module.exports = {
   MongoDB: {
@@ -104,10 +91,5 @@ module.exports = {
     1: 'request_deck_edit_rights'
   },
   SALT: '6cee6c6a420e0573d1a4ad8ecb44f2113d010a0c3aadd3c1251b9aa1406ba6a3', //must be the same as in slidewiki-platform, see handler.js resetPassword
-  LTI: {
-    _ID: lti_id,
-    KEY: lti_key,
-    SECRET: lti_secret,
-    ENABLED: lti_enabled
-  }
+  LTI_ID: '@lti.org'
 };

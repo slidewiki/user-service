@@ -3,118 +3,138 @@
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
   co = require('../common'),
   userCtrl = require('../database/user'),
-  //ltiCtrl = require('../database/lti'),
-  //config = require('../configuration'),
+  userltiCtrl = require('../database/userlti'),
   jwt = require('./jwt'),
   util = require('./util'),
   lti = require('ims-lti'),
-  LTI_CONFIG = require('../configuration.js').LTI;
+  LTI_ID = require('../configuration.js').LTI_ID;
 
 const PLATFORM_LTI_URL = require('../configs/microservices').platform.uri+ '/ltiLogin';
 
 module.exports = {
 
   handleLTI: (req, res) => {
-    //console.log('req='+JSON.stringify(req.query));
 
-    if (!LTI_CONFIG.ENABLED)
-      return res(boom.notFound());
+    let isValid = false;
 
-    // Validate LTI request
-    let ltiKeySecret = {
-      '_id': LTI_CONFIG._ID,
-      'key': LTI_CONFIG.KEY,
-      'secret': LTI_CONFIG.SECRET
-    };
+    return userltiCtrl.readAllLTIs()
+      .then((ltiArray) => {
+        for(let i=0; i<ltiArray.length; i++){
+          let ltiObj = ltiArray[i];
+          let ltiProvider = new lti.Provider(ltiObj.key, ltiObj.secret);
+          ltiProvider.valid_request(req, (err, isValid) => {
+            if(err){
+              console.log('There was an error in the LTI request', err);
+            }
+            else {
+              console.log('There is the valid LTI request. i='+i);
+              proceedLTI(req, res, ltiObj);
+            }
+          });
+        } //end for
+      }).catch((error) => {
+        console.log('userltiCtrl.readAllLTIs failed:', error);
+        res(boom.badImplementation('Error', error));
+      });
+  },
 
-    //TODO: Accept different types of signatures
-    let ltiProvider = new lti.Provider(ltiKeySecret.key, ltiKeySecret.secret);
-    ltiProvider.valid_request(req, function(err, isValid){
-      if(err){
-        console.log('There was an error in the LTI request', err);
-        res(boom.badImplementation());
-      }
-      else{
-        let user = getUser(req);
+};
 
-        console.log('Registration with LTI: ', user.username, user.email);
-        //check if username already exists
-        return util.isIdentityAssigned(user.email, user.username)
+
+
+function proceedLTI(req, res, ltiObj){
+  let email = 'lti'+ltiObj._id+'.user'+(ltiObj.members.length+1)+'@slidewiki.org';
+  let username = 'lti'+ltiObj._id+'.user'+(ltiObj.members.length+1)+LTI_ID;
+  console.log('req.payload.ext_user_username='+req.payload.ext_user_username);
+  if(req.payload.ext_user_username !== '' && req.payload.ext_user_username !== undefined){
+    username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+LTI_ID;
+  }
+
+  let user = getUser(req, username, email);
+
+  console.log('req.params.resource_id='+req.params.resource_id);
+  let resource_id='';
+  if(req.params.resource_id !== '' && req.params.resource_id >=0)
+    resource_id = req.params.resource_id;
+
+  return util.isLTIIdentityAssigned(user.username)
+    .then((result) => {
+      if (result.assigned === false) {
+        // If the user doesn't exist, create a new user
+        return userCtrl.create(user)
           .then((result) => {
-
-            if (result.assigned === false) {
-              // If the user doesn't exist, create a new user
-              return userCtrl.create(user)
-                .then((result) => {
-
-                  console.log('result='+simpleStringify(result));
-                  if (result[0] !== undefined && result[0] !== null) {
-                    //Error
-                    console.log('ajv error', result, co.parseAjvValidationErrors(result));
-                    return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
-                  }
-
-                  if (result.insertedCount === 1) {
-                    //success
-                    console.log('new user created. successful, result.insertedId='+result.insertedId);
-                    let data = {
-                      userid: result.insertedId,
-                      username: user.username,
-                      jwt: jwt.createLTIToken({
-                        userid: result.insertedId,
-                        username: user.username
-                      })
-                    };
-
-                    //success
-                    return res()
-                      .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
-                      .temporary(true);
-
-                  }
-
-                  res(boom.badImplementation());
-                });
-
-
-            } else {
-
-              /*
-                  If the user is already registered, sign in
-              */
-              console.log('already registered. signed in. result='+simpleStringify(result));
-              let id = result.userid;
-              //id='1';
+            //console.log('result='+simpleStringify(result));
+            if (result[0] !== undefined && result[0] !== null) {
+              //Error
+              console.log('ajv error', result, co.parseAjvValidationErrors(result));
+              return res(boom.badData('registration failed because data is wrong: ', co.parseAjvValidationErrors(result)));
+            }
+            if (result.insertedCount === 1) {
+              //success
+              console.log('new user created. successful, result.insertedId='+result.insertedId);
+              let newUserId = result.insertedId;
               let data = {
-                userid: id,
+                userid: result.insertedId,
                 username: user.username,
                 jwt: jwt.createLTIToken({
-                  userid: id,
+                  userid: result.insertedId,
                   username: user.username
                 })
               };
 
-              //success
-              return res()
-                .redirect(PLATFORM_LTI_URL + '?data=' + encodeURIComponent(JSON.stringify(data)))
-                .temporary(true);
+              //Add new user to the LTI group
+              let member = {
+                userid: newUserId,
+                joined: (new Date()).toISOString()
+              };
+              ltiObj.members.push(member);
+
+              return userltiCtrl.update(ltiObj)
+                .then((result) => {
+
+                  //success
+                  return res()
+                    .redirect(PLATFORM_LTI_URL + '?resource_id='+resource_id+'&data=' + encodeURIComponent(JSON.stringify(data)))
+                    .temporary(true);
+
+                }).catch((error) => {
+                  console.log('userltiCtrl.update(lti) failed:', error);
+                  res(boom.badImplementation('Error', error));
+                });
 
             }
-
-          })
-          .catch((error) => {
-            console.log('Error - util.isIdentityAssigned('+user.email+', '+user.username+') failed:', error);
+            res(boom.badImplementation());
+          }).catch((error) => {
+            console.log('userCtrl.create(user) failed:', error);
             res(boom.badImplementation('Error', error));
           });
 
 
+      } else {
+        // If the user is already registered, sign in
+        console.log('already registered. signed in. result='+simpleStringify(result));
+        let id = result.userid;
+        let data = {
+          userid: id,
+          username: user.username,
+          jwt: jwt.createLTIToken({
+            userid: id,
+            username: user.username
+          })
+        };
+
+        //success
+        return res()
+          .redirect(PLATFORM_LTI_URL + '?resource_id='+resource_id+'&data=' + encodeURIComponent(JSON.stringify(data)))
+          .temporary(true);
       }
+
+    }).catch((error) => {
+      console.log('Error - util.isLTIIdentityAssigned( '+user.username+') failed:', error);
+      res(boom.badImplementation('Error', error));
     });
 
-  },
-
-
-};
+}
 
 function simpleStringify (object){
   let simpleObject = {};
@@ -134,19 +154,13 @@ function simpleStringify (object){
 }
 
 
-function getUser(req){
-  //let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'') || document.username.replace(/\s/g,'');
-  let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'');
-  let email = util.parseAPIParameter(req.payload.lis_person_contact_email_primary).toLowerCase();
-
+function getUser(req, username, email){
+  //console.log('req.payload.ext_user_username='+req.payload.ext_user_username);
+  //let username = util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'')+LTI_ID;
   return {
-    //username:         util.parseAPIParameter(req.payload.ext_user_username).replace(/\s/g,'') || document.username.replace(/\s/g,''),
-    //email:            util.parseAPIParameter(req.payload.lis_person_contact_email_primary).toLowerCase(),
     username: username,
     email: email,
     frontendLanguage: 'en',
-    // spokenLanguages: [util.parseAPIParameter(req.payload.language)],
-    //country:          util.parseAPIParameter(req.payload.launch_presentation_locale) || document.location || '',
     country:          util.parseAPIParameter(req.payload.launch_presentation_locale),
     picture:          '',
     description:      '',

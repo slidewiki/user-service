@@ -8,14 +8,7 @@ let ajv = Ajv({
   //v5: true  //enable v5 proposal of JSON-schema standard
 }); // options can be passed, e.g. {allErrors: true}
 
-//build schema
-/*
-const objectid = {
-  type: 'string',
-  maxLength: 24,
-  minLength: 24
-};
-*/
+
 const ltiKeys = {
   type: 'object',
   properties: {
@@ -29,8 +22,9 @@ const ltiKeys = {
       type: 'string'
     }
   },
-  required: ['key', 'token', 'token_creation', 'id']
+  required: ['key', 'secret', 'id']
 };
+
 
 //export
 module.exports = ajv.compile(ltiKeys);

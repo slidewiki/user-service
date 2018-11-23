@@ -48,6 +48,8 @@ const provider = {
   },
   required: ['provider', 'token', 'token_creation']
 };
+
+
 const user = {
   type: 'object',
   properties: {

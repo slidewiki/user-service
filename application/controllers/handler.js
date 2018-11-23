@@ -12,6 +12,7 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   co = require('../common'),
   userCtrl = require('../database/user'),
   usergroupCtrl = require('../database/usergroup'),
+  userltiCtrl = require('../database/userlti'),
   config = require('../configuration'),
   jwt = require('./jwt'),
   Joi = require('joi'),
@@ -199,18 +200,29 @@ module.exports = {
 
     return userCtrl.read(util.parseStringToInteger(req.params.id))
       .then((user) => {
-        //console.log('getUser: got user:', user);
         if (user !== undefined && user !== null && user.username !== undefined) {
           if (user.deactivated === true) {
             return res(boom.locked('This user is deactivated.'));
           }
 
-          //get groups of a user
           return usergroupCtrl.readGroupsOfUser(req.params.id)
-            .then((array) => {
-              user.groups = array;
+            .then((groupArray) => {
+              user.groups = groupArray;
 
-              return res(prepareDetailedUserData(user)).header(config.JWT.HEADER, jwt.createToken(user));
+              return userltiCtrl.readLTIsOfUser(req.params.id)
+                .then((ltiArray) => {
+                  user.ltis = ltiArray;
+
+                  return res(prepareDetailedUserData(user)).header(config.JWT.HEADER, jwt.createToken(user));
+                }) //end return userltiCtrl
+                .catch((error) => {
+                  console.log('Error while getting LTIs of the user with id '+req.params.id+':', error);
+                  res(boom.notFound('Wrong user id', error));
+                });
+            }) //end return usergroupCtrl
+            .catch((error) => {
+              console.log('Error while getting groups of the user with id '+req.params.id+':', error);
+              res(boom.notFound('Wrong user id', error));
             });
         }
         else {
@@ -691,6 +703,7 @@ module.exports = {
       });
   },
 
+  //groups
   deleteUsergroup: (req, res) => {
     //first check if user is creator
     return usergroupCtrl.read(req.params.groupid)
@@ -918,6 +931,7 @@ module.exports = {
     }
   },
 
+
   getUsergroups: (req, res) => {
     if (req.payload === undefined || req.payload.length < 1)
       return res(boom.badData());
@@ -954,6 +968,7 @@ module.exports = {
       });
   },
 
+
   leaveUsergroup: (req, res) => {
     return usergroupCtrl.partlyUpdate({
       _id: req.params.groupid
@@ -976,8 +991,274 @@ module.exports = {
       });
   },
 
-  //
 
+  //ltis
+  deleteUserlti: (req, res) => {
+    //first check if user is creator
+    return userltiCtrl.read(req.params.ltiid)
+      .then((document) => {
+        if (document === undefined || document === null) {
+          return res(boom.notFound());
+        }
+
+        let creator = document.creator.userid || document.creator;
+        if (creator !== req.auth.credentials.userid) {
+          return res(boom.unauthorized());
+        }
+
+        //now delete
+        return userltiCtrl.delete(req.params.ltiid)
+          .then((result) => {
+            // console.log('deleteUserlti: deleted', result.result);
+
+            if (result.result.ok !== 1) {
+              return res(boom.badImplementation());
+            }
+
+            if (result.result.n !== 1) {
+              return res(boom.notFound());
+            }
+
+            if (document.members.length < 1)
+              return res();
+
+            //notify users
+            let promises = [];
+            document.members.forEach((member) => {
+              promises.push(notifiyLTIUser({
+                id: creator,
+                name: document.creator.username || 'LTI leader'
+              }, member.userid, 'left', document, true));
+            });
+            return Promise.all(promises).then(() => {
+              return res();
+            }).catch((error) => {
+              console.log('Error while processing notification of users:', error);
+              //reply(boom.badImplementation());
+              //for now always succeed
+              return res();
+            });
+          });
+      })
+      .catch((error) => {
+        console.log('error while reading or deleting the userlti '+req.params.ltiid+':', error);
+        res(boom.badImplementation(error));
+      });
+  },
+
+
+
+  createOrUpdateUserlti: (req, res) => {
+
+    console.log('handlers.createOrUpdateUserlti');
+    const userid = req.auth.credentials.userid;
+
+    let lti = req.payload;
+
+    lti.creator = {
+      userid: userid,
+      username: req.auth.credentials.username
+    };
+
+    let referenceDateTime = util.parseAPIParameter(req.payload.referenceDateTime) || (new Date()).toISOString();
+    delete lti.referenceDateTime;
+
+    lti.key = util.parseAPIParameter(lti.key);
+    lti.secret = util.parseAPIParameter(lti.secret);
+    lti.timestamp = util.parseAPIParameter(lti.timestamp);
+
+    if (lti.timestamp === undefined || lti.timestamp === null || lti.timestamp === '')
+      lti.timestamp = referenceDateTime;
+
+    if (lti.isActive !== false)
+      lti.isActive = true;
+    if (lti.members === undefined || lti.members === null || lti.members.length < 0)
+      lti.members = [];
+
+    //add joined attribute if not given
+    lti.members = lti.members.reduce((array, user) => {
+      if (user.joined === undefined || user.joined === '')
+        user.joined = referenceDateTime;
+      array.push(user);
+      return array;
+    }, []);
+
+    if (lti.id === undefined || lti.id === null) {
+      //create
+      console.log('create lti', lti.key);
+
+      return userltiCtrl.create(lti)
+        .then((result) => {
+          // console.log('createOrUpdateUserlti: created lti', result.result || result);
+
+          if (result[0] !== undefined && result[0] !== null) {
+            //Error
+            return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+          }
+
+          if (result.insertedCount === 1) {
+            //success
+            lti.id = result.insertedId;
+
+            if (lti.members.length < 1)
+              return res(lti);
+
+            //notify users
+            console.log('Notify '+lti.members.length+' users...');
+            let promises = [];
+            lti.members.forEach((member) => {
+              promises.push(notifiyUser({
+                id: lti.creator.userid || lti.creator,
+                name: lti.creator.username || 'LTI leader'
+              }, member.userid, 'joined', lti, true));
+            });
+            return Promise.all(promises).then(() => {
+              return res(lti);
+            }).catch((error) => {
+              console.log('Error while processing notification of users:', error);
+              //reply(boom.badImplementation());
+              //for now always succeed
+              return res(lti);
+            });
+          }
+
+          res(boom.badImplementation());
+        })
+        .catch((error) => {
+          console.log('Error while creating lti:', error, lti);
+          res(boom.badImplementation(error));
+        });
+    }
+    else if (lti.id < 1) {
+      //error
+      return res(boom.badData());
+    }
+    else {
+      //update
+      console.log('update lti', lti.id);
+
+      //first check if user is creator
+      return userltiCtrl.read(lti.id)
+        .then((document) => {
+          if (document === undefined || document === null) {
+            return res(boom.notFound());
+          }
+
+          let dCreator = document.creator.userid || document.creator;
+          if (dCreator !== lti.creator.userid) {
+            return res(boom.unauthorized());
+          }
+
+          //some attribute should be unchangeable
+          lti.timestamp = document.timestamp;
+          lti._id = document._id;
+
+          return userltiCtrl.update(lti)
+            .then((result) => {
+              // console.log('createOrUpdateUserlti: updated lti', result.result || result);
+
+              if (result[0] !== undefined && result[0] !== null) {
+                //Error
+                return res(boom.badData('Wrong data: ', co.parseAjvValidationErrors(result)));
+              }
+
+              if (result.result.ok === 1) {
+                if (lti.members.length < 1 && document.members.length < 1)
+                  return res(lti);
+
+                //notify users
+                let wasUserAMember = (userid) => {
+                  let result = false;
+                  document.members.forEach((member) => {
+                    if (member.userid === userid)
+                      result = true;
+                  });
+                  return result;
+                };
+                let wasUserDeleted = (userid) => {
+                  let result = true;
+                  lti.members.forEach((member) => {
+                    if (member.userid === userid)
+                      result = false;
+                  });
+                  return result;
+                };
+                let promises = [];
+                lti.members.forEach((member) => {
+                  if (!wasUserAMember(member.userid))
+                    promises.push(notifiyUser({
+                      id: lti.creator.userid,
+                      name: lti.creator.username || 'LTI leader'
+                    }, member.userid, 'joined', lti, true));
+                });
+                document.members.forEach((member) => {
+                  if (wasUserDeleted(member.userid))
+                    promises.push(notifiyUser({
+                      id: dCreator,
+                      name: document.creator.username || 'Group leader'
+                    }, member.userid, 'left', document, true));
+                });
+                console.log('Notify '+promises.length+' users...');
+                return Promise.all(promises).then(() => {
+                  return res(lti);
+                }).catch((error) => {
+                  console.log('Error while processing notification of users:', error);
+                  //reply(boom.badImplementation());
+                  //for now always succeed
+                  return res(lti);
+                });
+              }
+
+              console.log('Failed updating lti '+lti._id+' and got result:', result.result, lti);
+              return res(boom.badImplementation());
+            });
+        })
+        .catch((error) => {
+          console.log('Error while reading lti '+lti.id+':', error);
+          res(boom.badImplementation(error));
+        });
+    }
+  },
+
+
+  getUserltis: (req, res) => {
+    if (req.payload === undefined || req.payload.length < 1)
+      return res(boom.badData());
+
+    let selectors = req.payload.reduce((q, element) => {
+      q.push({_id: element});
+      return q;
+    }, []);
+    let query = {
+      $or: selectors
+    };
+
+    console.log('handler.getUserltis:', query);
+
+    return userltiCtrl.find(query)
+      .then((cursor) => cursor.toArray())
+      .then((array) => {
+        if (array === undefined || array === null || array.length < 1) {
+          return res([]);
+        }
+
+        let enrichedLTIs_promises = array.reduce((prev, curr) => {
+          prev.push(enrichLTIMembers(curr));
+          return prev;
+        }, []);
+        return Promise.all(enrichedLTIs_promises)
+          .then((enrichedLTIs) => {
+            return res(enrichedLTIs);
+          });
+      })
+      .catch((error) => {
+        console.log('Error while reading ltis:', error);
+        res(boom.badImplementation(error));
+      });
+  },
+
+
+  //
   getUserdata: (req, res) => {
     return usergroupCtrl.readGroupsOfUser(req.auth.credentials.userid)
       .then((array) => {
@@ -1483,6 +1764,42 @@ function notifiyUser(actor, receiver, type, group, isActiveAction = false) {
   return promise;
 }
 
+
+function notifiyLTIUser(actor, receiver, type, lti, isActiveAction = false) {
+  let promise = new Promise((resolve, reject) => {
+    let message = actor.name + ': Has ' + type + ' the LTI Group ' + lti.key;
+    if (isActiveAction)
+      message = 'You ' + type + ' the LTI group ' + lti.key;
+    const options = {
+      url: require('../configs/microservices').activities.uri + '/activity/new',
+      method: 'POST',
+      json: true,
+      body: {
+        activity_type: type,
+        user_id: actor.id.toString(),
+        content_id: lti._id.toString(),
+        content_kind: 'lti',
+        content_name: message,
+        content_owner_id: receiver.toString()
+      }
+    };
+
+    function callback(error, response, body) {
+      // console.log('notifiyUser: ', error, response.statusCode, body);
+
+      if (!error && (response.statusCode === 200)) {
+        return resolve(body);
+      } else {
+        return reject(error);
+      }
+    }
+
+    request(options, callback);
+  });
+  return promise;
+}
+
+
 //Uses userids of creator and members in order to add username and picture
 function enrichGroupMembers(group) {
   let userids = group.members.reduce((prev, curr) => {
@@ -1547,5 +1864,69 @@ function enrichGroupMembers(group) {
       console.log('enrichGroupMembers: got new members (after reading from database, adding joined attribute and cleanup), amount:', members.length);
 
       return group;
+    });
+}
+
+
+//Uses userids of creator and members in order to add username and picture
+function enrichLTIMembers(lti) {
+  let userids = lti.members.reduce((prev, curr) => {
+    prev.push(curr.userid);
+    return prev;
+  }, []);
+  userids.push(lti.creator.userid);
+
+  console.log('enrichLTIMembers: lti, userids', lti, userids);
+
+  let query = {
+    _id: {
+      $in: userids
+    }
+  };
+  return userCtrl.find(query)
+    .then((cursor) => cursor.project({_id: 1, username: 1, picture: 1, country: 1, organization: 1}))
+    .then((cursor2) => cursor2.toArray())
+    .then((array) => {
+      array = array.reduce((prev, curr) => {
+        if (curr._id) {
+          curr.userid = curr._id;
+          delete curr._id;
+        }
+        prev.push(curr);
+        return prev;
+      }, []);
+      let creator = array.filter((user) => {
+        return user.userid === lti.creator.userid;
+      });
+      let members = array.filter((user) => {
+        return user.userid !== lti.creator.userid;
+      });
+
+      console.log('enrichLTIMembers: got creator and users (amount)', {id: creator[0]._id, name: creator[0].username, email: creator[0].email}, members.concat(lti.members).length);
+
+      //add joined attribute to members
+      members = (members.concat(lti.members)).reduce((prev, curr) => {
+        if (prev[curr.userid] === undefined)
+          prev[curr.userid] = {};
+
+        if (curr.joined === undefined) {
+          prev[curr.userid].userid = curr.userid;
+          prev[curr.userid].username = curr.username;
+          prev[curr.userid].picture = curr.picture;
+          prev[curr.userid].country = curr.country;
+          prev[curr.userid].organization = curr.organization;
+        }
+        else
+          prev[curr.userid].joined = curr.joined;
+        return prev;
+      }, {});
+      members = Object.keys(members).map((key) => { return members[key]; }).filter((member) => {return member.joined && member.userid && member.username;});
+
+      lti.creator = creator[0];
+      lti.members = members;
+
+      console.log('enrichLTIMembers: got new members (after reading from database, adding joined attribute and cleanup), amount:', members.length);
+
+      return lti;
     });
 }

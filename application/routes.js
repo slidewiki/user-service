@@ -862,7 +862,7 @@ module.exports = function (server) {
   //LTI
   server.route({
     method: 'POST',
-    path: '/lti/handle',
+    path: '/lti/handle/{resource_id?}',
     handler: handlers_lti.handleLTI,
     config: {
       validate: {
@@ -903,7 +903,7 @@ module.exports = function (server) {
           lti_version: Joi.string().allow(''),
           launch_presentation_return_url: Joi.string().allow(''),
           launch_presentation_document_target: Joi.string().allow('')
-        }).requiredKeys('ext_user_username', 'oauth_consumer_key', 'oauth_signature', 'oauth_timestamp', 'oauth_signature_method', 'oauth_version'),
+        }).requiredKeys('oauth_consumer_key', 'oauth_signature', 'oauth_timestamp', 'oauth_signature_method', 'oauth_version'),
       },
       state: {
         parse: true, // parse and store in request.state
@@ -1096,6 +1096,8 @@ module.exports = function (server) {
     }
   });
 
+
+
   server.route({
     method: 'POST',
     path: '/usergroups',
@@ -1121,6 +1123,126 @@ module.exports = function (server) {
   });
 
 
+  //ltis
+  server.route({
+    method: 'POST',
+    path: '/userltis',
+    handler: handlers.getUserltis,
+    config: {
+      validate: {
+        payload: Joi.array().items(Joi.number())
+      },
+      tags: ['api'],
+      description: 'Gets ltis by ids',
+      auth: false,
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            }
+          },
+          payloadType: 'json'
+        }
+      }
+    }
+  });
+
+  server.route({
+    method: 'PUT',
+    path: '/userlti/createorupdate',
+    handler: handlers.createOrUpdateUserlti,
+    config: {
+      validate: {
+        payload: Joi.object().keys({
+          id: Joi.number().optional().description('have to be empty for create'),
+          key: Joi.string(),
+          secret: Joi.string().allow('').optional(),
+          isActive: Joi.boolean().optional(),
+          timestamp: Joi.string().allow('').optional(),
+          members: Joi.array().items(Joi.object().keys({
+            userid: Joi.number(),
+            joined: Joi.string().allow('').optional()
+          }).requiredKeys('userid')),
+          referenceDateTime: Joi.string().allow('').optional()
+        }).requiredKeys('key'),
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+
+      },
+      tags: ['api'],
+      description: 'Update or create a userlti - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to update or create this userlti.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right userid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'LTI for update not found. Check the id.'
+            },
+            ' 422 ': {
+              'description': 'Wrong userlti data - see error message'
+            }
+          },
+          payloadType: 'json'
+        }
+      }
+    }
+
+  });
+
+
+
+  server.route({
+    method: 'DELETE',
+    path: '/userlti/{ltiid}',
+    handler: handlers.deleteUserlti,
+    config: {
+      validate: {
+        params: {
+          ltiid: Joi.number().integer().options({convert: true})
+        },
+        headers: Joi.object({
+          '----jwt----': Joi.string().required().description('JWT header provided by /login')
+        }).unknown()
+      },
+      tags: ['api'],
+      description: 'Delete a userlti - JWT needed',
+      auth: 'jwt',
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            ' 200 ': {
+              'description': 'Successful',
+            },
+            ' 401 ': {
+              'description': 'Not authorized to delete this lti.',
+              'headers': {
+                'WWW-Authenticate': {
+                  'description': 'Use your JWT token and the right ltiid.'
+                }
+              }
+            },
+            ' 404 ': {
+              'description': 'LTI not found. Check the id.'
+            }
+          },
+          payloadType: 'form'
+        }
+      }
+    }
+  });
 
   // Routes for other services
 
@@ -1148,7 +1270,19 @@ module.exports = function (server) {
               userid: Joi.number(),
               joined: Joi.string()
             }).requiredKeys('userid', 'joined'))
-          }).requiredKeys('_id', 'name', 'creator'))
+          }).requiredKeys('_id', 'name', 'creator')),
+
+          ltis: Joi.array().items(Joi.object().keys({
+            _id: Joi.number(),
+            key: Joi.string(),
+            secret: Joi.string(),
+            creator: Joi.number(),
+            members: Joi.array().items(Joi.object().keys({
+              userid: Joi.number(),
+              joined: Joi.string()
+            }).requiredKeys('userid', 'joined'))
+          }).requiredKeys('_id', 'key', 'secret', 'creator'))
+
         }).required('id', 'username')
       },
       auth: 'jwt',
