@@ -45,7 +45,7 @@ return handler.getReviewableUsers(null, (array) => {
           exit();
         });
     });
-}, lastId);
+}, parseInt(lastId));
 
 function exit() {
   process.exit(0);

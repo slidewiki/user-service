@@ -1052,8 +1052,8 @@ module.exports = {
 
     return userCtrl.find(query)
       .then((cursor) => cursor.project({_id: 1, registered: 1, username: 1}))
-      .then((cursor2) => cursor2.limit(1000))
-      .then((cursor3) => cursor3.sort({_id: 1}))
+      .then((cursor2) => cursor2.sort({_id: 1}))
+      .then((cursor3) => cursor3.limit(3000))
       .then((cursor4) => cursor4.toArray())
       .then((array) => {
         if (array.length < 1)
@@ -1067,6 +1067,8 @@ module.exports = {
           return arr;
         }, []);
 
+        console.log('filtered with date > 2017-07-19', userids);
+
         if (userids.length < 1)
           return res([]);
 
@@ -1079,6 +1081,7 @@ module.exports = {
             userids: userids
           }
         };
+        console.log('url', options.url);
 
         function callback(error, response, body) {
           console.log('getReviewableUsers: ', error, response.statusCode, body);
