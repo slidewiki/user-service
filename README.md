@@ -79,6 +79,13 @@ Connect to the Mongo shell and add the userid:
 
 *db.useridsforsuspension.insert({_id: *userid*})*
 
+Or use the script [updateQueue.sh](https://github.com/slidewiki/user-service/blob/master/application/queue/updateQueue.sh).
+This script detects possible users for the queue, gets their deck count and filters them before they get added to the queue.
+There a user must have more than 1 deck and have to be registered after 2017-07-19 in order to not be filtered out.
+Because the deck count is retrieved via the deckservice which route uses GET query parameter, the query could get too long.
+The script uses a maximum of 3000 users if the [line](https://github.com/slidewiki/user-service/blob/updatequeue_fix/application/controllers/handler.js#L1056) gets active and uses an \_id offset which is the first parameter of the script.
+When the error occurs the script have to be executed multiple times with different maximum and offset values in order to get and handle all users.
+
 ### How to execute the script
 
 Run

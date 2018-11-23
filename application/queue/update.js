@@ -3,7 +3,8 @@
 const api = require('./api.js'),
   handler = require('../controllers/handler.js');
 
-console.log('Updating Queue');
+let lastId = process.argv[2];
+console.log('Updating Queue with offset', lastId);
 
 return handler.getReviewableUsers(null, (array) => {
   if (array.length < 1) {
@@ -20,6 +21,7 @@ return handler.getReviewableUsers(null, (array) => {
     arr.push(o);
     return arr;
   }, []);
+  console.log('last element', reviewableUserObjects[reviewableUserObjects.length - 1]);
 
   return api.getAll()
     .then((array2) => {
@@ -43,7 +45,7 @@ return handler.getReviewableUsers(null, (array) => {
           exit();
         });
     });
-});
+}, parseInt(lastId));
 
 function exit() {
   process.exit(0);
