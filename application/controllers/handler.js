@@ -200,7 +200,6 @@ module.exports = {
 
     return userCtrl.read(util.parseStringToInteger(req.params.id))
       .then((user) => {
-        console.log('getUser: got user:', user);
         if (user !== undefined && user !== null && user.username !== undefined) {
           if (user.deactivated === true) {
             return res(boom.locked('This user is deactivated.'));
@@ -215,8 +214,16 @@ module.exports = {
                   user.ltis = ltiArray;
 
                   return res(prepareDetailedUserData(user)).header(config.JWT.HEADER, jwt.createToken(user));
-                }); //end return userltiCtrl
-            }); //end return usergroupCtrl
+                }) //end return userltiCtrl
+                .catch((error) => {
+                  console.log('Error while getting LTIs of the user with id '+req.params.id+':', error);
+                  res(boom.notFound('Wrong user id', error));
+                });
+            }) //end return usergroupCtrl
+            .catch((error) => {
+              console.log('Error while getting groups of the user with id '+req.params.id+':', error);
+              res(boom.notFound('Wrong user id', error));
+            });
         }
         else {
           return res(boom.notFound());
